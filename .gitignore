@@ -174,3 +174,6 @@ junit.xml
 
 # Local override file — useful for personal aliases / paths
 local.mk
+*.env
+credentials.json
+.credentials
