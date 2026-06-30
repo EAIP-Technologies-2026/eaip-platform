@@ -1,0 +1,79 @@
+# Auto-detect text files and normalise line endings to LF in the repo.
+* text=auto eol=lf
+
+# Explicit text files
+*.py        text diff=python
+*.pyi       text diff=python
+*.md        text
+*.markdown  text
+*.txt       text
+*.rst       text
+*.json      text
+*.jsonc     text
+*.yml       text
+*.yaml      text
+*.toml      text
+*.ini       text
+*.cfg       text
+*.html      text diff=html
+*.css       text diff=css
+*.scss      text
+*.js        text
+*.jsx       text
+*.ts        text
+*.tsx       text
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.zsh       text eol=lf
+Makefile    text eol=lf
+GNUmakefile text eol=lf
+*.mk        text eol=lf
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf
+LICENSE     text
+CHANGELOG.md text
+
+# Windows-only files keep CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary files — never normalise, never diff
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.webp      binary
+*.svgz      binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.tgz       binary
+*.bz2       binary
+*.xz        binary
+*.7z        binary
+*.tar       binary
+*.whl       binary
+*.so        binary
+*.dylib     binary
+*.dll       binary
+*.exe       binary
+*.bin       binary
+*.parquet   binary
+*.onnx      binary
+*.pt        binary
+*.pth       binary
+*.safetensors binary
+
+# Generated / vendored — exclude from language stats
+docs/_build/**          linguist-generated=true
+**/__generated__/**     linguist-generated=true
+**/*.lock               linguist-generated=true
+**/dist/**              linguist-generated=true
+**/build/**             linguist-generated=true
+**/.venv/**             linguist-vendored=true
+**/node_modules/**      linguist-vendored=true
+
+# Treat shell scripts as executable when checked out (where Git supports it)
+*.sh        text eol=lf

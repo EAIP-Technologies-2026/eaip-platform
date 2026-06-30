@@ -1,0 +1,120 @@
+name: 🐛 Bug Report
+description: Report a reproducible defect in EAIP.
+title: "bug: <concise summary>"
+labels: ["type/bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! 🙏
+
+        **Please do not file security issues here.** See [`SECURITY.md`](../../SECURITY.md) for the disclosure process.
+
+        Before submitting, please:
+        - Search [open](https://github.com/subham1902/eaip-platform/issues?q=is%3Aissue+is%3Aopen+label%3Atype%2Fbug) and [closed](https://github.com/subham1902/eaip-platform/issues?q=is%3Aissue+is%3Aclosed+label%3Atype%2Fbug) issues to avoid duplicates.
+        - Verify the bug reproduces on the latest released version (or `main`).
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the [Code of Conduct](../../CODE_OF_CONDUCT.md).
+          required: true
+        - label: This is **not** a security vulnerability (which must go through `SECURITY.md`).
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing the bug.
+      placeholder: "Calling `eaip agents run` exits 0 even when the run fails."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal, complete, and verifiable steps. Use code fences.
+      placeholder: |
+        1. `git checkout v0.0.1`
+        2. `make bootstrap`
+        3. Run `eaip agents run hello`
+        4. Observe exit code …
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      placeholder: "Exit code should be non-zero when the run errors."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      description: Include full error messages, stack traces, and relevant logs. Use code fences.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: EAIP Version
+      placeholder: "0.0.1 (or commit SHA)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python
+    attributes:
+      label: Python Version
+      options:
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - other (specify in additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Containerised (Docker / Kubernetes)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity (your assessment)
+      options:
+        - Low — minor inconvenience, easy workaround
+        - Medium — feature impacted, workaround exists
+        - High — feature broken, no workaround
+        - Critical — data loss, security, or outage
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Anything else that might help — config snippets (with secrets redacted), screenshots, related issues.

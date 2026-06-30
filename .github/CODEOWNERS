@@ -1,0 +1,67 @@
+# =============================================================================
+# EAIP — CODEOWNERS
+# -----------------------------------------------------------------------------
+# Each line maps a path pattern to one or more code owners.
+# The LAST matching pattern takes precedence — order matters.
+# Owners are auto-requested for review on PRs that touch their paths.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+# =============================================================================
+
+# Default owner for everything not matched below.
+*                               @subham1902
+
+# -----------------------------------------------------------------------------
+# Governance & top-level documentation
+# -----------------------------------------------------------------------------
+/README.md                      @subham1902
+/CONTRIBUTING.md                @subham1902
+/CODE_OF_CONDUCT.md             @subham1902
+/SECURITY.md                    @subham1902
+/SUPPORT.md                     @subham1902
+/CHANGELOG.md                   @subham1902
+/ROADMAP.md                     @subham1902
+/ARCHITECTURE.md                @subham1902
+/ENGINEERING_TRACKER.md         @subham1902
+/DECISION_REGISTER.md           @subham1902
+/TECH_DEBT.md                   @subham1902
+/RISK_REGISTER.md               @subham1902
+/VERSIONING.md                  @subham1902
+/LICENSE                        @subham1902
+
+# -----------------------------------------------------------------------------
+# Tooling & repository hygiene
+# -----------------------------------------------------------------------------
+/.editorconfig                  @subham1902
+/.gitattributes                 @subham1902
+/.gitignore                     @subham1902
+/pyproject.toml                 @subham1902
+/Makefile                       @subham1902
+/.pre-commit-config.yaml        @subham1902
+/.vscode/                       @subham1902
+
+# -----------------------------------------------------------------------------
+# CI/CD & GitHub configuration (require strict review)
+# -----------------------------------------------------------------------------
+/.github/                       @subham1902
+/.github/workflows/             @subham1902
+/.github/CODEOWNERS             @subham1902
+
+# -----------------------------------------------------------------------------
+# Source — populated in EP-0002+
+# -----------------------------------------------------------------------------
+/src/eaip/runtime/              @subham1902
+/src/eaip/policy/               @subham1902
+/src/eaip/adapters/             @subham1902
+/src/eaip/control/              @subham1902
+/src/eaip/cli/                  @subham1902
+/src/eaip/telemetry/            @subham1902
+
+# -----------------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------------
+/tests/                         @subham1902
+
+# -----------------------------------------------------------------------------
+# Documentation site (when added)
+# -----------------------------------------------------------------------------
+/docs/                          @subham1902

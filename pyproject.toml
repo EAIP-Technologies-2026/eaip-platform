@@ -1,0 +1,283 @@
+# =============================================================================
+# EAIP — pyproject.toml
+# =============================================================================
+# Build system & tooling configuration for the Enterprise Autonomous
+# Intelligence Platform. Source code lands in EP-0002.
+# =============================================================================
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+# -----------------------------------------------------------------------------
+# Project metadata
+# -----------------------------------------------------------------------------
+[project]
+name = "eaip"
+version = "0.0.1"
+description = "Enterprise Autonomous Intelligence Platform — composable, observable, governed agent orchestration."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = [
+    "agents",
+    "llm",
+    "orchestration",
+    "ai",
+    "autonomous",
+    "platform",
+    "observability",
+    "policy",
+]
+authors = [
+    { name = "Subham Panigrahi", email = "hello@eaip.dev" },
+]
+maintainers = [
+    { name = "Subham Panigrahi", email = "hello@eaip.dev" },
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+# Runtime dependencies are intentionally minimal at EP-0001A.
+# They will be populated as runtime packages land in EP-0002+.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.9",
+    "black>=24.10.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.1",
+    "pip-audit>=2.7.3",
+    "bandit[toml]>=1.7.10",
+    "detect-secrets>=1.5.0",
+]
+test = [
+    "pytest>=8.3.3",
+    "pytest-cov>=5.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-xdist>=3.6.1",
+    "hypothesis>=6.115.0",
+]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5.40",
+    "mkdocstrings[python]>=0.26.2",
+]
+
+[project.urls]
+Homepage      = "https://github.com/subham1902/eaip-platform"
+Documentation = "https://github.com/subham1902/eaip-platform#readme"
+Repository    = "https://github.com/subham1902/eaip-platform"
+Changelog     = "https://github.com/subham1902/eaip-platform/blob/main/CHANGELOG.md"
+Issues        = "https://github.com/subham1902/eaip-platform/issues"
+Discussions   = "https://github.com/subham1902/eaip-platform/discussions"
+Security      = "https://github.com/subham1902/eaip-platform/blob/main/SECURITY.md"
+
+# -----------------------------------------------------------------------------
+# Hatch — packaging
+# -----------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+# Source layout will be added in EP-0002 (src/eaip/).
+packages = []
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
+
+# -----------------------------------------------------------------------------
+# Ruff — linter & formatter
+# -----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+    ".venv",
+    "build",
+    "dist",
+    "docs/_build",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+# A pragmatic, security-aware ruleset.
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "S",    # flake8-bandit (security)
+    "SIM",  # flake8-simplify
+    "PERF", # perflint
+    "PL",   # pylint subset
+    "RUF",  # ruff-specific
+    "N",    # pep8-naming
+    "ANN",  # annotations (only enforce on public APIs — see per-file-ignores)
+    "ASYNC",# async best-practices
+    "TID",  # tidy imports
+    "PIE",
+    "RET",
+    "ARG",
+    "PTH",  # use pathlib
+    "ERA",  # eradicate dead code
+    "D",    # pydocstyle (public APIs)
+]
+ignore = [
+    "D203",   # 1 blank line before class — conflicts with D211
+    "D213",   # multi-line docstring summary on second line — conflicts with D212
+    "PLR0913",# too many arguments
+    "S101",   # use of assert — allowed in tests
+    "ANN401", # disallow Any — handled case-by-case
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "D", "ANN", "PLR2004", "ARG"]
+"docs/**"  = ["D", "ANN"]
+"**/__init__.py" = ["F401", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["eaip"]
+combine-as-imports = true
+force-single-line = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+docstring-code-format = true
+
+# -----------------------------------------------------------------------------
+# Black — formatter (kept aligned with ruff format; black is canonical)
+# -----------------------------------------------------------------------------
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312", "py313"]
+skip-string-normalization = false
+preview = false
+extend-exclude = '''
+/(
+  \.venv
+  | build
+  | dist
+  | docs/_build
+  | node_modules
+)/
+'''
+
+# -----------------------------------------------------------------------------
+# mypy — static type checking
+# -----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_equality = true
+extra_checks = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+files = ["src", "tests"]
+exclude = '(^|/)(\.venv|build|dist|docs/_build|node_modules)(/|$)'
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# -----------------------------------------------------------------------------
+# pytest
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--strict-config",
+    "--strict-markers",
+    "--showlocals",
+    "--tb=short",
+    "--import-mode=importlib",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:hypothesis.*",
+]
+markers = [
+    "unit: fast, isolated unit tests",
+    "integration: tests that touch external services or filesystems",
+    "e2e: end-to-end scenarios",
+    "slow: tests that may take more than 1s",
+]
+
+# -----------------------------------------------------------------------------
+# Coverage
+# -----------------------------------------------------------------------------
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "tests/*",
+    "src/**/__main__.py",
+    "src/**/_version.py",
+]
+parallel = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@(abc\\.)?abstractmethod",
+]
+# fail_under will be enabled once runtime code lands (EP-0002).
+# fail_under = 85
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# -----------------------------------------------------------------------------
+# Bandit — security linter
+# -----------------------------------------------------------------------------
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+skips = ["B101"]  # assert_used — allowed in tests; handled by ruff per-file-ignores

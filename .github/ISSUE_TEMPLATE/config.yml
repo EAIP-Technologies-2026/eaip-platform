@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Community Discussions
+    url: https://github.com/subham1902/eaip-platform/discussions
+    about: Ask questions, share ideas, or discuss design with the community.
+  - name: 🛡 Security Vulnerability
+    url: https://github.com/subham1902/eaip-platform/security/advisories/new
+    about: Report a security issue privately. Do not open a public issue.
+  - name: 📖 Documentation
+    url: https://github.com/subham1902/eaip-platform#readme
+    about: Read the project README, architecture, and contribution guides.
+  - name: 💼 Commercial Support
+    url: mailto:hello@eaip.dev
+    about: Inquiries about SLAs, prioritised features, or training.

@@ -1,0 +1,141 @@
+# =============================================================================
+# EAIP — pre-commit configuration
+# -----------------------------------------------------------------------------
+# Install:  pre-commit install --install-hooks && pre-commit install --hook-type commit-msg
+# Run all:  pre-commit run --all-files
+# =============================================================================
+
+default_language_version:
+  python: python3
+
+default_stages: [pre-commit]
+fail_fast: false
+minimum_pre_commit_version: "3.7.0"
+
+repos:
+  # ---------------------------------------------------------------------------
+  # Generic hygiene
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-yaml
+        args: ["--unsafe"]   # allow custom tags (GitHub Actions, MkDocs)
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: detect-private-key
+      - id: forbid-submodules
+
+  # ---------------------------------------------------------------------------
+  # Python — ruff (lint + format) and black (canonical formatter)
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.10.0
+    hooks:
+      - id: black
+        args: ["--config=pyproject.toml"]
+
+  # ---------------------------------------------------------------------------
+  # Python — type checking
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        args: ["--config-file=pyproject.toml"]
+        additional_dependencies: []
+        # Restrict to src/ to avoid noise from generated/vendored trees.
+        files: ^src/
+
+  # ---------------------------------------------------------------------------
+  # Secrets scanning
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: |
+          (?x)^(
+            \.secrets\.baseline|
+            poetry\.lock|
+            yarn\.lock|
+            package-lock\.json|
+            .*\.svg
+          )$
+
+  # ---------------------------------------------------------------------------
+  # Markdown
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+      - id: markdownlint
+        args: ["--disable", "MD013", "MD033", "MD041", "MD024", "--"]
+
+  # ---------------------------------------------------------------------------
+  # YAML / TOML / JSON formatting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.13.0
+    hooks:
+      - id: yamlfmt
+        args: ["-conf", ".yamlfmt.yml"]
+        # Ship a minimal yamlfmt config inline by allowing default if missing.
+        require_serial: true
+
+  # ---------------------------------------------------------------------------
+  # Shell scripts
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions workflow linting
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.3
+    hooks:
+      - id: actionlint
+
+  # ---------------------------------------------------------------------------
+  # Commit message — Conventional Commits + DCO sign-off
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - --strict
+          - feat
+          - fix
+          - perf
+          - refactor
+          - docs
+          - test
+          - build
+          - ci
+          - chore
+          - revert

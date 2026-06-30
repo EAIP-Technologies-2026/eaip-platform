@@ -1,0 +1,30 @@
+# =============================================================================
+# EAIP — gitleaks configuration
+# -----------------------------------------------------------------------------
+# Reference: https://github.com/gitleaks/gitleaks#configuration
+# =============================================================================
+
+title = "EAIP gitleaks config"
+
+[extend]
+# Inherit the maintained default rule set; add/override below.
+useDefault = true
+
+[allowlist]
+description = "Project-wide allowlist for false positives"
+paths = [
+  '''\.secrets\.baseline''',
+  '''\.gitleaks\.toml''',
+  '''CHANGELOG\.md''',
+  '''(^|/)docs/''',
+  '''(^|/)tests/fixtures/''',
+  '''(^|/)\.venv/''',
+  '''(^|/)node_modules/''',
+]
+
+# Common false-positive strings used in documentation examples.
+regexes = [
+  '''AKIA[0-9A-Z]{16}_EXAMPLE''',
+  '''sk-EXAMPLE[0-9A-Za-z]+''',
+  '''ghp_EXAMPLE[0-9A-Za-z]+''',
+]

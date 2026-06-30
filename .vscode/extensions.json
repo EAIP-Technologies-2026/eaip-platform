@@ -1,0 +1,33 @@
+{
+  "// _comment": "EAIP — Recommended VS Code extensions. VS Code prompts contributors to install these on first open.",
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml",
+    "esbenp.prettier-vscode",
+    "DavidAnson.vscode-markdownlint",
+    "yzhang.markdown-all-in-one",
+    "bierner.markdown-mermaid",
+    "EditorConfig.EditorConfig",
+    "eamodio.gitlens",
+    "GitHub.vscode-pull-request-github",
+    "GitHub.vscode-github-actions",
+    "github.vscode-codeql",
+    "streetsidesoftware.code-spell-checker",
+    "Gruntfuggly.todo-tree",
+    "vivaxy.vscode-conventional-commits",
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode.makefile-tools"
+  ],
+  "unwantedRecommendations": [
+    "ms-python.flake8",
+    "ms-python.pylint",
+    "ms-python.isort"
+  ]
+}

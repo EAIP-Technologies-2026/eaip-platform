@@ -1,0 +1,176 @@
+# =============================================================================
+# EAIP — .gitignore
+# =============================================================================
+# Keep this file readable. Group by domain. Prefer narrow patterns over broad.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.installed.cfg
+MANIFEST
+
+# Build / dist
+build/
+dist/
+wheels/
+*.whl
+pip-wheel-metadata/
+share/python-wheels/
+
+# Tooling caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.benchmarks/
+prof/
+profile.out
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Notebooks
+.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# Node / Frontend (in case of future docs site or dashboards)
+# -----------------------------------------------------------------------------
+node_modules/
+.npm/
+.yarn/
+.pnp.*
+.parcel-cache/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+out/
+
+# -----------------------------------------------------------------------------
+# Logs & runtime artefacts
+# -----------------------------------------------------------------------------
+*.log
+logs/
+pids/
+*.pid
+*.seed
+*.pid.lock
+*.sqlite
+*.sqlite3
+*.db
+
+# -----------------------------------------------------------------------------
+# OS detritus
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# -----------------------------------------------------------------------------
+# Editors / IDEs (we ship .vscode/ intentionally; ignore user overrides)
+# -----------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vs/
+*.swp
+*.swo
+*.swn
+*~
+.tags
+tags
+.cscope*
+
+# JetBrains
+.idea_modules/
+
+# VS Code — track shared workspace settings, ignore personal ones
+.vscode/*.local.json
+.vscode/.history/
+.history/
+
+# -----------------------------------------------------------------------------
+# Secrets & local config
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets.baseline.local
+
+# -----------------------------------------------------------------------------
+# Docs build outputs
+# -----------------------------------------------------------------------------
+docs/_build/
+docs/.cache/
+site/
+
+# -----------------------------------------------------------------------------
+# Containers / Infra
+# -----------------------------------------------------------------------------
+*.tar
+*.tar.gz
+.docker/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.orig
+*.bak
+*.backup
+*.tmp
+*.temp
+.tmp/
+tmp/
+
+# Coverage / test reports
+test_reports/
+junit.xml
+.report/
+
+# Project-local Make stamps
+.make-stamps/
+
+# Local override file — useful for personal aliases / paths
+local.mk

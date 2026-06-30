@@ -1,0 +1,63 @@
+version: 2
+updates:
+  # -----------------------------------------------------------------
+  # Python (pip) — weekly, grouped
+  # -----------------------------------------------------------------
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build(deps)"
+      include: scope
+    labels:
+      - "type/deps"
+      - "area/python"
+    groups:
+      python-dev:
+        applies-to: version-updates
+        patterns:
+          - "ruff*"
+          - "black*"
+          - "mypy*"
+          - "pre-commit*"
+          - "pip-audit*"
+          - "bandit*"
+          - "detect-secrets*"
+      python-test:
+        applies-to: version-updates
+        patterns:
+          - "pytest*"
+          - "hypothesis*"
+      python-docs:
+        applies-to: version-updates
+        patterns:
+          - "mkdocs*"
+          - "mkdocstrings*"
+
+  # -----------------------------------------------------------------
+  # GitHub Actions — weekly
+  # -----------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci(deps)"
+      include: scope
+    labels:
+      - "type/deps"
+      - "area/ci"
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"

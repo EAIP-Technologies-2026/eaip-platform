@@ -1,0 +1,203 @@
+# =============================================================================
+# EAIP — Continuous Integration
+# -----------------------------------------------------------------------------
+# Lint + type-check + test matrix across supported Python versions and OSes.
+# Security workflow lives in security.yml.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+    branches: [main, "release/**"]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Default to read-only tokens; jobs opt-in to writes explicitly.
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Pre-commit — runs all configured hooks against the full tree.
+  # ---------------------------------------------------------------------------
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pre-commit
+
+      - name: Cache pre-commit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Run pre-commit on all files
+        run: pre-commit run --all-files --show-diff-on-failure --color always
+
+  # ---------------------------------------------------------------------------
+  # Lint + type-check — fast, single job.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: lint & typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,test]"
+
+      - name: Ruff
+        run: ruff check --output-format=github .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Black
+        run: black --check .
+
+      - name: mypy
+        run: mypy --config-file pyproject.toml || echo "::warning::mypy reports issues (non-blocking until src/ lands in EP-0002)"
+
+  # ---------------------------------------------------------------------------
+  # Tests — matrix across Python versions and OSes.
+  # ---------------------------------------------------------------------------
+  test:
+    name: tests (py${{ matrix.python }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.12"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,test]"
+
+      - name: Run pytest
+        shell: bash
+        run: |
+          if [ -d tests ] && [ -n "$(find tests -name 'test_*.py' -print -quit)" ]; then
+            pytest --cov --cov-report=xml --cov-report=term-missing
+          else
+            echo "No tests yet — skipping pytest invocation (EP-0001A is documentation-only)."
+          fi
+
+      - name: Upload coverage artefact
+        if: always() && hashFiles('coverage.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-py${{ matrix.python }}
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # Build — sanity-check the sdist & wheel build.
+  # ---------------------------------------------------------------------------
+  build:
+    name: build distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build sdist & wheel
+        run: python -m build
+
+      - name: Validate metadata
+        run: twine check dist/*
+
+      - name: Upload distribution artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Required status check aggregator — branch protection points at this job.
+  # ---------------------------------------------------------------------------
+  ci:
+    name: CI
+    needs: [pre-commit, lint, test, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate
+        run: |
+          echo "pre-commit: ${{ needs.pre-commit.result }}"
+          echo "lint:       ${{ needs.lint.result }}"
+          echo "test:       ${{ needs.test.result }}"
+          echo "build:      ${{ needs.build.result }}"
+          if [[ "${{ needs.pre-commit.result }}" != "success" || \
+                "${{ needs.lint.result }}"       != "success" || \
+                "${{ needs.test.result }}"       != "success" || \
+                "${{ needs.build.result }}"      != "success" ]]; then
+            echo "::error::One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed."

@@ -1,0 +1,44 @@
+name: 📚 Documentation
+description: Report a documentation gap, error, or improvement.
+title: "docs: <concise summary>"
+labels: ["type/docs", "needs-triage"]
+assignees: []
+
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: File path(s) or URL(s) in the docs that need attention.
+      placeholder: "ARCHITECTURE.md → Memory section"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Issue Type
+      options:
+        - Typo / grammar
+        - Inaccuracy / outdated content
+        - Missing topic
+        - Confusing / needs better example
+        - Broken link
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What is wrong or missing? If you have a suggested fix, please include it.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to open a PR with the fix.
