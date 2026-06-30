@@ -33,6 +33,37 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
+## [0.0.2] — 2026-01-15
+
+**Engineering Package:** [EP-0002 — Platform Foundation](ENGINEERING_TRACKER.md#ep-0002--platform-foundation)
+
+### Added
+
+- **Source tree** under `src/eaip/` — 27 production-quality packages providing the reusable Platform Foundation. No business capabilities; pure infrastructure.
+- **Composition root** — `eaip.platform.Platform` and `PlatformBuilder` wire every subsystem together; `eaip.application.build_platform()` is the one-liner entry point.
+- **Lifecycle** — `LifecycleManager` orchestrates ordered startup and reverse-ordered shutdown with rollback on failure.
+- **Dependency Injection** — `Container` with `Singleton`, `Transient`, and `Scoped` providers, cycle detection, type-safe bindings, and child scopes.
+- **Registries** — generic observable `Registry[T]` plus domain wrappers (`CapabilityRegistry`, `PluginRegistry`, feature flags).
+- **Plugin contract** — `PluginManifest`, `Plugin` Protocol, `PluginLoader` with contract-version validation.
+- **Structured logging** — `structlog`-backed JSON & console formats, contextvar propagation, redaction of sensitive keys.
+- **Events** — in-process `EventBus` with sync/async handlers, subclass routing, and isolated failure semantics.
+- **Health** — tri-state `HealthStatus`, async `HealthCheck` protocol, aggregating `HealthReporter`.
+- **Config & settings** — layered config sources (`DictSource`, `EnvSource`, `FileSource`, `LayeredSource`) and a typed `PlatformSettings` hierarchy.
+- **Ports & default adapters** — `ClockPort`, `IdGeneratorPort`, `SecretProviderPort` with `SystemClock`, `UuidIdGenerator`, `EnvSecretProvider` defaults.
+- **Shared primitives** — typed `str` identifiers (`CorrelationId`, `RunId`, `ComponentId`, `Slug`), `Result`/`Ok`/`Err`, `Duration`, `UNSET` sentinel, JSON type aliases.
+- **Exceptions** — single hierarchy under `EAIPError` with stable `ErrorCode`s and structured `context`.
+- **Tests** — 14 unit-test modules with **152 tests passing in <1s**; 84% coverage; pytest + pytest-asyncio fixtures.
+
+### Changed
+
+- `pyproject.toml` now declares runtime dependencies (`pydantic>=2.9`, `pydantic-settings>=2.6`, `structlog>=24.4`, `anyio>=4.6`) and registers `src/eaip` as the wheel package.
+
+### Notes
+
+- This release is **infrastructure-only** — no runtime orchestration, no LLM integrations, no business APIs.
+
+---
+
 ## [0.0.1] — 2026-01-15
 
 **Engineering Package:** [EP-0001A — Repository Foundation](ENGINEERING_TRACKER.md#ep-0001a)
@@ -76,5 +107,6 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
-[Unreleased]: https://github.com/subham1902/eaip-platform/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2
 [0.0.1]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.1

@@ -3,69 +3,77 @@
 **Repository:** `subham1902/eaip-platform`
 **Owner:** Subham Panigrahi (@subham1902)
 **License:** Apache-2.0
-**Status:** EP-0001A complete (repository foundation)
+**Status:** EP-0001A ✅ + EP-0002 ✅ — Platform Foundation complete
 **Last updated:** 2026-01-15
 
-## Original Problem Statement
+## Original Problem Statement (latest CTO Order — EP-0002)
 
-> Generate EP-0001A for the EAIP platform repository. Implement every repository foundation file in production-ready quality. Generate complete file-by-file contents for README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, SUPPORT.md, CHANGELOG.md, ROADMAP.md, ARCHITECTURE.md, ENGINEERING_TRACKER.md, DECISION_REGISTER.md, TECH_DEBT.md, RISK_REGISTER.md, VERSIONING.md, LICENSE, .editorconfig, .gitattributes, .gitignore, pyproject.toml, Makefile, pre-commit configuration, VS Code configuration (.vscode), GitHub ISSUE_TEMPLATE files, pull_request_template.md, CODEOWNERS, and a starter GitHub Actions workflow.
+> Build the complete reusable **Platform Foundation** for EAIP. Infrastructure
+> only — no runtime orchestration, planners, reasoners, knowledge engines,
+> memory engines, workflow engines, dashboards, marketplaces, deployment
+> packs, industry packs, LLM integrations, or business APIs.
+> Must feel like an OS-style foundation (Kubernetes / Linux / VS Code).
 
 ## User Choices
 
-- **Acronym:** EAIP = Enterprise Autonomous Intelligence Platform
-- **Repo:** `subham1902/eaip-platform`
-- **Maintainer:** Subham Panigrahi (@subham1902)
-- **Copyright:** © 2026 Subham Panigrahi
-- **License:** Apache 2.0
-- **Python:** 3.11, 3.12, 3.13
-- **Tooling:** ruff + black + mypy + pytest
-- **CI scope:** lint + test + security scan + build + release automation (EP-0001B)
+- EAIP = Enterprise Autonomous Intelligence Platform
+- Repo: `subham1902/eaip-platform`
+- Maintainer: Subham Panigrahi (@subham1902)
+- License: Apache 2.0
+- Python: 3.11/3.12/3.13 (target 3.13)
+- Tooling: ruff + black + mypy + pytest
 
-## Architecture / Task Summary
+## Architecture
 
-EP-0001A delivers **repository scaffolding & governance only** — no runtime source code (lands in EP-0002).
+EP-0001A and EP-0002 together establish the architectural foundation. EP-0002
+delivers a **layered Platform Foundation** under `src/eaip/`:
 
-## What's Been Implemented (2026-01-15)
+```
+application → platform → (lifecycle, registry, DI, capabilities, plugins, core)
+            → (events, logging, health, config, settings, factories)
+            → (serialization, validation, protocols, interfaces, metadata, version, utilities)
+            → (ports ↔ infrastructure ↔ adapters/interfaces)
+            → (shared, exceptions, types)   — bottom layer, zero deps
+```
 
-### Governance docs (root)
-- `README.md` (rewritten), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1)
-- `SECURITY.md` (coordinated disclosure), `SUPPORT.md`
-- `CHANGELOG.md` (Keep-a-Changelog 1.1.0), `ROADMAP.md` (rolling 4-quarter)
-- `ARCHITECTURE.md`, `ENGINEERING_TRACKER.md`, `DECISION_REGISTER.md` (10 ADRs seeded)
-- `TECH_DEBT.md` (10 entries), `RISK_REGISTER.md` (10 risks), `VERSIONING.md` (SemVer 2.0.0)
-- `LICENSE` (Apache-2.0 full text)
+## What's Been Implemented
 
-### Tooling / hygiene
-- `.editorconfig`, `.gitattributes`, `.gitignore` (Python/Node/IDE/OS-aware)
-- `pyproject.toml` (hatchling build; ruff, black, mypy --strict, pytest, coverage, bandit configured)
-- `Makefile` (bootstrap, fmt, lint, typecheck, test, check, audit, clean, distclean, help)
-- `.pre-commit-config.yaml` (hygiene, ruff, black, mypy, detect-secrets, markdownlint, yamlfmt, shellcheck, actionlint, conventional-pre-commit)
-- `.secrets.baseline` (detect-secrets stub)
+### EP-0001A — Repository Foundation (2026-01-15) ✅
+35 governance/process/tooling files (README, CONTRIBUTING, CoC, SECURITY,
+ROADMAP, ARCHITECTURE, etc.), `pyproject.toml`, `Makefile`, `.pre-commit`,
+`.vscode/`, GitHub issue/PR templates, CODEOWNERS, CI + security workflows.
 
-### Editor / IDE
-- `.vscode/settings.json`, `.vscode/extensions.json`, `.vscode/launch.json`
+### EP-0002 — Platform Foundation (2026-01-15) ✅
+**27 source packages** under `src/eaip/` totalling ~1,830 lines of strictly-
+typed, production-quality Python. Highlights:
 
-### GitHub
-- `.github/ISSUE_TEMPLATE/{bug_report,feature_request,documentation,config}.yml`
-- `.github/pull_request_template.md`
-- `.github/CODEOWNERS`
-- `.github/workflows/ci.yml` (pre-commit + lint + 3.11/3.12/3.13 × ubuntu/mac/win matrix + build + aggregator)
-- `.github/workflows/security.yml` (bandit + pip-audit + gitleaks; weekly schedule)
-- `.github/gitleaks.toml`, `.github/dependabot.yml`
+- **Composition root:** `Platform`, `PlatformBuilder`, `build_platform()`, `run_platform()`.
+- **Lifecycle:** ordered start, LIFO stop, automatic rollback on failure.
+- **Dependency Injection:** typed `Container` with `Singleton`/`Transient`/`Scoped` scopes, cycle detection.
+- **Registries:** generic observable `Registry[T]` + `CapabilityRegistry`, `PluginRegistry`, `FeatureFlagRegistry`.
+- **Plugins:** Protocol-based contract, manifest validation, idempotent activate/deactivate.
+- **Logging:** `structlog` JSON+console, contextvar propagation, secret redaction.
+- **Events:** in-process bus with subclass routing, sync/async handlers, isolated failure.
+- **Health:** worst-status rollup with failure isolation.
+- **Config/Settings:** layered sources + typed Pydantic settings hierarchy.
+- **Ports & infrastructure:** clock, ID generator, secret provider with default adapters.
+- **Shared:** typed `str` identifiers, `Result` monad, `Duration`, `UNSET`, JSON aliases.
+- **Exceptions:** single hierarchy with stable `ErrorCode`s and structured context.
 
-### Validation
-- All TOML, YAML, JSON files parsed and validated.
+**Tests:** 14 unit-test modules, **152 tests passing in 0.31s**, 84% coverage.
 
 ## Backlog
 
-- **P0 (EP-0001B):** CI caching tuning, release-please integration, signed releases.
-- **P0 (EP-0002):** Runtime skeleton in `src/eaip/runtime/`.
-- **P1 (EP-0003):** LLM adapter contract + 2 reference adapters.
-- **P1 (EP-0004):** OpenTelemetry baseline + structlog config.
-- **P2:** Docs site (MkDocs Material), SBOM/cosign signing, threat model.
+- **P0 (EP-0001B):** release-please + sigstore, signed PyPI releases.
+- **P0 (EP-0003):** LLM adapter contract + OpenAI/Anthropic reference adapters.
+- **P0 (EP-0004):** OpenTelemetry baseline (traces + metrics).
+- **P1 (EP-0005):** Tool adapter contract + HTTP/SQL/file reference tools.
+- **P1 (EP-0006):** Memory subsystem (STM Redis + LTM pgvector).
+- **P1 (EP-0007):** Policy Engine v1 (OPA/Rego facade, per [DR-0003](DECISION_REGISTER.md#dr-0003)).
+- **P2 (EP-0008–EP-0009):** CLI, cost/token budgets.
 
 ## Next Tasks
 
-1. Begin EP-0001B — automate releases (release-please, sigstore), add caching.
-2. Begin EP-0002 — orchestrator/Run/Step skeleton + first unit tests.
+1. Begin EP-0001B (release automation + signing).
+2. Begin EP-0003 (LLM adapter contract atop `AbstractAdapter`).
 3. Recruit additional maintainers (TD-0007 / R-0003).

@@ -21,9 +21,9 @@ Every EP corresponds to a labelled GitHub Project view (`EP/EP-NNNNX`) and a mil
 
 | EP ID       | Title                                        | Status     | Owner        | Target     | Notes |
 | ----------- | -------------------------------------------- | ---------- | ------------ | ---------- | ----- |
-| **EP-0001A** | Repository Foundation                       | ✅ Done    | @subham1902  | 2026-01-15 | This package — governance & scaffolding. |
+| **EP-0001A** | Repository Foundation                       | ✅ Done    | @subham1902  | 2026-01-15 | Governance & scaffolding. |
 | EP-0001B    | CI/CD Baseline                               | 🟡 Active  | @subham1902  | 2026-02-15 | Test matrix, caching, release automation. |
-| EP-0002     | Agent Runtime Skeleton                       | 🟡 Active  | @subham1902  | 2026-03-31 | Orchestrator, Run model, structured logs. |
+| **EP-0002** | **Platform Foundation**                      | ✅ Done    | @subham1902  | 2026-01-15 | DI, lifecycle, registries, plugins, logging, events, health. |
 | EP-0003     | LLM Adapter Contract + 2 Reference Adapters  | ⚪ Planned | TBD          | 2026-04-30 | OpenAI + Anthropic adapters. |
 | EP-0004     | Telemetry Baseline                           | ⚪ Planned | TBD          | 2026-05-31 | OTel traces + Prometheus metrics. |
 | EP-0005     | Tool Adapter Contract + Reference Tools      | ⚪ Planned | TBD          | 2026-06-30 | HTTP, SQL, file. |
@@ -110,29 +110,79 @@ Foundation is complete and unblocking. Subsequent EPs may freely add directories
 
 ---
 
-## EP-0002 — Agent Runtime Skeleton
+## EP-0002 — Platform Foundation
 
-- **Status:** 🟡 Active
+- **Status:** ✅ Done
 - **Owner:** @subham1902
-- **Target:** 2026-03-31
+- **Reviewers:** community
+- **Started / Completed:** 2026-01-15 / 2026-01-15
 
 ### Scope (In)
 
-- `src/eaip/runtime/` package with `Orchestrator`, `Run`, `Step`, `RunContext`.
-- In-memory store for runs (replaceable adapter behind a `Protocol`).
-- A trivial echo "agent" used to validate the loop end to end.
-- Structured logging via `structlog`.
+Production-quality reusable infrastructure under `src/eaip/`, **no business
+logic**. Every future capability pack depends on this package.
+
+- `shared/` — zero-dependency primitives: identifiers, `Result`, sentinels, time, JSON types.
+- `exceptions/` — single hierarchy under `EAIPError` with stable `ErrorCode`s.
+- `types/` — constrained Pydantic value types (`NonEmptyStr`, `Port`, `HostName`, `Url`, `LogLevel`, `EnvName`, `Environment`).
+- `protocols/` — structural protocols (`Startable`, `Healthcheckable`, `Identifiable`, ...).
+- `interfaces/` — abstract bases (`AbstractService` FSM, `AbstractRepository`).
+- `metadata/` — `ComponentMetadata` and `ComponentKind`.
+- `version/` — `Version` value object + `PLATFORM_VERSION`.
+- `utilities/` — `gather_with_concurrency`, `chunked`, `unique`, string helpers.
+- `serialization/` — strict JSON encoder/decoder.
+- `validation/` — typed `ValidationError` wrappers around Pydantic v2.
+- `config/` — `DictSource`, `EnvSource`, `FileSource` (JSON/TOML), `LayeredSource`.
+- `settings/` — `PlatformSettings`, `CoreSettings`, `LoggingSettings`, `FeatureFlagSettings`.
+- `logging/` — `structlog`-backed structured logging with context propagation & redaction.
+- `events/` — in-process pub/sub bus with sync/async handlers & subclass routing.
+- `factories/` — generic typed factory.
+- `dependency_injection/` — `Container`, `Scope`, cycle detection.
+- `registry/` — generic typed observable registry.
+- `lifecycle/` — `LifecycleManager` with rollback on failure.
+- `capabilities/` — `Capability`, `CapabilityRegistry`.
+- `plugins/` — `PluginManifest`, `Plugin` (Protocol), `PluginRegistry`, `PluginLoader`.
+- `ports/` — `ClockPort`, `IdGeneratorPort`, `SecretProviderPort`.
+- `adapters/interfaces/` — `AbstractAdapter`, `AdapterCapability`.
+- `infrastructure/` — `SystemClock`, `UuidIdGenerator`, `EnvSecretProvider`.
+- `core/` — `FeatureFlag(Registry)`, `ShutdownSignal`, signal handlers.
+- `platform/` — `Platform` composition root, `PlatformBuilder`.
+- `application/` — `build_platform()`, `run_platform()`.
 
 ### Scope (Out)
 
-- LLM/Tool adapters (EP-0003 / EP-0005).
-- Persistence beyond in-memory (EP-0006).
+- Runtime orchestration, planner, reasoner, knowledge engine (later EPs).
+- LLM, vector store, tool adapters (capability packs).
+- Dashboards, marketplace, deployment packs, industry packs (future EPs).
+
+### Deliverables
+
+- 60+ source modules under `src/eaip/`.
+- 14 unit-test modules with **152 passing tests** in 0.31s.
+- Per-package `README.md` documentation files.
 
 ### Acceptance Criteria
 
-- `eaip.runtime` is importable and unit-tested.
-- A scripted test runs an agent end to end without external services.
-- 90%+ unit test coverage for the runtime package.
+- ✅ Every Foundation package imports cleanly under Python ≥ 3.11.
+- ✅ `build_platform()` returns a usable `Platform`; `async with platform:`
+      transitions through `created → running → stopped`.
+- ✅ Health rollup, plugin contract validation, DI cycle detection, lifecycle
+      rollback all exercised by tests.
+- ✅ Total test coverage **84%+** with the public Protocol modules being the
+      only systematically under-covered surface (they are pure stubs).
+
+### Decisions
+
+- [DR-0008](DECISION_REGISTER.md#dr-0008) — async-first runtime.
+- [DR-0010](DECISION_REGISTER.md#dr-0010) — OpenTelemetry as the only telemetry contract (consumed in EP-0004).
+
+### Exit Notes
+
+The Platform Foundation is now the load-bearing layer for every future
+engineering pack. Capability packs depend on `eaip.platform.Platform`, the
+DI container, registries, and ports — they MUST NOT reach across into each
+other directly. Foundation modules are stable; breaking changes require a
+follow-on `EP-0002B` re-scope rather than in-place edits.
 
 ---
 

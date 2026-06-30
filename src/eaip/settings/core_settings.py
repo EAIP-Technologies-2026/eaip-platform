@@ -1,0 +1,67 @@
+"""Platform-wide settings model — the root configuration object."""
+
+from __future__ import annotations
+
+from pydantic import Field
+
+from eaip.logging.config import LoggingConfig
+from eaip.settings.base import EAIPSettingsBase
+from eaip.types import EnvName, Environment, NonEmptyStr
+
+
+class LoggingSettings(EAIPSettingsBase):
+    """Settings nested under ``EAIP_LOGGING_*`` (mapped from :class:`LoggingConfig`)."""
+
+    level: str = Field(default="INFO")
+    format: str = Field(default="json")
+    include_caller: bool = Field(default=False)
+
+    def to_logging_config(self) -> LoggingConfig:
+        return LoggingConfig(
+            level=self.level,  # type: ignore[arg-type]
+            format=self.format,  # type: ignore[arg-type]
+            include_caller=self.include_caller,
+        )
+
+
+class FeatureFlagSettings(EAIPSettingsBase):
+    """Static feature-flag overrides. Dynamic flags live in :mod:`eaip.core.feature_flags`."""
+
+    enabled: tuple[str, ...] = Field(default=())
+    disabled: tuple[str, ...] = Field(default=())
+
+
+class CoreSettings(EAIPSettingsBase):
+    """Identity & environment of the running platform."""
+
+    app_name: NonEmptyStr = Field(default="eaip-platform")
+    environment: Environment = Field(default=Environment.LOCAL)
+    environment_name: EnvName = Field(default="local")
+    instance_id: NonEmptyStr = Field(default="local-0")
+    debug: bool = Field(default=False)
+
+
+class PlatformSettings(EAIPSettingsBase):
+    """The root settings object exposed via :func:`load_platform_settings`."""
+
+    core: CoreSettings = Field(default_factory=CoreSettings)
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    feature_flags: FeatureFlagSettings = Field(default_factory=FeatureFlagSettings)
+
+
+def load_platform_settings() -> PlatformSettings:
+    """Load :class:`PlatformSettings` from environment variables.
+
+    A thin helper kept independent of :mod:`eaip.config` so that callers who
+    only want env-driven settings can bypass the layered loader entirely.
+    """
+    return PlatformSettings()
+
+
+__all__ = [
+    "CoreSettings",
+    "FeatureFlagSettings",
+    "LoggingSettings",
+    "PlatformSettings",
+    "load_platform_settings",
+]

@@ -53,9 +53,16 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-# Runtime dependencies are intentionally minimal at EP-0001A.
-# They will be populated as runtime packages land in EP-0002+.
-dependencies = []
+# Runtime dependencies — the Platform Foundation (EP-0002) only.
+# Capability-specific dependencies (LLM SDKs, vector stores, etc.) land in
+# their respective Engineering Packages, never here.
+dependencies = [
+    "pydantic>=2.9.0,<3",
+    "pydantic-settings>=2.6.0,<3",
+    "structlog>=24.4.0,<25",
+    "anyio>=4.6.0,<5",
+    "typing-extensions>=4.12.0; python_version < '3.13'",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -93,11 +100,12 @@ Security      = "https://github.com/subham1902/eaip-platform/blob/main/SECURITY.
 # Hatch — packaging
 # -----------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
-# Source layout will be added in EP-0002 (src/eaip/).
-packages = []
+packages = ["src/eaip"]
 
 [tool.hatch.build.targets.sdist]
 include = [
+    "/src",
+    "/tests",
     "/README.md",
     "/LICENSE",
     "/CHANGELOG.md",

@@ -236,6 +236,89 @@ Final contracts are introduced in EP-0003 (LLM), EP-0005 (Tools), and EP-0006 (M
 - **Tenant** — an isolation boundary for resources, policies, and data.
 - **Guardrail** — a pre/post hook enforcing content, safety, or policy.
 - **EP (Engineering Package)** — a planned, owned, versioned unit of platform work.
+- **Foundation** — the reusable infrastructure layer (delivered by EP-0002) on which every capability is built.
+- **Capability** — a self-describing, public unit of platform functionality (registered with the `CapabilityRegistry`).
+- **Plugin** — a third-party extension satisfying the `Plugin` Protocol; installed into the `PluginRegistry`, activated by the `PluginLoader`.
+- **Port** — an abstract dependency the platform needs from its host (e.g. `ClockPort`); implemented by an adapter under `eaip.infrastructure`.
+
+---
+
+## Platform Foundation Layout (EP-0002)
+
+The Foundation source tree under `src/eaip/` is organised by **architectural
+layer**, not by feature. Each package documents its own contract and exposes
+a curated `__init__.py`. Layers depend strictly downward:
+
+```
+                            ┌──────────────────────────────┐
+                            │      application/            │   bootstrap + runner
+                            └──────────────────────────────┘
+                                          │
+                            ┌──────────────────────────────┐
+                            │      platform/               │   Platform + Builder (composition root)
+                            └──────────────────────────────┘
+                                          │
+   ┌────────────┬─────────────┬───────────┴────────────┬──────────────┬────────────┐
+   ▼            ▼             ▼                        ▼              ▼            ▼
+lifecycle/  registry/   dependency_injection/    capabilities/    plugins/     core/
+   │            │             │                        │              │            │
+   └────────────┴─────────────┴────────────────────────┴──────────────┴────────────┘
+                                          │
+   ┌────────────┬─────────────┬───────────┴────────────┬──────────────┬────────────┐
+   ▼            ▼             ▼                        ▼              ▼            ▼
+events/     logging/      health/                   config/         settings/   factories/
+                                          │
+   ┌────────────┬─────────────┬───────────┴────────────┬──────────────┬────────────┐
+   ▼            ▼             ▼                        ▼              ▼            ▼
+serialization/ validation/  protocols/  interfaces/  metadata/    version/     utilities/
+                                          │
+                            ┌──────────────────────────────┐
+                            │   ports/   ↔   infrastructure/   adapters/interfaces/
+                            └──────────────────────────────┘
+                                          │
+                            ┌──────────────────────────────┐
+                            │   shared/                    │   zero-dependency primitives
+                            │   exceptions/                │
+                            │   types/                     │
+                            └──────────────────────────────┘
+```
+
+### Composition
+
+A host obtains a fully-wired platform with one call:
+
+```python
+from eaip.application import build_platform, run_platform
+
+async def main() -> None:
+    platform = build_platform()
+    await run_platform(platform)  # installs signal handlers; awaits shutdown
+```
+
+`build_platform()` performs the following in order:
+
+1. Load `PlatformSettings` from `EAIP_*` env vars.
+2. `configure_logging(settings.logging.to_logging_config())`.
+3. Create the DI `Container`; wire the default port adapters (`SystemClock`, `UuidIdGenerator`, `EnvSecretProvider`).
+4. Construct `EventBus`, `HealthReporter`, `LifecycleManager`, `CapabilityRegistry`, `PluginRegistry`, `PluginLoader`, `FeatureFlagRegistry`.
+5. Register every subsystem instance back into the container so capabilities can resolve them.
+6. Install (but **do not** activate) declared plugins.
+
+`Platform.start()` then:
+
+1. Binds `app`, `env`, `instance`, `version` into the structured-logging context.
+2. Runs every `LifecycleManager` hook in registration order, rolling back on failure.
+3. Activates every installed plugin (`PluginLoader.activate_all`).
+
+`Platform.stop()` deactivates plugins in reverse, then runs lifecycle stop hooks LIFO — even if any step raises.
+
+### Architectural Invariants
+
+* The Foundation **never** imports from a capability pack. Dependency arrows always point **down** the layer diagram.
+* All public symbols are typed; `mypy --strict` is the contract.
+* No module performs I/O at import time.
+* All timestamps are timezone-aware UTC; identifiers are typed `str` subclasses.
+* Cross-cutting failures (DI cycles, registry conflicts, plugin contract violations) raise typed exceptions carrying stable `ErrorCode`s.
 
 ---
 
