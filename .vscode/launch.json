@@ -2,15 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Current File",
+      "name": "EAIP: build_platform smoke",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "asyncio",
+      "args": [],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "EAIP_LOGGING__LEVEL": "DEBUG"
+      },
+      "preLaunchTask": "",
+      "program": "${workspaceFolder}/scripts/_dev_smoke.py",
+      "presentation": { "hidden": false, "group": "EAIP", "order": 1 }
+    },
+    {
+      "name": "Python: Current File (PYTHONPATH=src)",
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
-      }
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
     },
     {
       "name": "Python: pytest (current file)",
@@ -20,9 +34,7 @@
       "args": ["${file}", "-vv", "-s"],
       "console": "integratedTerminal",
       "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
-      }
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
     },
     {
       "name": "Python: pytest (all)",
@@ -32,33 +44,16 @@
       "args": ["tests", "-vv"],
       "console": "integratedTerminal",
       "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
-      }
-    },
-    {
-      "name": "Python: pytest (selected test)",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pytest",
-      "args": ["${file}::${selectedText}", "-vv", "-s"],
-      "console": "integratedTerminal",
-      "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
-      }
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
     },
     {
       "name": "Python: Attach (5678)",
       "type": "debugpy",
       "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 5678
-      },
+      "connect": { "host": "localhost", "port": 5678 },
       "justMyCode": false,
       "pathMappings": [
-        { "localRoot": "${workspaceFolder}", "remoteRoot": "/app" }
+        { "localRoot": "${workspaceFolder}", "remoteRoot": "/workspaces/eaip-platform" }
       ]
     }
   ]

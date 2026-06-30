@@ -3,7 +3,7 @@
 **Repository:** `subham1902/eaip-platform`
 **Owner:** Subham Panigrahi (@subham1902)
 **License:** Apache-2.0
-**Status:** EP-0001A ✅ + EP-0002 ✅ — Platform Foundation complete
+**Status:** EP-0001A ✅ + EP-0002 ✅ + Developer Experience ✅ — repository is GitHub-publication-ready
 **Last updated:** 2026-01-15
 
 ## Original Problem Statement (latest CTO Order — EP-0002)
@@ -77,3 +77,11 @@ typed, production-quality Python. Highlights:
 1. Begin EP-0001B (release automation + signing).
 2. Begin EP-0003 (LLM adapter contract atop `AbstractAdapter`).
 3. Recruit additional maintainers (TD-0007 / R-0003).
+
+## Developer Experience (post-EP-0002)
+
+- **DevContainer** (`.devcontainer/`) and **Dockerfile + docker-compose.dev.yml** for reproducible environments.
+- **Cross-platform bootstrap** (`scripts/bootstrap.sh` + `scripts/bootstrap.ps1`).
+- **Local validators**: `scripts/healthcheck.sh`, `scripts/validate.sh`, `scripts/validate-docs.sh`, `scripts/diagnostics.sh`.
+- **VS Code tasks** for every common operation; new doc-only CI workflow (`.github/workflows/docs.yml`).
+- All validators are green; lint/typecheck/test all pass.

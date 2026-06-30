@@ -78,12 +78,27 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full system view. In short:
 git clone https://github.com/subham1902/eaip-platform.git
 cd eaip-platform
 
-# 2. Bootstrap dev environment (creates venv, installs deps, installs pre-commit)
-make bootstrap
+# 2. One-command developer setup (Linux/macOS/WSL)
+bash scripts/bootstrap.sh          # creates .venv, installs deps, installs hooks
+#    Windows:
+pwsh -File scripts/bootstrap.ps1
 
 # 3. Run the standard quality gates locally
-make check        # ruff + black --check + mypy + pytest
+make check                          # ruff + black --check + mypy + pytest
+#    or, with friendlier output:
+bash scripts/validate.sh
+
+# 4. Verify the repository is healthy end-to-end
+make health                         # → scripts/healthcheck.sh
+make validate-docs                  # → scripts/validate-docs.sh
+
+# Or work inside a containerised dev environment:
+make docker-dev                     # docker compose -f docker-compose.dev.yml run --rm eaip
 ```
+
+If you use **VS Code**, opening the folder prompts you to reopen in the
+shipped **devcontainer** (`.devcontainer/devcontainer.json`) — everything is
+pre-installed and tasks are wired under `Tasks: Run Task → EAIP: *`.
 
 If you only want to verify the scaffolding:
 

@@ -19,7 +19,7 @@ Thanks for using EAIP! This document explains **where to get help**, **what to e
 ## Before You Open an Issue
 
 1. **Search first.** Most questions have already been asked. Check open *and* closed issues and Discussions.
-2. **Read the docs** — `README.md`, `ARCHITECTURE.md`, and the [`docs/`](docs/) tree.
+2. **Read the docs** — `README.md`, [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md), and [`ARCHITECTURE.md`](ARCHITECTURE.md).
 3. **Use a supported version.** See [`SECURITY.md`](SECURITY.md#supported-versions).
 4. **Produce a minimal reproducer.** Strip everything that is not essential.
 5. **Include the basics:**
@@ -28,9 +28,7 @@ Thanks for using EAIP! This document explains **where to get help**, **what to e
    - OS and architecture
    - Exact command(s) and full stack trace / logs (use code fences)
 
-A good bug report saves multiple round-trips. A great bug report often leads to a fix in hours instead of weeks.
-
-## Response Expectations
+A good bug report saves multiple round-trips. A great bug report often leads to a fix in hours instead of weeks.## Response Expectations
 
 EAIP is primarily a **community-supported open-source project**. There is no implicit SLA for community channels. That said, the maintainers aim for:
 

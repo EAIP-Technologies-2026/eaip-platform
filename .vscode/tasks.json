@@ -1,0 +1,60 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "EAIP: Bootstrap",
+      "type": "shell",
+      "command": "bash scripts/bootstrap.sh",
+      "windows": { "command": "pwsh -File scripts/bootstrap.ps1" },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "EAIP: Healthcheck",
+      "type": "shell",
+      "command": "bash scripts/healthcheck.sh",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "EAIP: Validate (lint + types + tests)",
+      "type": "shell",
+      "command": "bash scripts/validate.sh",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "EAIP: Validate Docs",
+      "type": "shell",
+      "command": "bash scripts/validate-docs.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "EAIP: Diagnostics",
+      "type": "shell",
+      "command": "bash scripts/diagnostics.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "EAIP: Run pytest",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest tests -q",
+      "windows": { "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe -m pytest tests -q" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "EAIP: Format",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m black src tests && ${workspaceFolder}/.venv/bin/python -m ruff check --fix src tests",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "EAIP: Docker dev shell",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml run --rm eaip",
+      "problemMatcher": []
+    }
+  ]
+}

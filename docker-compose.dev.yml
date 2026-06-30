@@ -1,0 +1,33 @@
+# =============================================================================
+# EAIP — Local development stack
+# -----------------------------------------------------------------------------
+# Spin up an interactive dev shell with every tool pre-installed:
+#     docker compose -f docker-compose.dev.yml run --rm eaip
+# Run the test suite in the container:
+#     docker compose -f docker-compose.dev.yml run --rm eaip make test
+# =============================================================================
+
+services:
+  eaip:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eaip-platform-dev:latest
+    container_name: eaip-dev
+    working_dir: /workspaces/eaip-platform
+    stdin_open: true
+    tty: true
+    environment:
+      EAIP_CORE__ENVIRONMENT: development
+      EAIP_LOGGING__LEVEL: DEBUG
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - .:/workspaces/eaip-platform
+      - eaip-pip-cache:/root/.cache/pip
+      - eaip-precommit-cache:/root/.cache/pre-commit
+    command: bash
+
+volumes:
+  eaip-pip-cache:
+  eaip-precommit-cache:

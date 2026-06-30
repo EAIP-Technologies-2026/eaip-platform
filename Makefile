@@ -143,6 +143,33 @@ pre-commit: ## Run all pre-commit hooks against every file.
 	@$(PRECOMMIT) run --all-files
 
 # -----------------------------------------------------------------------------
+# Developer experience
+# -----------------------------------------------------------------------------
+.PHONY: health
+health: ## Read-only repository health check.
+	@bash scripts/healthcheck.sh
+
+.PHONY: validate
+validate: ## Local pre-flight (lint + format + typecheck + test) with friendly output.
+	@bash scripts/validate.sh
+
+.PHONY: validate-docs
+validate-docs: ## Walk Markdown files, verify internal links and required docs.
+	@bash scripts/validate-docs.sh
+
+.PHONY: diagnostics
+diagnostics: ## Print an environment snapshot suitable for bug reports.
+	@bash scripts/diagnostics.sh
+
+.PHONY: docker-dev
+docker-dev: ## Build & enter the local dev container (requires docker).
+	@docker compose -f docker-compose.dev.yml run --rm eaip
+
+.PHONY: docker-test
+docker-test: ## Run the test suite inside the dev container.
+	@docker compose -f docker-compose.dev.yml run --rm eaip make test
+
+# -----------------------------------------------------------------------------
 # Hygiene
 # -----------------------------------------------------------------------------
 .PHONY: clean

@@ -14,22 +14,29 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 ## [Unreleased]
 
 ### Added
-- _Nothing yet._
+- **Developer experience** (`EP-0002 + DX`):
+  - `.devcontainer/devcontainer.json` — VS Code dev container targeting Python 3.13.
+  - `Dockerfile` + `docker-compose.dev.yml` + `.dockerignore` for a reproducible local dev environment.
+  - `scripts/bootstrap.sh` (Linux/macOS/WSL) and `scripts/bootstrap.ps1` (Windows) — one-command developer setup.
+  - `scripts/healthcheck.sh` — read-only repository health check (governance docs, package layout, toolchain, configuration parsing, import safety).
+  - `scripts/validate.sh` — local pre-flight gate (ruff + black + mypy + pytest) with friendly output.
+  - `scripts/validate-docs.sh` — Markdown link validator skipping code spans and fences; verifies governance docs & per-package READMEs.
+  - `scripts/diagnostics.sh` — environment snapshot suitable for bug reports.
+  - `scripts/_dev_smoke.py` — exercises `build_platform()` end-to-end for VS Code launch config.
+  - `scripts/README.md` documenting every script.
+- **VS Code automation:** new `.vscode/tasks.json` (Bootstrap / Healthcheck / Validate / Format / Tests / Docker shell) and refreshed `launch.json`.
+- **CI:** new `.github/workflows/docs.yml` for fast doc-only PR validation (Markdown links + healthcheck).
+- **Makefile targets:** `health`, `validate`, `validate-docs`, `diagnostics`, `docker-dev`, `docker-test`.
 
 ### Changed
-- _Nothing yet._
-
-### Deprecated
-- _Nothing yet._
+- `README.md` quickstart now advertises the cross-platform bootstrap scripts and devcontainer.
+- `SUPPORT.md` no longer references the not-yet-existing `docs/` tree; links to `DEVELOPER_GUIDE.md` instead.
 
 ### Removed
-- _Nothing yet._
+- Stripped the pre-existing e1 pod scaffold remnants (`frontend/`, `backend/`, `yarn.lock`, `test_result.md`) — they were never part of EAIP and caused external code-review tools to scan files that don't belong to the platform.
 
 ### Fixed
-- _Nothing yet._
-
-### Security
-- _Nothing yet._
+- Documentation reference consistency: every Markdown internal link now resolves; every Foundation package has a `README.md` (added `src/eaip/adapters/README.md`).
 
 ---
 
