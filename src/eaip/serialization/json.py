@@ -32,7 +32,7 @@ from eaip.exceptions.domain import SerializationError
 class JSONEncoder(json.JSONEncoder):
     """Strict JSON encoder used platform-wide."""
 
-    def default(self, o: Any) -> Any:  # noqa: ANN401 - json.JSONEncoder signature
+    def default(self, o: Any) -> Any:
         if isinstance(o, BaseModel):
             return o.model_dump(mode="json")
         if isinstance(o, enum.Enum):

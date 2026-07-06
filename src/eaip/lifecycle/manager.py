@@ -92,7 +92,7 @@ class LifecycleManager:
                 await self._invoke(entry.start)
                 entry.started = True
                 self._log.debug("lifecycle.hook_started", hook=entry.name)
-            except BaseException as exc:
+            except Exception as exc:
                 self._phase = LifecyclePhase.FAILED
                 self._log.error(
                     "lifecycle.start_failed",
@@ -130,7 +130,7 @@ class LifecycleManager:
                 continue
             try:
                 await self._invoke(entry.stop)
-            except BaseException as exc:  # noqa: BLE001 — must keep unwinding
+            except Exception as exc:
                 self._log.error(
                     "lifecycle.stop_failed",
                     hook=entry.name,

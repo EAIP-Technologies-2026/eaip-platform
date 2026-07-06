@@ -8,6 +8,12 @@ from eaip.exceptions.domain import LifecycleError
 from eaip.lifecycle import LifecycleManager, LifecyclePhase
 
 
+def test_empty_lifecycle() -> None:
+    lm = LifecycleManager()
+    assert lm.phase is LifecyclePhase.CREATED
+    assert lm.hook_count == 0
+
+
 @pytest.mark.asyncio
 async def test_start_and_stop_order() -> None:
     lm = LifecycleManager()
@@ -79,3 +85,42 @@ async def test_stop_is_idempotent_for_stopped() -> None:
     await lm.stop()
     await lm.stop()  # no-op
     assert lm.phase is LifecyclePhase.STOPPED
+
+
+@pytest.mark.asyncio
+async def test_stop_from_failed_is_idempotent() -> None:
+    """stop() can be called after a failure to reach STOPPED."""
+    lm = LifecycleManager()
+    lm.add("a", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    with pytest.raises(LifecycleError):
+        await lm.start()
+    assert lm.phase is LifecyclePhase.FAILED
+
+    await lm.stop()
+    assert lm.phase is LifecyclePhase.STOPPED
+
+
+@pytest.mark.asyncio
+async def test_stop_before_start_is_noop() -> None:
+    lm = LifecycleManager()
+    await lm.stop()
+    assert lm.phase is LifecyclePhase.CREATED
+
+
+@pytest.mark.asyncio
+async def test_empty_start_stop() -> None:
+    lm = LifecycleManager()
+    await lm.start()
+    assert lm.phase is LifecyclePhase.RUNNING
+    await lm.stop()
+    assert lm.phase is LifecyclePhase.STOPPED
+
+
+@pytest.mark.asyncio
+async def test_hook_count_tracks_registrations() -> None:
+    lm = LifecycleManager()
+    assert lm.hook_count == 0
+    lm.add("a", lambda: None)
+    assert lm.hook_count == 1
+    lm.add("b", lambda: None, lambda: None)
+    assert lm.hook_count == 2

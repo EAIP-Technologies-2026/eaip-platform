@@ -11,9 +11,7 @@ class CapabilityRegistry:
     """High-level wrapper around :class:`Registry` for capabilities."""
 
     def __init__(self) -> None:
-        self._inner: Registry[Capability] = Registry(
-            name="capabilities", value_type=Capability
-        )
+        self._inner: Registry[Capability] = Registry(name="capabilities", value_type=Capability)
 
     # ------------------------------------------------------------------
     # Registration

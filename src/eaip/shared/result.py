@@ -34,7 +34,7 @@ class Ok(Generic[T_co]):
     def unwrap_or(self, _default: T_co, /) -> T_co:  # pragma: no cover - trivial
         return self.value
 
-    def map(self, fn: "Callable[[T_co], U]") -> "Ok[U]":  # type: ignore[name-defined]
+    def map(self, fn: Callable[[T_co], U]) -> Ok[U]:  # type: ignore[name-defined]
         return Ok(fn(self.value))
 
 
@@ -54,7 +54,7 @@ class Err(Generic[E_co]):
     def unwrap_or(self, default: U, /) -> U:
         return default
 
-    def map(self, _fn: "Callable[..., object]") -> "Err[E_co]":  # type: ignore[name-defined]
+    def map(self, _fn: Callable[..., object]) -> Err[E_co]:  # type: ignore[name-defined]
         return self
 
 

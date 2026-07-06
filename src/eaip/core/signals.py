@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import signal as _signal
-from typing import Iterable
+from collections.abc import Iterable
 
 from eaip.logging.context import get_logger
 

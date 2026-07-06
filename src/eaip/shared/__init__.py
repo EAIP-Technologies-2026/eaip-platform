@@ -10,7 +10,7 @@ Re-exports the most commonly used primitives so callers can write
 
 from __future__ import annotations
 
-from eaip.shared.identifiers import CorrelationId, ComponentId, RunId, Slug
+from eaip.shared.identifiers import ComponentId, CorrelationId, RunId, Slug
 from eaip.shared.result import Err, Ok, Result
 from eaip.shared.sentinels import UNSET, UnsetType
 from eaip.shared.time import Clock, Duration, utc_now

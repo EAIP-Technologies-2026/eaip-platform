@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from eaip.ports.clock import ClockPort
 
@@ -13,7 +13,7 @@ class FrozenClock(ClockPort):
     """A deterministic clock used in tests."""
 
     def __init__(self, at: datetime | None = None) -> None:
-        self._now = at or datetime(2026, 1, 1, tzinfo=timezone.utc)
+        self._now = at or datetime(2026, 1, 1, tzinfo=UTC)
 
     def now(self) -> datetime:
         return self._now

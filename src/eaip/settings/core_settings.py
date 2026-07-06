@@ -6,7 +6,7 @@ from pydantic import Field
 
 from eaip.logging.config import LoggingConfig
 from eaip.settings.base import EAIPSettingsBase
-from eaip.types import EnvName, Environment, NonEmptyStr
+from eaip.types import Environment, EnvName, NonEmptyStr
 
 
 class LoggingSettings(EAIPSettingsBase):

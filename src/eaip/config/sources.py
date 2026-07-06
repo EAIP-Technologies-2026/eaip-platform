@@ -56,7 +56,7 @@ class EnvSource(ConfigSource):
         for raw_key, raw_value in self._environ.items():
             if not raw_key.startswith(self._prefix):
                 continue
-            path = raw_key[len(self._prefix):].lower().split("__")
+            path = raw_key[len(self._prefix) :].lower().split("__")
             self._assign(result, path, raw_value)
         return result
 

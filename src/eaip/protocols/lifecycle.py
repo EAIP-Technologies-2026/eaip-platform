@@ -1,5 +1,6 @@
 """Lifecycle protocols implemented by components that need orchestrated
-startup, shutdown, or resource disposal."""
+startup, shutdown, or resource disposal.
+"""
 
 from __future__ import annotations
 

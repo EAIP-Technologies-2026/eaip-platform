@@ -80,17 +80,83 @@ class SerializationError(EAIPError):
     default_code = ErrorCode.SERIALIZATION_FAILED
 
 
+class PipelineError(EAIPError):
+    """Base for pipeline execution failures."""
+
+    default_code = ErrorCode.PIPELINE_EXECUTION_FAILED
+
+
+class SchedulerError(EAIPError):
+    """Base for scheduler-related failures."""
+
+    default_code = ErrorCode.SCHEDULER_TASK_FAILED
+
+
+class CommandHandlerNotFoundError(EAIPError):
+    """Raised when no handler is registered for a command type."""
+
+    default_code = ErrorCode.COMMAND_HANDLER_NOT_FOUND
+
+
+class CommandValidationError(EAIPError):
+    """Raised when a command fails validation."""
+
+    default_code = ErrorCode.COMMAND_VALIDATION_FAILED
+
+
+class CommandRetryExhaustedError(EAIPError):
+    """Raised when all retry attempts for a command have been exhausted."""
+
+    default_code = ErrorCode.COMMAND_RETRY_EXHAUSTED
+
+
+class QueryHandlerNotFoundError(EAIPError):
+    """Raised when no handler is registered for a query type."""
+
+    default_code = ErrorCode.QUERY_HANDLER_NOT_FOUND
+
+
+class QueryCacheError(EAIPError):
+    """Raised when a cache operation fails."""
+
+    default_code = ErrorCode.QUERY_CACHE_ERROR
+
+
+class WorkerPoolExhaustedError(EAIPError):
+    """Raised when submitting a task to a stopped or full worker pool."""
+
+    default_code = ErrorCode.WORKER_POOL_EXHAUSTED
+
+
+class WorkerTaskFailedError(EAIPError):
+    """Raised when a background worker task raises an unhandled exception.
+
+    This error is returned when the caller requested error propagation.
+    """
+
+    default_code = ErrorCode.WORKER_TASK_FAILED
+
+
 __all__ = [
+    "CommandHandlerNotFoundError",
+    "CommandRetryExhaustedError",
+    "CommandValidationError",
     "ConfigurationError",
     "DependencyCycleError",
     "DependencyError",
     "DuplicateRegistrationError",
     "LifecycleError",
     "NotFoundError",
+    "PipelineError",
     "PluginContractViolationError",
     "PluginError",
+    "QueryCacheError",
+    "QueryHandlerNotFoundError",
     "RegistryError",
     "RegistryTypeMismatchError",
+    "SchedulerError",
     "SerializationError",
     "ValidationError",
+    "WorkerPoolExhaustedError",
+    "WorkerTaskFailedError",
 ]

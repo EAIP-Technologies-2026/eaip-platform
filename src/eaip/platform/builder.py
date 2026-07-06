@@ -31,10 +31,7 @@ class PlatformBuilder:
     Usage::
 
         platform = (
-            PlatformBuilder()
-            .with_settings(load_platform_settings())
-            .with_plugin(my_plugin)
-            .build()
+            PlatformBuilder().with_settings(load_platform_settings()).with_plugin(my_plugin).build()
         )
         async with platform:
             ...
