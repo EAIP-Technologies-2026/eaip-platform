@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from eaip.types import EnvName, Environment, HostName, LogLevel, NonEmptyStr, Port, Url
+from eaip.types import Environment, EnvName, HostName, LogLevel, NonEmptyStr, Port, Url
 
 
 class _Cfg(BaseModel):

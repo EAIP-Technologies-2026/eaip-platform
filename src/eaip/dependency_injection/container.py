@@ -61,7 +61,7 @@ class Container:
     holds its own scoped instances.
     """
 
-    def __init__(self, *, parent: "Container | None" = None) -> None:
+    def __init__(self, *, parent: Container | None = None) -> None:
         self._providers: dict[type[Any], Provider] = {}
         self._lock = threading.RLock()
         self._stack = _ResolveStack()
@@ -87,7 +87,7 @@ class Container:
     def register_factory(
         self,
         key: type[T],
-        factory: Callable[["Container"], T],
+        factory: Callable[[Container], T],
         *,
         scope: Scope = Scope.SINGLETON,
     ) -> None:
@@ -163,7 +163,7 @@ class Container:
             return self._parent._find(key)
         return None
 
-    def _build(self, provider: Provider) -> Any:  # noqa: ANN401 - generic key
+    def _build(self, provider: Provider) -> Any:
         with self._lock:
             if provider.scope is Scope.SINGLETON and provider._has_instance:
                 return provider.instance
@@ -180,10 +180,11 @@ class Container:
                     f"factory for {provider.key.__name__} produced {type(instance).__name__}",
                     context={"key": provider.key.__name__, "produced": type(instance).__name__},
                 )
-            if provider.scope is Scope.SINGLETON:
-                provider.instance = instance
-                provider._has_instance = True
-            elif provider.scope is Scope.SCOPED and provider in self._providers.values():
+            if (
+                provider.scope is Scope.SINGLETON
+                or provider.scope is Scope.SCOPED
+                and provider in self._providers.values()
+            ):
                 provider.instance = instance
                 provider._has_instance = True
             return instance
@@ -197,7 +198,7 @@ class Container:
     def keys(self) -> list[type[Any]]:
         return list(self._providers)
 
-    def create_scope(self) -> "Container":
+    def create_scope(self) -> Container:
         """Build a child container sharing this container's singletons.
 
         Singletons resolved through the child still live in this (parent)

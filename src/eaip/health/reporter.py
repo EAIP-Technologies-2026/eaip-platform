@@ -56,7 +56,7 @@ class HealthReporter:
     async def _safe_check(self, check: HealthCheck) -> HealthReport:
         try:
             return await check.check()
-        except BaseException as exc:  # noqa: BLE001 — must isolate per check
+        except BaseException as exc:
             self._log.error("health.check_failed", check=check.name, error=repr(exc))
             return HealthReport(
                 component=check.name,

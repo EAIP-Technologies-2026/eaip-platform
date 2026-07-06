@@ -41,7 +41,7 @@ class _StrId(str):
     ) -> CoreSchema:
         """Tell Pydantic v2 to treat this class as a constrained string."""
 
-        def _validate(value: Any) -> "_StrId":
+        def _validate(value: Any) -> _StrId:
             if isinstance(value, cls):
                 return value
             if isinstance(value, str):
@@ -80,18 +80,16 @@ class Slug(str):
 
     __slots__ = ()
 
-    def __new__(cls, value: str) -> "Slug":
+    def __new__(cls, value: str) -> Slug:
         if not _SLUG_RE.match(value):
-            raise ValueError(
-                f"invalid slug {value!r}: must match {_SLUG_RE.pattern}"
-            )
+            raise ValueError(f"invalid slug {value!r}: must match {_SLUG_RE.pattern}")
         return str.__new__(cls, value)
 
     @classmethod
     def __get_pydantic_core_schema__(
         cls, _source: Any, _handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        def _validate(value: Any) -> "Slug":
+        def _validate(value: Any) -> Slug:
             if isinstance(value, cls):
                 return value
             if isinstance(value, str):

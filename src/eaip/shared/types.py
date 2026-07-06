@@ -10,9 +10,7 @@ from collections.abc import Mapping, Sequence
 from typing import TypeAlias
 
 #: A value that survives a JSON round-trip without loss.
-JSONValue: TypeAlias = (
-    "None | bool | int | float | str | JSONArray | JSONObject"
-)
+JSONValue: TypeAlias = "None | bool | int | float | str | JSONArray | JSONObject"
 #: An ordered collection of JSON values.
 JSONArray: TypeAlias = Sequence["JSONValue"]
 #: A string-keyed mapping of JSON values.

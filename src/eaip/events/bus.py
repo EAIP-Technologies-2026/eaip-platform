@@ -132,7 +132,7 @@ class EventBus:
             result = sub.handler(event)
             if inspect.isawaitable(result):
                 await result
-        except BaseException as exc:  # noqa: BLE001 — bus isolates per subscriber
+        except BaseException as exc:
             failures.append((sub, exc))
             self._log.error(
                 "event.handler_failed",

@@ -176,7 +176,7 @@ class Registry(Generic[T]):
         for obs in list(self._observers):
             try:
                 obs(change)
-            except BaseException:  # noqa: BLE001 — observers must not break registry
+            except BaseException:
                 pass
 
 

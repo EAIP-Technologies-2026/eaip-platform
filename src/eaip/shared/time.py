@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Final, Protocol, final, runtime_checkable
 
-UTC: Final = timezone.utc
+UTC: Final = UTC
 
 
 def utc_now() -> datetime:
@@ -42,15 +42,15 @@ class Duration:
             raise ValueError("Duration must be non-negative")
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> "Duration":
+    def from_seconds(cls, seconds: float) -> Duration:
         return cls(int(round(seconds * 1_000_000)))
 
     @classmethod
-    def from_milliseconds(cls, ms: float) -> "Duration":
+    def from_milliseconds(cls, ms: float) -> Duration:
         return cls(int(round(ms * 1_000)))
 
     @classmethod
-    def from_timedelta(cls, td: timedelta) -> "Duration":
+    def from_timedelta(cls, td: timedelta) -> Duration:
         return cls(int(td.total_seconds() * 1_000_000))
 
     @property
