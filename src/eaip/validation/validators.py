@@ -1,13 +1,13 @@
 """Imperative validation helpers used by services that cannot rely on
-Pydantic's declarative parsing (e.g. dynamic config from plugins)."""
+Pydantic's declarative parsing (e.g. dynamic config from plugins).
+"""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import TypeVar
 
-from pydantic import BaseModel
-from pydantic import ValidationError as _PydanticValidationError
+from pydantic import BaseModel, ValidationError as _PydanticValidationError
 
 from eaip.exceptions.domain import ValidationError
 

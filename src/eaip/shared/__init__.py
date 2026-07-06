@@ -10,31 +10,31 @@ Re-exports the most commonly used primitives so callers can write
 
 from __future__ import annotations
 
-from eaip.shared.identifiers import CorrelationId, ComponentId, RunId, Slug
+from eaip.shared.identifiers import ComponentId, CorrelationId, RunId, Slug
 from eaip.shared.result import Err, Ok, Result
 from eaip.shared.sentinels import UNSET, UnsetType
 from eaip.shared.time import Clock, Duration, utc_now
 from eaip.shared.types import JSONArray, JSONObject, JSONValue
 
 __all__ = [
+    # sentinels
+    "UNSET",
+    # time
+    "Clock",
     # identifiers
     "ComponentId",
     "CorrelationId",
-    "RunId",
-    "Slug",
+    "Duration",
     # result
     "Err",
-    "Ok",
-    "Result",
-    # sentinels
-    "UNSET",
-    "UnsetType",
-    # time
-    "Clock",
-    "Duration",
-    "utc_now",
     # types
     "JSONArray",
     "JSONObject",
     "JSONValue",
+    "Ok",
+    "Result",
+    "RunId",
+    "Slug",
+    "UnsetType",
+    "utc_now",
 ]

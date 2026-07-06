@@ -14,6 +14,7 @@ type. These extras are cheap and pay back richly in operability.
 
 from __future__ import annotations
 
+import contextlib
 import threading
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -164,20 +165,15 @@ class Registry(Generic[T]):
             self._observers.append(observer)
 
         def _remove() -> None:
-            with self._lock:
-                try:
-                    self._observers.remove(observer)
-                except ValueError:
-                    pass
+            with self._lock, contextlib.suppress(ValueError):
+                self._observers.remove(observer)
 
         return _remove
 
     def _notify(self, change: RegistryChange[T]) -> None:
         for obs in list(self._observers):
-            try:
+            with contextlib.suppress(BaseException):
                 obs(change)
-            except BaseException:  # noqa: BLE001 — observers must not break registry
-                pass
 
 
 __all__ = ["Observer", "Registry", "RegistryChange", "RegistryEvent"]

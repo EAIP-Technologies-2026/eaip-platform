@@ -12,7 +12,7 @@ the reusable infrastructure on which every future EAIP capability is built:
 The Foundation deliberately contains **no business logic**. Capability packs
 (EP-0003+) import these primitives to implement domain features.
 
-Example
+Example:
 -------
 >>> from eaip.application import build_platform
 >>> platform = build_platform()

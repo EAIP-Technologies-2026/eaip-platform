@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any, cast
 
 import structlog
 from structlog.contextvars import (
@@ -20,10 +21,13 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     """Return a logger, configuring defaults on first use."""
     if not is_configured():
         configure_logging()
-    return structlog.get_logger(name) if name else structlog.get_logger()
+    return cast(
+        structlog.stdlib.BoundLogger,
+        structlog.get_logger(name) if name else structlog.get_logger(),
+    )
 
 
-def bind_context(**kv: Any) -> None:  # noqa: ANN401 - log payloads are heterogeneous
+def bind_context(**kv: Any) -> None:
     """Bind key-value pairs to the current context (propagates to children)."""
     bind_contextvars(**kv)
 

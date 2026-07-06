@@ -8,7 +8,7 @@ import tomllib
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from eaip.exceptions.domain import ConfigurationError
 
@@ -56,7 +56,7 @@ class EnvSource(ConfigSource):
         for raw_key, raw_value in self._environ.items():
             if not raw_key.startswith(self._prefix):
                 continue
-            path = raw_key[len(self._prefix):].lower().split("__")
+            path = raw_key[len(self._prefix) :].lower().split("__")
             self._assign(result, path, raw_value)
         return result
 
@@ -92,7 +92,7 @@ class FileSource(ConfigSource):
         suffix = self._path.suffix.lower()
         try:
             if suffix == ".json":
-                return json.loads(self._path.read_text(encoding="utf-8"))
+                return cast(Mapping[str, Any], json.loads(self._path.read_text(encoding="utf-8")))
             if suffix == ".toml":
                 with self._path.open("rb") as handle:
                     return tomllib.load(handle)

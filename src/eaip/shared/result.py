@@ -8,6 +8,7 @@ type only appears in public adapter contracts.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final, Generic, NoReturn, TypeVar, final
 
@@ -31,10 +32,10 @@ class Ok(Generic[T_co]):
         """Return the contained value."""
         return self.value
 
-    def unwrap_or(self, _default: T_co, /) -> T_co:  # pragma: no cover - trivial
+    def unwrap_or(self, _default: object, /) -> T_co:  # pragma: no cover - trivial
         return self.value
 
-    def map(self, fn: "Callable[[T_co], U]") -> "Ok[U]":  # type: ignore[name-defined]
+    def map(self, fn: Callable[[T_co], U]) -> Ok[U]:
         return Ok(fn(self.value))
 
 
@@ -54,12 +55,12 @@ class Err(Generic[E_co]):
     def unwrap_or(self, default: U, /) -> U:
         return default
 
-    def map(self, _fn: "Callable[..., object]") -> "Err[E_co]":  # type: ignore[name-defined]
+    def map(self, _fn: Callable[..., object]) -> Err[E_co]:
         return self
 
 
 #: Discriminated union covering both arms.
-Result = Ok[T_co] | Err[E_co]  # type: ignore[valid-type]
+Result = Ok[T_co] | Err[E_co]
 
 
 class _ResultUnwrapError(RuntimeError):
@@ -69,8 +70,5 @@ class _ResultUnwrapError(RuntimeError):
         super().__init__(f"Result.unwrap() called on Err({error!r})")
         self.error = error
 
-
-# Late import to silence ruff's reordering while keeping mypy happy.
-from collections.abc import Callable  # noqa: E402
 
 __all__ = ["Err", "Ok", "Result"]

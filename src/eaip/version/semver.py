@@ -39,6 +39,7 @@ class Version:
 
     @classmethod
     def parse(cls, value: str) -> Self:
+        """Parse a semantic version string."""
         match = _SEMVER_RE.match(value.strip())
         if not match:
             raise ValueError(f"invalid SemVer string {value!r}")
@@ -52,6 +53,7 @@ class Version:
         )
 
     def __str__(self) -> str:
+        """Return the string representation of the semantic version."""
         core = f"{self.major}.{self.minor}.{self.patch}"
         if self.prerelease:
             core += f"-{self.prerelease}"
@@ -67,23 +69,27 @@ class Version:
         pre_rank = 0 if self.prerelease == "" else 1
         return (self.major, self.minor, self.patch, pre_rank, self.prerelease)
 
-    def __lt__(self, other: "Version") -> bool:
+    def __lt__(self, other: Version) -> bool:
+        """Compare if less than other."""
         if not isinstance(other, Version):  # pragma: no cover - defensive
-            return NotImplemented  # type: ignore[return-value]
+            return NotImplemented
         a, b = self._key(), other._key()
         # Flip pre_rank: lower pre_rank = higher precedence.
-        return (a[:3], -a[3], a[4]) < (b[:3], -b[3], b[4])  # type: ignore[operator]
+        return (a[:3], -a[3], a[4]) < (b[:3], -b[3], b[4])
 
-    def __le__(self, other: "Version") -> bool:
+    def __le__(self, other: Version) -> bool:
+        """Compare if less than or equal to other."""
         return self == other or self < other
 
-    def __gt__(self, other: "Version") -> bool:
+    def __gt__(self, other: Version) -> bool:
+        """Compare if greater than other."""
         return not self <= other
 
-    def __ge__(self, other: "Version") -> bool:
+    def __ge__(self, other: Version) -> bool:
+        """Compare if greater than or equal to other."""
         return not self < other
 
-    def is_compatible_with(self, other: "Version") -> bool:
+    def is_compatible_with(self, other: Version) -> bool:
         """Return ``True`` if ``other`` is API-compatible with ``self``.
 
         Per SemVer, two versions are compatible when their major versions

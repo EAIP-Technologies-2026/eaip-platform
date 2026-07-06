@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import signal as _signal
-from typing import Iterable
+from collections.abc import Iterable
 
 from eaip.logging.context import get_logger
 
@@ -53,7 +53,7 @@ def install_shutdown_handlers(
 def _handler(signal_obj: ShutdownSignal, sig: int, log: object) -> None:
     # ``log`` is a structlog BoundLogger; typed as object to avoid circular imports.
     if hasattr(log, "info"):
-        log.info("signals.received", signal=int(sig))  # type: ignore[attr-defined]
+        log.info("signals.received", signal=int(sig))
     signal_obj.trigger()
 
 

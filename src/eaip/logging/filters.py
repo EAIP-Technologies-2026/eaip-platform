@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -17,7 +17,7 @@ def redact_processor(keys: Iterable[str]) -> structlog.types.Processor:
     """
     lowered = {k.lower() for k in keys}
 
-    def _redact(value: Any) -> Any:  # noqa: ANN401 - heterogeneous payloads
+    def _redact(value: Any) -> Any:
         if isinstance(value, Mapping):
             return {
                 k: (_REDACTED if str(k).lower() in lowered else _redact(v))
@@ -31,7 +31,7 @@ def redact_processor(keys: Iterable[str]) -> structlog.types.Processor:
     def processor(
         _logger: object, _method: str, event_dict: structlog.types.EventDict
     ) -> structlog.types.EventDict:
-        return _redact(event_dict)  # type: ignore[return-value]
+        return cast(structlog.types.EventDict, _redact(event_dict))
 
     return processor
 

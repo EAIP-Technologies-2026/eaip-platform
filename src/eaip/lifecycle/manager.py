@@ -130,7 +130,7 @@ class LifecycleManager:
                 continue
             try:
                 await self._invoke(entry.stop)
-            except BaseException as exc:  # noqa: BLE001 — must keep unwinding
+            except BaseException as exc:
                 self._log.error(
                     "lifecycle.stop_failed",
                     hook=entry.name,

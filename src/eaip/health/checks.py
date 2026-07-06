@@ -35,7 +35,7 @@ class HealthReport(BaseModel):
     message: str = Field(default="")
     details: dict[str, Any] = Field(default_factory=dict)
     observed_at: datetime = Field(default_factory=utc_now)
-    children: tuple["HealthReport", ...] = Field(default=())
+    children: tuple[HealthReport, ...] = Field(default=())
 
     def is_healthy(self) -> bool:
         return self.status is HealthStatus.HEALTHY
@@ -50,9 +50,7 @@ class HealthCheck(Protocol):
     async def check(self) -> HealthReport: ...
 
 
-def callable_check(
-    name: str, fn: Callable[[], Awaitable[HealthReport]]
-) -> HealthCheck:
+def callable_check(name: str, fn: Callable[[], Awaitable[HealthReport]]) -> HealthCheck:
     """Wrap an async callable as a :class:`HealthCheck`."""
 
     class _AdHoc:

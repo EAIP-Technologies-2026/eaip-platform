@@ -54,8 +54,7 @@ def _validate_log_level(value: str) -> str:
     upper = value.upper()
     if upper not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
         raise ValueError(
-            f"invalid log level {value!r}: "
-            "expected one of DEBUG/INFO/WARNING/ERROR/CRITICAL"
+            f"invalid log level {value!r}: expected one of DEBUG/INFO/WARNING/ERROR/CRITICAL"
         )
     return upper
 
@@ -69,9 +68,7 @@ def _validate_env_name(value: str) -> str:
     if not value:
         raise ValueError("environment name must not be empty")
     if not all(c.isalnum() or c in "-_" for c in value):
-        raise ValueError(
-            f"invalid env name {value!r}: only alphanumerics, '-' and '_' allowed"
-        )
+        raise ValueError(f"invalid env name {value!r}: only alphanumerics, '-' and '_' allowed")
     return value
 
 

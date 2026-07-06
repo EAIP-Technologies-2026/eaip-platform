@@ -37,7 +37,9 @@ class FeatureFlagRegistry:
         with self._lock:
             self._flags[flag.name] = flag
 
-    def apply_overrides(self, *, enabled: tuple[str, ...] = (), disabled: tuple[str, ...] = ()) -> None:
+    def apply_overrides(
+        self, *, enabled: tuple[str, ...] = (), disabled: tuple[str, ...] = ()
+    ) -> None:
         """Apply static overrides (typically sourced from settings)."""
         with self._lock:
             for name in enabled:

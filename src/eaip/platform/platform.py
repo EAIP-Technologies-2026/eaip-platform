@@ -150,7 +150,7 @@ class Platform:
             await self._lifecycle.stop()
         self._log.info("platform.stopped")
 
-    async def __aenter__(self) -> "Platform":
+    async def __aenter__(self) -> Platform:
         await self.start()
         return self
 

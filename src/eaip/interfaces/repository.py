@@ -10,15 +10,15 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import Generic, TypeVar
 
-ID_co = TypeVar("ID_co", covariant=True)
+ID = TypeVar("ID")
 T = TypeVar("T")
 
 
-class AbstractRepository(ABC, Generic[ID_co, T]):
+class AbstractRepository(ABC, Generic[ID, T]):
     """Generic async CRUD contract parameterised by identifier and aggregate."""
 
     @abstractmethod
-    async def get(self, identifier: ID_co) -> T | None:
+    async def get(self, identifier: ID) -> T | None:
         """Return the aggregate or ``None`` if not found."""
 
     @abstractmethod
@@ -26,7 +26,7 @@ class AbstractRepository(ABC, Generic[ID_co, T]):
         """Persist a new aggregate; must raise on duplicate identifier."""
 
     @abstractmethod
-    async def remove(self, identifier: ID_co) -> bool:
+    async def remove(self, identifier: ID) -> bool:
         """Delete the aggregate; return ``True`` if it existed."""
 
     @abstractmethod

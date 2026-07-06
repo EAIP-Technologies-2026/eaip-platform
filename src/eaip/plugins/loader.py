@@ -79,7 +79,7 @@ class PluginLoader:
     # ------------------------------------------------------------------
     # Activation
     # ------------------------------------------------------------------
-    async def activate(self, name: str, platform: "Platform") -> None:
+    async def activate(self, name: str, platform: Platform) -> None:
         plugin = self._registry.get(name)
         if name in self._activated:
             return  # idempotent
@@ -94,7 +94,7 @@ class PluginLoader:
         self._activated.add(name)
         self._log.info("plugin.activated", plugin=name)
 
-    async def deactivate(self, name: str, platform: "Platform") -> None:
+    async def deactivate(self, name: str, platform: Platform) -> None:
         if name not in self._activated:
             return  # idempotent
         plugin = self._registry.get(name)
@@ -104,11 +104,11 @@ class PluginLoader:
             self._activated.discard(name)
             self._log.info("plugin.deactivated", plugin=name)
 
-    async def activate_all(self, platform: "Platform") -> None:
+    async def activate_all(self, platform: Platform) -> None:
         for plugin in self._registry.all():
             await self.activate(plugin.manifest.name, platform)
 
-    async def deactivate_all(self, platform: "Platform") -> None:
+    async def deactivate_all(self, platform: Platform) -> None:
         # Reverse order of activation.
         for name in reversed(list(self._activated)):
             await self.deactivate(name, platform)
