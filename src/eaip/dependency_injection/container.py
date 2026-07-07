@@ -43,7 +43,6 @@ class Provider:
     _has_instance: bool = False
 
 
-
 class _ResolveStack:
     """Per-thread re-entrancy tracker used to detect cycles."""
 

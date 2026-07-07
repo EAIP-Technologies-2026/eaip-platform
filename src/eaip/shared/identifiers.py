@@ -92,6 +92,7 @@ class Slug(str):
         cls: type[Self], _source: Any, _handler: GetCoreSchemaHandler
     ) -> CoreSchema:
         """Tell Pydantic v2 to treat this class as a constrained string."""
+
         def _validate(value: Any) -> Slug:
             if isinstance(value, cls):
                 return value

@@ -122,9 +122,7 @@ class EventBus:
             return []
 
         failures: list[tuple[Subscription[Any], BaseException]] = []
-        await asyncio.gather(
-            *[self._invoke(e.sub, event, failures) for e in matching]
-        )
+        await asyncio.gather(*[self._invoke(e.sub, event, failures) for e in matching])
         return failures
 
     async def _invoke(
