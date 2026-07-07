@@ -8,11 +8,11 @@ Thanks for using EAIP! This document explains **where to get help**, **what to e
 
 | You want to…                                 | Go here                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------ |
-| Ask a usage question                         | [GitHub Discussions › Q&A](<https://github.com/subham1902/eaip-platform/discussions/categories/q-a>) |
-| Report a bug                                 | [New Bug Report](<https://github.com/subham1902/eaip-platform/issues/new?template=bug_report.yml>) |
-| Request a feature                            | [New Feature Request](<https://github.com/subham1902/eaip-platform/issues/new?template=feature_request.yml>) |
+| Ask a usage question                         | [GitHub Discussions › Q&A](https://github.com/subham1902/eaip-platform/discussions/categories/q-a) |
+| Report a bug                                 | [New Bug Report](https://github.com/subham1902/eaip-platform/issues/new?template=bug_report.yml) |
+| Request a feature                            | [New Feature Request](https://github.com/subham1902/eaip-platform/issues/new?template=feature_request.yml) |
 | Report a security vulnerability              | See [`SECURITY.md`](SECURITY.md) — **do not file a public issue**        |
-| Discuss design / RFCs                        | [GitHub Discussions › Ideas](<https://github.com/subham1902/eaip-platform/discussions/categories/ideas>) |
+| Discuss design / RFCs                        | [GitHub Discussions › Ideas](https://github.com/subham1902/eaip-platform/discussions/categories/ideas) |
 | Real-time chat                               | `#eaip` on the community Slack *(invite link in Discussions pinned post)* |
 | Commercial support / SLA                     | `hello@eaip.dev`                                                         |
 
