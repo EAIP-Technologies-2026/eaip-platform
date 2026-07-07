@@ -37,7 +37,11 @@ class LoggingConfig(BaseModel):
     )
 
 
-_configured: bool = False
+class _State:
+    configured: bool = False
+
+
+_state = _State()
 
 
 def configure_logging(config: LoggingConfig | None = None) -> None:
@@ -88,21 +92,18 @@ def configure_logging(config: LoggingConfig | None = None) -> None:
 
     structlog.configure(
         processors=[*shared_processors, renderer],
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, cfg.level)
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, cfg.level)),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
-    global _configured
-    _configured = True
+    _state.configured = True
 
 
 def is_configured() -> bool:
     """Return ``True`` if :func:`configure_logging` has run at least once."""
-    return _configured
+    return _state.configured
 
 
 __all__ = ["LogFormat", "LoggingConfig", "configure_logging", "is_configured"]

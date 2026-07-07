@@ -9,7 +9,13 @@ from typing import Protocol, runtime_checkable
 class IdGeneratorPort(Protocol):
     """Produces opaque, globally-unique string identifiers."""
 
-    def new_id(self) -> str: ...
+    def new_id(self) -> str:
+        """Produces a new identifier.
+
+        Returns:
+            A new identifier.
+        """
+        ...
 
 
 __all__ = ["IdGeneratorPort"]

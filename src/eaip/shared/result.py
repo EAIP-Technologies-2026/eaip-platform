@@ -8,8 +8,9 @@ type only appears in public adapter contracts.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, Generic, NoReturn, TypeVar, final
+from typing import Final, Generic, NoReturn, Self, TypeVar, final
 
 T_co = TypeVar("T_co", covariant=True)
 E_co = TypeVar("E_co", covariant=True)
@@ -27,14 +28,16 @@ class Ok(Generic[T_co]):
     is_ok: Final[bool] = True
     is_err: Final[bool] = False
 
-    def unwrap(self) -> T_co:
+    def unwrap(self: Self) -> T_co:
         """Return the contained value."""
         return self.value
 
-    def unwrap_or(self, _default: T_co, /) -> T_co:  # pragma: no cover - trivial
+    def unwrap_or(self: Self, _default: object, /) -> T_co:  # pragma: no cover - trivial
+        """Return the contained value, ignoring the default."""
         return self.value
 
-    def map(self, fn: "Callable[[T_co], U]") -> "Ok[U]":  # type: ignore[name-defined]
+    def map(self: Self, fn: Callable[[T_co], U]) -> Ok[U]:
+        """Apply a function to the contained value."""
         return Ok(fn(self.value))
 
 
@@ -48,18 +51,21 @@ class Err(Generic[E_co]):
     is_ok: Final[bool] = False
     is_err: Final[bool] = True
 
-    def unwrap(self) -> NoReturn:
+    def unwrap(self: Self) -> NoReturn:
+        """Raise the contained error."""
         raise _ResultUnwrapError(self.error)
 
-    def unwrap_or(self, default: U, /) -> U:
+    def unwrap_or(self: Self, default: U, /) -> U:
+        """Return the provided default value."""
         return default
 
-    def map(self, _fn: "Callable[..., object]") -> "Err[E_co]":  # type: ignore[name-defined]
+    def map(self: Self, _fn: Callable[..., object]) -> Err[E_co]:
+        """Return the error, ignoring the function."""
         return self
 
 
 #: Discriminated union covering both arms.
-Result = Ok[T_co] | Err[E_co]  # type: ignore[valid-type]
+Result = Ok[T_co] | Err[E_co]
 
 
 class _ResultUnwrapError(RuntimeError):
@@ -69,8 +75,5 @@ class _ResultUnwrapError(RuntimeError):
         super().__init__(f"Result.unwrap() called on Err({error!r})")
         self.error = error
 
-
-# Late import to silence ruff's reordering while keeping mypy happy.
-from collections.abc import Callable  # noqa: E402
 
 __all__ = ["Err", "Ok", "Result"]

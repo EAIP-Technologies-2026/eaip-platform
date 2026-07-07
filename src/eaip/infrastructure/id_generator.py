@@ -11,6 +11,11 @@ class UuidIdGenerator(IdGeneratorPort):
     """Generates UUIDv4-backed string identifiers."""
 
     def new_id(self) -> str:
+        """Generates a new UUIDv4 string identifier.
+
+        Returns:
+            A new UUIDv4 string.
+        """
         return str(uuid.uuid4())
 
 

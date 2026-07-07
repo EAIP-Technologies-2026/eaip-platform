@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import signal as _signal
-from typing import Iterable
+from collections.abc import Iterable
 
 from eaip.logging.context import get_logger
 
@@ -18,15 +18,23 @@ class ShutdownSignal:
     """Thin wrapper around :class:`asyncio.Event` for graceful shutdown."""
 
     def __init__(self) -> None:
+        """Initialize ShutdownSignal with an unset asyncio event."""
         self._event = asyncio.Event()
 
     def trigger(self) -> None:
+        """Trigger the shutdown event."""
         self._event.set()
 
     def is_set(self) -> bool:
+        """Check if the shutdown event is set.
+
+        Returns:
+            True if set, False otherwise.
+        """
         return self._event.is_set()
 
     async def wait(self) -> None:
+        """Wait for the shutdown event to be set."""
         await self._event.wait()
 
 
@@ -51,9 +59,16 @@ def install_shutdown_handlers(
 
 
 def _handler(signal_obj: ShutdownSignal, sig: int, log: object) -> None:
+    """Handle OS signal by triggering the shutdown event.
+
+    Args:
+        signal_obj: The shutdown signal object to trigger.
+        sig: The signal integer.
+        log: The logger instance.
+    """
     # ``log`` is a structlog BoundLogger; typed as object to avoid circular imports.
     if hasattr(log, "info"):
-        log.info("signals.received", signal=int(sig))  # type: ignore[attr-defined]
+        log.info("signals.received", signal=int(sig))
     signal_obj.trigger()
 
 

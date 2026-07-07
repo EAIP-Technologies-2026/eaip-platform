@@ -28,7 +28,7 @@
 EP-0001A and EP-0002 together establish the architectural foundation. EP-0002
 delivers a **layered Platform Foundation** under `src/eaip/`:
 
-```
+```text
 application → platform → (lifecycle, registry, DI, capabilities, plugins, core)
             → (events, logging, health, config, settings, factories)
             → (serialization, validation, protocols, interfaces, metadata, version, utilities)
@@ -39,11 +39,13 @@ application → platform → (lifecycle, registry, DI, capabilities, plugins, co
 ## What's Been Implemented
 
 ### EP-0001A — Repository Foundation (2026-01-15) ✅
+
 35 governance/process/tooling files (README, CONTRIBUTING, CoC, SECURITY,
 ROADMAP, ARCHITECTURE, etc.), `pyproject.toml`, `Makefile`, `.pre-commit`,
 `.vscode/`, GitHub issue/PR templates, CODEOWNERS, CI + security workflows.
 
 ### EP-0002 — Platform Foundation (2026-01-15) ✅
+
 **27 source packages** under `src/eaip/` totalling ~1,830 lines of strictly-
 typed, production-quality Python. Highlights:
 

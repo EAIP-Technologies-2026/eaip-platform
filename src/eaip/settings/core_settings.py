@@ -2,24 +2,27 @@
 
 from __future__ import annotations
 
+from typing import Self
+
 from pydantic import Field
 
-from eaip.logging.config import LoggingConfig
+from eaip.logging.config import LogFormat, LoggingConfig
 from eaip.settings.base import EAIPSettingsBase
-from eaip.types import EnvName, Environment, NonEmptyStr
+from eaip.types import Environment, EnvName, NonEmptyStr
 
 
 class LoggingSettings(EAIPSettingsBase):
     """Settings nested under ``EAIP_LOGGING_*`` (mapped from :class:`LoggingConfig`)."""
 
     level: str = Field(default="INFO")
-    format: str = Field(default="json")
+    format: LogFormat = Field(default="json")
     include_caller: bool = Field(default=False)
 
-    def to_logging_config(self) -> LoggingConfig:
+    def to_logging_config(self: Self) -> LoggingConfig:
+        """Map this settings instance to a full :class:`LoggingConfig`."""
         return LoggingConfig(
-            level=self.level,  # type: ignore[arg-type]
-            format=self.format,  # type: ignore[arg-type]
+            level=self.level,
+            format=self.format,
             include_caller=self.include_caller,
         )
 

@@ -33,6 +33,11 @@ class PluginManifest(BaseModel):
     provides_capabilities: tuple[str, ...] = Field(default=())
 
     def to_metadata(self) -> ComponentMetadata:
+        """Converts the manifest into component metadata.
+
+        Returns:
+            The component metadata representing this plugin.
+        """
         return ComponentMetadata(
             name=self.name,
             kind=ComponentKind.PLUGIN,
@@ -55,9 +60,21 @@ class Plugin(Protocol):
 
     manifest: PluginManifest
 
-    async def activate(self, platform: "Platform") -> None: ...
+    async def activate(self, platform: Platform) -> None:
+        """Activates the plugin.
 
-    async def deactivate(self, platform: "Platform") -> None: ...
+        Args:
+            platform: The platform instance to activate the plugin on.
+        """
+        ...
+
+    async def deactivate(self, platform: Platform) -> None:
+        """Deactivates the plugin.
+
+        Args:
+            platform: The platform instance to deactivate the plugin on.
+        """
+        ...
 
 
 __all__ = ["Plugin", "PluginManifest"]

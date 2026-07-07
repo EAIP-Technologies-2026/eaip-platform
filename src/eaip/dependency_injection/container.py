@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Any, TypeVar
+from dataclasses import dataclass
+from typing import Any, TypeVar, cast
 
 from eaip.dependency_injection.scope import Scope
 from eaip.exceptions.domain import (
@@ -40,7 +40,7 @@ class Provider:
     factory: Factory
     scope: Scope
     instance: Any = None
-    _has_instance: bool = field(default=False, repr=False)
+    _has_instance: bool = False
 
 
 class _ResolveStack:
@@ -49,6 +49,7 @@ class _ResolveStack:
     __slots__ = ("frames",)
 
     def __init__(self) -> None:
+        """Initialize an empty resolution stack."""
         self.frames: list[type[Any]] = []
 
 
@@ -61,7 +62,12 @@ class Container:
     holds its own scoped instances.
     """
 
-    def __init__(self, *, parent: "Container | None" = None) -> None:
+    def __init__(self, *, parent: Container | None = None) -> None:
+        """Initialize a new DI container.
+
+        Args:
+            parent: An optional parent container, whose singletons will be shared.
+        """
         self._providers: dict[type[Any], Provider] = {}
         self._lock = threading.RLock()
         self._stack = _ResolveStack()
@@ -72,7 +78,7 @@ class Container:
     # ------------------------------------------------------------------
     def register_instance(self, key: type[T], instance: T) -> None:
         """Bind ``key`` to a pre-built singleton instance."""
-        if not isinstance(instance, key):  # type: ignore[arg-type]
+        if not isinstance(instance, key):
             raise RegistryTypeMismatchError(
                 f"instance is not an instance of {key.__name__}",
                 context={"key": key.__name__, "instance_type": type(instance).__name__},
@@ -87,7 +93,7 @@ class Container:
     def register_factory(
         self,
         key: type[T],
-        factory: Callable[["Container"], T],
+        factory: Callable[[Container], T],
         *,
         scope: Scope = Scope.SINGLETON,
     ) -> None:
@@ -145,7 +151,7 @@ class Container:
 
         self._stack.frames.append(key)
         try:
-            return self._build(provider)
+            return cast(T, self._build(provider))
         finally:
             self._stack.frames.pop()
 
@@ -163,7 +169,7 @@ class Container:
             return self._parent._find(key)
         return None
 
-    def _build(self, provider: Provider) -> Any:  # noqa: ANN401 - generic key
+    def _build(self, provider: Provider) -> Any:
         with self._lock:
             if provider.scope is Scope.SINGLETON and provider._has_instance:
                 return provider.instance
@@ -180,10 +186,9 @@ class Container:
                     f"factory for {provider.key.__name__} produced {type(instance).__name__}",
                     context={"key": provider.key.__name__, "produced": type(instance).__name__},
                 )
-            if provider.scope is Scope.SINGLETON:
-                provider.instance = instance
-                provider._has_instance = True
-            elif provider.scope is Scope.SCOPED and provider in self._providers.values():
+            if provider.scope is Scope.SINGLETON or (
+                provider.scope is Scope.SCOPED and provider in self._providers.values()
+            ):
                 provider.instance = instance
                 provider._has_instance = True
             return instance
@@ -192,12 +197,25 @@ class Container:
     # Introspection & lifecycle
     # ------------------------------------------------------------------
     def has(self, key: type[Any]) -> bool:
+        """Check if a binding is registered for ``key``.
+
+        Args:
+            key: The type to check.
+
+        Returns:
+            True if a binding exists, False otherwise.
+        """
         return self._find(key) is not None
 
     def keys(self) -> list[type[Any]]:
+        """Return the list of all registered keys.
+
+        Returns:
+            A list of all registered types.
+        """
         return list(self._providers)
 
-    def create_scope(self) -> "Container":
+    def create_scope(self) -> Container:
         """Build a child container sharing this container's singletons.
 
         Singletons resolved through the child still live in this (parent)

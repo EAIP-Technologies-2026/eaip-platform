@@ -37,6 +37,7 @@ class LifecycleManager:
     """Orchestrates ordered startup & reverse-ordered shutdown."""
 
     def __init__(self) -> None:
+        """Initialize the lifecycle manager."""
         self._entries: list[_Entry] = []
         self._phase: LifecyclePhase = LifecyclePhase.CREATED
         self._log = get_logger("eaip.lifecycle")
@@ -46,10 +47,12 @@ class LifecycleManager:
     # ------------------------------------------------------------------
     @property
     def phase(self) -> LifecyclePhase:
+        """Return the current phase of the lifecycle."""
         return self._phase
 
     @property
     def hook_count(self) -> int:
+        """Return the number of registered lifecycle hooks."""
         return len(self._entries)
 
     # ------------------------------------------------------------------
@@ -63,7 +66,14 @@ class LifecycleManager:
     ) -> None:
         """Register a lifecycle hook.
 
-        Adding hooks is forbidden once the manager has started.
+        Args:
+            name: The name of the hook.
+            start: The start function/coroutine.
+            stop: The optional stop function/coroutine.
+
+        Raises:
+            LifecycleError: If the manager is not in the CREATED phase.
+            ValueError: If the hook name is empty.
         """
         if self._phase is not LifecyclePhase.CREATED:
             raise LifecycleError(
@@ -78,7 +88,12 @@ class LifecycleManager:
     # Orchestration
     # ------------------------------------------------------------------
     async def start(self) -> None:
-        """Run every ``start`` hook in registration order."""
+        """Run every ``start`` hook in registration order.
+
+        Raises:
+            LifecycleError: If the manager is not in the CREATED phase,
+                or if a hook fails.
+        """
         if self._phase is not LifecyclePhase.CREATED:
             raise LifecycleError(
                 f"cannot start lifecycle in phase {self._phase}",
@@ -110,7 +125,11 @@ class LifecycleManager:
         self._log.info("lifecycle.running")
 
     async def stop(self) -> None:
-        """Run every ``stop`` hook in reverse order. Idempotent for STOPPED."""
+        """Run every ``stop`` hook in reverse order. Idempotent for STOPPED.
+
+        Raises:
+            LifecycleError: If the manager cannot stop the lifecycle.
+        """
         if self._phase in {LifecyclePhase.STOPPED, LifecyclePhase.CREATED}:
             return
         if self._phase not in {LifecyclePhase.RUNNING, LifecyclePhase.FAILED}:
@@ -125,12 +144,13 @@ class LifecycleManager:
         self._log.info("lifecycle.stopped")
 
     async def _rollback(self) -> None:
+        """Roll back lifecycle hooks."""
         for entry in reversed(self._entries):
             if not entry.started or entry.stop is None:
                 continue
             try:
                 await self._invoke(entry.stop)
-            except BaseException as exc:  # noqa: BLE001 — must keep unwinding
+            except BaseException as exc:
                 self._log.error(
                     "lifecycle.stop_failed",
                     hook=entry.name,
@@ -141,6 +161,11 @@ class LifecycleManager:
 
     @staticmethod
     async def _invoke(hook: LifecycleHook) -> None:
+        """Invoke a lifecycle hook.
+
+        Args:
+            hook: The hook to invoke.
+        """
         result = hook()
         if inspect.isawaitable(result):
             await result

@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
-
-import structlog
 
 from eaip.logging import (
     LoggingConfig,
@@ -32,7 +29,7 @@ def test_logger_is_bound(capsys: object) -> None:
 def test_redaction(capsys: object) -> None:
     configure_logging(LoggingConfig(level="INFO", format="json"))
     log = get_logger("eaip.test")
-    log.info("login", password="s3cret", username="ada")
+    log.info("login", password="s3cret", username="ada")  # pragma: allowlist secret
     out = capsys.readouterr().out  # type: ignore[attr-defined]
     payload = json.loads(out.splitlines()[-1])
     assert payload["password"] == "***REDACTED***"

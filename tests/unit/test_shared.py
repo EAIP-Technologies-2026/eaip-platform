@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, timedelta
 
 import pytest
 
@@ -69,7 +69,7 @@ class TestSentinels:
 class TestTime:
     def test_utc_now_is_aware(self) -> None:
         n = utc_now()
-        assert n.tzinfo is timezone.utc
+        assert n.tzinfo is UTC
 
     def test_duration_construction(self) -> None:
         d = Duration.from_milliseconds(1500)

@@ -21,10 +21,10 @@ class _DummyPlugin:
     activated: int = field(default=0)
     deactivated: int = field(default=0)
 
-    async def activate(self, _platform: "Platform") -> None:
+    async def activate(self, _platform: Platform) -> None:
         self.activated += 1
 
-    async def deactivate(self, _platform: "Platform") -> None:
+    async def deactivate(self, _platform: Platform) -> None:
         self.deactivated += 1
 
 

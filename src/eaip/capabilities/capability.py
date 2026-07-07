@@ -7,6 +7,7 @@ Examples (delivered by future engineering packs): "agent.run", "tool.http",
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -40,7 +41,12 @@ class Capability(BaseModel):
     status: CapabilityStatus = Field(default=CapabilityStatus.REGISTERED)
     tags: tuple[str, ...] = Field(default=())
 
-    def to_metadata(self) -> ComponentMetadata:
+    def to_metadata(self: Self) -> ComponentMetadata:
+        """Convert the capability to metadata.
+
+        Returns:
+            The component metadata for this capability.
+        """
         return ComponentMetadata(
             name=self.name,
             kind=ComponentKind.CAPABILITY,

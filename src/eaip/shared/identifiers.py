@@ -24,12 +24,12 @@ class _StrId(str):
     __slots__ = ()
 
     @classmethod
-    def new(cls) -> Self:
+    def new(cls: type[Self]) -> Self:
         """Generate a fresh UUIDv4-backed identifier."""
         return cls(str(uuid.uuid4()))
 
     @classmethod
-    def parse(cls, raw: str) -> Self:
+    def parse(cls: type[Self], raw: str) -> Self:
         """Parse and validate ``raw`` into an identifier of this type."""
         if not isinstance(raw, str) or not raw:
             raise ValueError(f"{cls.__name__} must be a non-empty string")
@@ -37,11 +37,11 @@ class _StrId(str):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, _source: Any, _handler: GetCoreSchemaHandler
+        cls: type[Self], _source: Any, _handler: GetCoreSchemaHandler
     ) -> CoreSchema:
         """Tell Pydantic v2 to treat this class as a constrained string."""
 
-        def _validate(value: Any) -> "_StrId":
+        def _validate(value: Any) -> _StrId:
             if isinstance(value, cls):
                 return value
             if isinstance(value, str):
@@ -53,7 +53,8 @@ class _StrId(str):
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 
-    def __repr__(self) -> str:  # pragma: no cover - trivial
+    def __repr__(self: Self) -> str:  # pragma: no cover - trivial
+        """Return the representation of the identifier."""
         return f"{type(self).__name__}({str.__repr__(self)})"
 
 
@@ -80,18 +81,19 @@ class Slug(str):
 
     __slots__ = ()
 
-    def __new__(cls, value: str) -> "Slug":
+    def __new__(cls: type[Self], value: str) -> Self:
+        """Create a new slug, validating it against the allowed pattern."""
         if not _SLUG_RE.match(value):
-            raise ValueError(
-                f"invalid slug {value!r}: must match {_SLUG_RE.pattern}"
-            )
+            raise ValueError(f"invalid slug {value!r}: must match {_SLUG_RE.pattern}")
         return str.__new__(cls, value)
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, _source: Any, _handler: GetCoreSchemaHandler
+        cls: type[Self], _source: Any, _handler: GetCoreSchemaHandler
     ) -> CoreSchema:
-        def _validate(value: Any) -> "Slug":
+        """Tell Pydantic v2 to treat this class as a constrained string."""
+
+        def _validate(value: Any) -> Slug:
             if isinstance(value, cls):
                 return value
             if isinstance(value, str):

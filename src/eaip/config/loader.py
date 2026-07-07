@@ -18,10 +18,22 @@ class ConfigLoader:
     __slots__ = ("_source",)
 
     def __init__(self, source: ConfigSource) -> None:
+        """Initialize the loader with a specific source.
+
+        Args:
+            source: The configuration source to read from.
+        """
         self._source = source
 
     def load(self, model_cls: type[M]) -> M:
-        """Load raw config and validate into ``model_cls``."""
+        """Load raw config and validate into ``model_cls``.
+
+        Args:
+            model_cls: The Pydantic model class to load the config into.
+
+        Returns:
+            An instance of ``model_cls`` populated with configuration data.
+        """
         raw = self._source.load()
         return validate_model(model_cls, raw)
 

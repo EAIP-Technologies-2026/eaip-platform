@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — Documentation & repository health checks
 # -----------------------------------------------------------------------------
@@ -5,9 +6,7 @@
 # READMEs, and runs the repository healthcheck script. Independent of CI.yml
 # so doc-only PRs don't have to wait on the full test matrix.
 # =============================================================================
-
 name: Docs
-
 on:
   push:
     branches: [main, "release/**"]
@@ -24,14 +23,11 @@ on:
       - "scripts/healthcheck.sh"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: docs-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate-docs:
     name: validate documentation
@@ -39,13 +35,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-
+      - name: Install runtime dependencies
+        run: pip install pydantic pydantic-settings structlog anyio
       - name: Validate Markdown links + governance docs
         run: bash scripts/validate-docs.sh
-
       - name: Repository healthcheck
         run: bash scripts/healthcheck.sh

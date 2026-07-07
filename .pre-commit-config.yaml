@@ -1,23 +1,21 @@
+---
 # =============================================================================
 # EAIP — pre-commit configuration
 # -----------------------------------------------------------------------------
 # Install:  pre-commit install --install-hooks && pre-commit install --hook-type commit-msg
 # Run all:  pre-commit run --all-files
 # =============================================================================
-
 default_language_version:
   python: python3
-
 default_stages: [pre-commit]
 fail_fast: false
 minimum_pre_commit_version: "3.7.0"
-
 repos:
   # ---------------------------------------------------------------------------
   # Generic hygiene
   # ---------------------------------------------------------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=512"]
@@ -28,7 +26,7 @@ repos:
       - id: check-symlinks
       - id: check-toml
       - id: check-yaml
-        args: ["--unsafe"]   # allow custom tags (GitHub Actions, MkDocs)
+        args: ["--unsafe"] # allow custom tags (GitHub Actions, MkDocs)
       - id: check-json
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -37,35 +35,31 @@ repos:
         args: ["--fix=lf"]
       - id: detect-private-key
       - id: forbid-submodules
-
   # ---------------------------------------------------------------------------
   # Python — ruff (lint + format) and black (canonical formatter)
   # ---------------------------------------------------------------------------
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.15.20
     hooks:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
       - id: ruff-format
-
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
+    rev: 26.5.1
     hooks:
       - id: black
         args: ["--config=pyproject.toml"]
-
   # ---------------------------------------------------------------------------
   # Python — type checking
   # ---------------------------------------------------------------------------
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v2.1.0
     hooks:
       - id: mypy
         args: ["--config-file=pyproject.toml"]
-        additional_dependencies: []
+        additional_dependencies: ["pydantic", "pydantic-settings", "structlog", "anyio"]
         # Restrict to src/ to avoid noise from generated/vendored trees.
         files: ^src/
-
   # ---------------------------------------------------------------------------
   # Secrets scanning
   # ---------------------------------------------------------------------------
@@ -82,48 +76,43 @@ repos:
             package-lock\.json|
             .*\.svg
           )$
-
   # ---------------------------------------------------------------------------
   # Markdown
   # ---------------------------------------------------------------------------
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.42.0
+    rev: v0.49.0
     hooks:
       - id: markdownlint
-        args: ["--disable", "MD013", "MD033", "MD041", "MD024", "--"]
-
+        args: ["--disable", "MD013", "MD033", "MD041", "MD024", "MD060", "--"]
   # ---------------------------------------------------------------------------
   # YAML / TOML / JSON formatting
   # ---------------------------------------------------------------------------
   - repo: https://github.com/google/yamlfmt
-    rev: v0.13.0
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
         args: ["-conf", ".yamlfmt.yml"]
         # Ship a minimal yamlfmt config inline by allowing default if missing.
         require_serial: true
-
   # ---------------------------------------------------------------------------
   # Shell scripts
   # ---------------------------------------------------------------------------
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
-
   # ---------------------------------------------------------------------------
   # GitHub Actions workflow linting
   # ---------------------------------------------------------------------------
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.3
+    rev: v1.7.12
     hooks:
       - id: actionlint
-
   # ---------------------------------------------------------------------------
   # Commit message — Conventional Commits + DCO sign-off
   # ---------------------------------------------------------------------------
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
+    rev: v4.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]

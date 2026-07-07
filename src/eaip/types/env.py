@@ -31,13 +31,12 @@ class Environment(StrEnum):
             "qa": cls.TEST,
         }
         if normalised in aliases:
-            return aliases[normalised]  # type: ignore[return-value]
+            return aliases[normalised]
         try:
             return cls(normalised)
         except ValueError as exc:
             raise ValueError(
-                f"unknown environment {raw!r}; expected one of "
-                f"{', '.join(e.value for e in cls)}"
+                f"unknown environment {raw!r}; expected one of {', '.join(e.value for e in cls)}"
             ) from exc
 
     @property

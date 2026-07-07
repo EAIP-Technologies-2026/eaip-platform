@@ -24,6 +24,7 @@ class FeatureFlagRegistry:
     """Registers known flags and exposes resolution overlays."""
 
     def __init__(self) -> None:
+        """Initialize the registry with no flags or overrides."""
         self._flags: dict[str, FeatureFlag] = {}
         self._overrides: dict[str, bool] = {}
         self._lock = threading.RLock()
@@ -32,13 +33,28 @@ class FeatureFlagRegistry:
     # Registration
     # ------------------------------------------------------------------
     def define(self, flag: FeatureFlag) -> None:
+        """Define a new feature flag.
+
+        Args:
+            flag: The feature flag definition.
+
+        Raises:
+            ValueError: If the flag name is empty.
+        """
         if not flag.name:
             raise ValueError("flag name must be non-empty")
         with self._lock:
             self._flags[flag.name] = flag
 
-    def apply_overrides(self, *, enabled: tuple[str, ...] = (), disabled: tuple[str, ...] = ()) -> None:
-        """Apply static overrides (typically sourced from settings)."""
+    def apply_overrides(
+        self, *, enabled: tuple[str, ...] = (), disabled: tuple[str, ...] = ()
+    ) -> None:
+        """Apply static overrides (typically sourced from settings).
+
+        Args:
+            enabled: Tuple of flag names to enable.
+            disabled: Tuple of flag names to disable.
+        """
         with self._lock:
             for name in enabled:
                 self._overrides[name] = True
@@ -49,6 +65,14 @@ class FeatureFlagRegistry:
     # Resolution
     # ------------------------------------------------------------------
     def is_enabled(self, name: str) -> bool:
+        """Check if a feature flag is enabled.
+
+        Args:
+            name: The name of the flag.
+
+        Returns:
+            True if enabled, False otherwise.
+        """
         with self._lock:
             if name in self._overrides:
                 return self._overrides[name]
@@ -56,6 +80,11 @@ class FeatureFlagRegistry:
             return flag.default if flag else False
 
     def known(self) -> list[str]:
+        """Get a list of all known feature flag names.
+
+        Returns:
+            A sorted list of flag names.
+        """
         with self._lock:
             return sorted(self._flags)
 

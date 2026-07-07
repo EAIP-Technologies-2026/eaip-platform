@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -14,10 +14,17 @@ def redact_processor(keys: Iterable[str]) -> structlog.types.Processor:
     """Build a ``structlog`` processor that redacts values for ``keys``.
 
     Matching is case-insensitive. Redaction recurses into nested mappings.
+
+    Args:
+        keys: The keys to redact.
+
+    Returns:
+        A ``structlog`` processor.
     """
     lowered = {k.lower() for k in keys}
 
-    def _redact(value: Any) -> Any:  # noqa: ANN401 - heterogeneous payloads
+    def _redact(value: Any) -> Any:
+        """Recursively redact values."""
         if isinstance(value, Mapping):
             return {
                 k: (_REDACTED if str(k).lower() in lowered else _redact(v))
@@ -31,7 +38,8 @@ def redact_processor(keys: Iterable[str]) -> structlog.types.Processor:
     def processor(
         _logger: object, _method: str, event_dict: structlog.types.EventDict
     ) -> structlog.types.EventDict:
-        return _redact(event_dict)  # type: ignore[return-value]
+        """The processor function."""
+        return cast(structlog.types.EventDict, _redact(event_dict))
 
     return processor
 

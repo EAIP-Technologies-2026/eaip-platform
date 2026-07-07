@@ -22,7 +22,7 @@ import enum
 import json
 import pathlib
 import uuid
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel
 
@@ -32,22 +32,49 @@ from eaip.exceptions.domain import SerializationError
 class JSONEncoder(json.JSONEncoder):
     """Strict JSON encoder used platform-wide."""
 
-    def default(self, o: Any) -> Any:  # noqa: ANN401 - json.JSONEncoder signature
+    def default(self: Self, o: Any) -> Any:
+        """Serialise objects to JSON.
+
+        Args:
+            o: The object to serialise.
+
+        Returns:
+            The serialised object.
+
+        Raises:
+            SerializationError: If the type is unsupported.
+        """
+        if (result := self._handle_pydantic_and_enum(o)) is not None:
+            return result
+        if (result := self._handle_dates_and_times(o)) is not None:
+            return result
+        if (result := self._handle_misc_types(o)) is not None:
+            return result
+        if (result := self._handle_custom_types(o)) is not None:
+            return result
+        raise SerializationError(
+            f"unsupported type for JSON serialisation: {type(o).__name__}",
+            context={"type": type(o).__name__},
+        )
+
+    def _handle_pydantic_and_enum(self: Self, o: Any) -> Any | None:
         if isinstance(o, BaseModel):
             return o.model_dump(mode="json")
         if isinstance(o, enum.Enum):
             return o.value
+        return None
+
+    def _handle_dates_and_times(self: Self, o: Any) -> Any | None:
         if isinstance(o, _dt.datetime):
             if o.tzinfo is None:
                 o = o.replace(tzinfo=_dt.UTC)
             return o.isoformat()
         if isinstance(o, _dt.date):
             return o.isoformat()
-        if isinstance(o, uuid.UUID):
-            return str(o)
-        if isinstance(o, pathlib.PurePath):
-            return str(o)
-        if isinstance(o, decimal.Decimal):
+        return None
+
+    def _handle_misc_types(self: Self, o: Any) -> Any | None:
+        if isinstance(o, uuid.UUID | pathlib.PurePath | decimal.Decimal):
             return str(o)
         if isinstance(o, set | frozenset):
             return sorted(o, key=repr)
@@ -55,14 +82,14 @@ class JSONEncoder(json.JSONEncoder):
             return o.decode("utf-8")
         if dataclasses.is_dataclass(o) and not isinstance(o, type):
             return dataclasses.asdict(o)
+        return None
+
+    def _handle_custom_types(self: Self, o: Any) -> Any | None:
         for attr in ("__json__", "to_json"):
             method = getattr(o, attr, None)
             if callable(method):
                 return method()
-        raise SerializationError(
-            f"unsupported type for JSON serialisation: {type(o).__name__}",
-            context={"type": type(o).__name__},
-        )
+        return None
 
 
 class JSONDecoder(json.JSONDecoder):

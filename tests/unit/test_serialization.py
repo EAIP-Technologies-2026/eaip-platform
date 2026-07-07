@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import PurePosixPath
 
@@ -60,7 +60,7 @@ def test_encodes_uuid_path_decimal() -> None:
 
 
 def test_datetime_is_utc_iso() -> None:
-    n = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+    n = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
     assert from_json(to_json(n)) == n.isoformat()
 
 

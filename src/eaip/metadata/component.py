@@ -42,6 +42,11 @@ class ComponentMetadata(BaseModel):
     tags: tuple[str, ...] = Field(default=(), description="Free-form tags.")
 
     def is_stable(self) -> bool:
+        """Determines if the component is in a stable state.
+
+        Returns:
+            True if the stability is 'stable', False otherwise.
+        """
         return self.stability == "stable"
 
 

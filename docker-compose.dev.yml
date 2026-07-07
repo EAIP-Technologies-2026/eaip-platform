@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — Local development stack
 # -----------------------------------------------------------------------------
@@ -6,7 +7,6 @@
 # Run the test suite in the container:
 #     docker compose -f docker-compose.dev.yml run --rm eaip make test
 # =============================================================================
-
 services:
   eaip:
     build:
@@ -27,7 +27,6 @@ services:
       - eaip-pip-cache:/root/.cache/pip
       - eaip-precommit-cache:/root/.cache/pre-commit
     command: bash
-
 volumes:
   eaip-pip-cache:
   eaip-precommit-cache:

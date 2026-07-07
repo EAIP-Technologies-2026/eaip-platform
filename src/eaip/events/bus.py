@@ -54,6 +54,7 @@ class EventBus:
     """
 
     def __init__(self) -> None:
+        """Initialize a new, empty event bus."""
         self._entries: list[_Entry] = []
         self._log = get_logger("eaip.events.bus")
 
@@ -100,6 +101,11 @@ class EventBus:
 
     @property
     def subscription_count(self) -> int:
+        """Return the number of active subscriptions.
+
+        Returns:
+            The count of subscriptions.
+        """
         return len(self._entries)
 
     # ------------------------------------------------------------------
@@ -116,10 +122,7 @@ class EventBus:
             return []
 
         failures: list[tuple[Subscription[Any], BaseException]] = []
-        coros: list[Awaitable[None]] = []
-        for entry in matching:
-            coros.append(self._invoke(entry.sub, event, failures))
-        await asyncio.gather(*coros)
+        await asyncio.gather(*[self._invoke(e.sub, event, failures) for e in matching])
         return failures
 
     async def _invoke(
@@ -132,7 +135,7 @@ class EventBus:
             result = sub.handler(event)
             if inspect.isawaitable(result):
                 await result
-        except BaseException as exc:  # noqa: BLE001 — bus isolates per subscriber
+        except BaseException as exc:
             failures.append((sub, exc))
             self._log.error(
                 "event.handler_failed",

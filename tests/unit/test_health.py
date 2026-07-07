@@ -60,4 +60,8 @@ def test_duplicate_check_rejected() -> None:
 
 
 def test_status_numeric_ordering() -> None:
-    assert HealthStatus.HEALTHY.numeric < HealthStatus.DEGRADED.numeric < HealthStatus.UNHEALTHY.numeric
+    assert (
+        HealthStatus.HEALTHY.numeric
+        < HealthStatus.DEGRADED.numeric
+        < HealthStatus.UNHEALTHY.numeric
+    )

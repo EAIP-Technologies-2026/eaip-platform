@@ -1,16 +1,15 @@
+---
 name: ✨ Feature Request
 description: Propose a new capability or enhancement.
 title: "feat: <concise summary>"
 labels: ["type/feature", "needs-triage"]
 assignees: []
-
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for proposing an idea! Larger proposals are often better discussed first in
         [GitHub Discussions › Ideas](https://github.com/subham1902/eaip-platform/discussions/categories/ideas).
-
   - type: checkboxes
     id: prerequisites
     attributes:
@@ -20,7 +19,6 @@ body:
           required: true
         - label: I have read the [Roadmap](../../ROADMAP.md) and [Architecture](../../ARCHITECTURE.md).
           required: true
-
   - type: textarea
     id: problem
     attributes:
@@ -29,7 +27,6 @@ body:
       placeholder: "When deploying multi-tenant runtimes, operators have no way to set per-tenant token budgets…"
     validations:
       required: true
-
   - type: textarea
     id: proposal
     attributes:
@@ -39,13 +36,11 @@ body:
         Introduce a `TokenBudget` resource in the Control Plane API …
     validations:
       required: true
-
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives Considered
       description: What other approaches did you consider, and why did you prefer this one?
-
   - type: dropdown
     id: scope
     attributes:
@@ -65,7 +60,6 @@ body:
         - Other
     validations:
       required: true
-
   - type: dropdown
     id: priority
     attributes:
@@ -76,7 +70,6 @@ body:
         - Blocking — cannot adopt without it
     validations:
       required: true
-
   - type: checkboxes
     id: willingness
     attributes:
@@ -84,7 +77,6 @@ body:
       options:
         - label: I am willing to contribute a PR for this (with guidance if needed).
         - label: I am willing to help test/validate this once available.
-
   - type: textarea
     id: additional
     attributes:

@@ -14,6 +14,7 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 ## [Unreleased]
 
 ### Added
+
 - **Developer experience** (`EP-0002 + DX`):
   - `.devcontainer/devcontainer.json` — VS Code dev container targeting Python 3.13.
   - `Dockerfile` + `docker-compose.dev.yml` + `.dockerignore` for a reproducible local dev environment.
@@ -29,13 +30,16 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 - **Makefile targets:** `health`, `validate`, `validate-docs`, `diagnostics`, `docker-dev`, `docker-test`.
 
 ### Changed
+
 - `README.md` quickstart now advertises the cross-platform bootstrap scripts and devcontainer.
 - `SUPPORT.md` no longer references the not-yet-existing `docs/` tree; links to `DEVELOPER_GUIDE.md` instead.
 
 ### Removed
+
 - Stripped the pre-existing e1 pod scaffold remnants (`frontend/`, `backend/`, `yarn.lock`, `test_result.md`) — they were never part of EAIP and caused external code-review tools to scan files that don't belong to the platform.
 
 ### Fixed
+
 - Documentation reference consistency: every Markdown internal link now resolves; every Foundation package has a `README.md` (added `src/eaip/adapters/README.md`).
 
 ---
@@ -53,11 +57,11 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 - **Registries** — generic observable `Registry[T]` plus domain wrappers (`CapabilityRegistry`, `PluginRegistry`, feature flags).
 - **Plugin contract** — `PluginManifest`, `Plugin` Protocol, `PluginLoader` with contract-version validation.
 - **Structured logging** — `structlog`-backed JSON & console formats, contextvar propagation, redaction of sensitive keys.
-- **Events** — in-process `EventBus` with sync/async handlers, subclass routing, and isolated failure semantics.
+- **Events** — in-process `EventBus` with sync/async handlers, subclass routing, and isolated failure.
 - **Health** — tri-state `HealthStatus`, async `HealthCheck` protocol, aggregating `HealthReporter`.
-- **Config & settings** — layered config sources (`DictSource`, `EnvSource`, `FileSource`, `LayeredSource`) and a typed `PlatformSettings` hierarchy.
+- **Config & settings** — layered sources (`DictSource`, `EnvSource`, `FileSource`, `LayeredSource`) and a typed `PlatformSettings` hierarchy.
 - **Ports & default adapters** — `ClockPort`, `IdGeneratorPort`, `SecretProviderPort` with `SystemClock`, `UuidIdGenerator`, `EnvSecretProvider` defaults.
-- **Shared primitives** — typed `str` identifiers (`CorrelationId`, `RunId`, `ComponentId`, `Slug`), `Result`/`Ok`/`Err`, `Duration`, `UNSET` sentinel, JSON type aliases.
+- **Shared primitives** — typed `str` identifiers (`CorrelationId`, `RunId`, `ComponentId`, `Slug`), `Result`/`Ok`/`Err`, `Duration`, `UNSET`, JSON aliases.
 - **Exceptions** — single hierarchy under `EAIPError` with stable `ErrorCode`s and structured `context`.
 - **Tests** — 14 unit-test modules with **152 tests passing in <1s**; 84% coverage; pytest + pytest-asyncio fixtures.
 
@@ -114,6 +118,6 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
-[Unreleased]: https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD
-[0.0.2]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2
-[0.0.1]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.1
+[Unreleased]: <https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD>
+[0.0.2]: <https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2>
+[0.0.1]: <https://github.com/subham1902/eaip-platform/releases/tag/v0.0.1>

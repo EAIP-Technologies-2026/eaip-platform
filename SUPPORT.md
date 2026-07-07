@@ -28,7 +28,9 @@ Thanks for using EAIP! This document explains **where to get help**, **what to e
    - OS and architecture
    - Exact command(s) and full stack trace / logs (use code fences)
 
-A good bug report saves multiple round-trips. A great bug report often leads to a fix in hours instead of weeks.## Response Expectations
+A good bug report saves multiple round-trips. A great bug report often leads to a fix in hours instead of weeks.
+
+## Response Expectations
 
 EAIP is primarily a **community-supported open-source project**. There is no implicit SLA for community channels. That said, the maintainers aim for:
 
@@ -43,7 +45,7 @@ If you need guaranteed response times, prioritised fixes, private support channe
 
 ## Issue Lifecycle
 
-```
+```text
 new → triage → accepted → in-progress → fixed → released → closed
                 ↓
             needs-info → (stale after 30d) → closed

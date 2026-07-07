@@ -29,7 +29,7 @@ This document describes **how to contribute** to the Enterprise Autonomous Intel
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [EAIP Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Report unacceptable behaviour to **conduct@eaip.dev**.
+This project and everyone participating in it is governed by the [EAIP Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Report unacceptable behaviour to `<conduct@eaip.dev>`.
 
 ## Ways to Contribute
 
@@ -40,7 +40,7 @@ This project and everyone participating in it is governed by the [EAIP Code of C
 - **Design** — UX, diagrams, accessibility audits.
 - **Operations** — CI, release tooling, observability dashboards.
 
-If you are not sure where to start, look for issues labelled [`good first issue`](https://github.com/subham1902/eaip-platform/labels/good%20first%20issue) or [`help wanted`](https://github.com/subham1902/eaip-platform/labels/help%20wanted).
+If you are not sure where to start, look for issues labelled [`good first issue`](<https://github.com/subham1902/eaip-platform/labels/good%20first%20issue>) or [`help wanted`](<https://github.com/subham1902/eaip-platform/labels/help%20wanted>).
 
 ## Getting Started
 
@@ -54,7 +54,7 @@ If you are not sure where to start, look for issues labelled [`good first issue`
 ### Bootstrap
 
 ```bash
-git clone https://github.com/subham1902/eaip-platform.git
+git clone <https://github.com/subham1902/eaip-platform.git>
 cd eaip-platform
 make bootstrap        # creates .venv/, installs dev deps, installs pre-commit hooks
 ```
@@ -87,7 +87,7 @@ We do **not** use long-lived feature branches. If your work spans multiple PRs, 
 
 We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
 
-```
+```text
 <type>(<scope>)!: <subject>
 
 <body>
@@ -104,7 +104,7 @@ We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1
 
 Example:
 
-```
+```text
 feat(runtime): add token-budget enforcement to orchestrator
 
 Introduces per-request and per-tenant token budgets enforced before each

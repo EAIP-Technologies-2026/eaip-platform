@@ -48,7 +48,7 @@ This document describes the **target architecture** of the Enterprise Autonomous
 
 ## System Overview
 
-```
+```text
                          ┌────────────────────────────────────────────────┐
                          │                Operators / SDK / CLI           │
                          └────────────────────────────────────────────────┘
@@ -66,7 +66,7 @@ This document describes the **target architecture** of the Enterprise Autonomous
 │                                AGENT RUNTIME                                    │
 │  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Planner  │→ │ Router  │→ │ Executor │→ │ Guardrails│→ │ State / Memory  │  │
-│  └──────────┘  └─────────┘  └──────────┘  └──────────┘  └──────────────────┘  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘  │
 └────────────────────────────────────────────────────────────────────────────────┘
                                               │
         ┌─────────────────┬──────────────────┼──────────────────┬─────────────────┐
@@ -168,7 +168,7 @@ Policies are expressed in a declarative DSL *(initial implementation may wrap OP
 
 EAIP is designed to run on Kubernetes; a single-node Docker Compose variant is provided for development.
 
-```
+```text
 [Ingress] → [Control Plane (HPA)] ─┐
                                    ├─→ [PostgreSQL] [Redis] [Object Store]
 [Ingress] → [Agent Runtime (HPA)] ─┘
@@ -249,7 +249,7 @@ The Foundation source tree under `src/eaip/` is organised by **architectural
 layer**, not by feature. Each package documents its own contract and exposes
 a curated `__init__.py`. Layers depend strictly downward:
 
-```
+```text
                             ┌──────────────────────────────┐
                             │      application/            │   bootstrap + runner
                             └──────────────────────────────┘
@@ -314,11 +314,11 @@ async def main() -> None:
 
 ### Architectural Invariants
 
-* The Foundation **never** imports from a capability pack. Dependency arrows always point **down** the layer diagram.
-* All public symbols are typed; `mypy --strict` is the contract.
-* No module performs I/O at import time.
-* All timestamps are timezone-aware UTC; identifiers are typed `str` subclasses.
-* Cross-cutting failures (DI cycles, registry conflicts, plugin contract violations) raise typed exceptions carrying stable `ErrorCode`s.
+- The Foundation **never** imports from a capability pack. Dependency arrows always point **down** the layer diagram.
+- All public symbols are typed; `mypy --strict` is the contract.
+- No module performs I/O at import time.
+- All timestamps are timezone-aware UTC; identifiers are typed `str` subclasses.
+- Cross-cutting failures (DI cycles, registry conflicts, plugin contract violations) raise typed exceptions carrying stable `ErrorCode`s.
 
 ---
 
