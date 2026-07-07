@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — Security Scans
 # -----------------------------------------------------------------------------
@@ -8,7 +9,6 @@
 # =============================================================================
 
 name: Security
-
 on:
   push:
     branches: [main, "release/**"]
@@ -18,15 +18,12 @@ on:
     # Every Monday at 06:00 UTC
     - cron: "0 6 * * 1"
   workflow_dispatch:
-
 permissions:
   contents: read
   security-events: write
-
 concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   bandit:
     name: bandit (SAST)
@@ -34,17 +31,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-
       - name: Install bandit
         run: |
           python -m pip install --upgrade pip
           python -m pip install "bandit[toml]>=1.7.10"
-
       - name: Run bandit
         run: |
           if [ -d src ]; then
@@ -52,28 +46,23 @@ jobs:
           else
             echo "src/ does not yet exist — bandit has nothing to scan (EP-0001A is documentation-only)."
           fi
-
   pip-audit:
     name: pip-audit (deps)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-
       - name: Install project + pip-audit
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,test]"
           python -m pip install "pip-audit>=2.7.3"
-
       - name: Audit
         run: pip-audit --strict --progress-spinner off
-
   gitleaks:
     name: gitleaks (secrets)
     runs-on: ubuntu-latest
@@ -82,7 +71,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v3
         env:

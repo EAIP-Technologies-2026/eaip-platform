@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 #: Re-export the package version for convenience.
-from eaip._version import __version__ as PLATFORM_VERSION
+from eaip._version import __version__
 from eaip.version.semver import Version
 
-__all__ = ["PLATFORM_VERSION", "Version"]
+__all__ = ["Version", "__version__"]

@@ -38,6 +38,7 @@ class PlatformBuilder:
     """
 
     def __init__(self) -> None:
+        """Initializes a new PlatformBuilder instance."""
         self._settings: PlatformSettings | None = None
         self._container: Container | None = None
         self._plugins: list[Plugin] = []
@@ -47,6 +48,14 @@ class PlatformBuilder:
     # Configuration knobs
     # ------------------------------------------------------------------
     def with_settings(self, settings: PlatformSettings) -> Self:
+        """Sets the platform settings for the builder.
+
+        Args:
+            settings: The platform settings to use.
+
+        Returns:
+            The builder instance.
+        """
         self._settings = settings
         return self
 
@@ -56,6 +65,14 @@ class PlatformBuilder:
         return self
 
     def with_plugin(self, plugin: Plugin) -> Self:
+        """Adds a plugin to be installed by the platform.
+
+        Args:
+            plugin: The plugin to add.
+
+        Returns:
+            The builder instance.
+        """
         self._plugins.append(plugin)
         return self
 
@@ -68,6 +85,11 @@ class PlatformBuilder:
     # Build
     # ------------------------------------------------------------------
     def build(self) -> Platform:
+        """Constructs and returns the configured Platform instance.
+
+        Returns:
+            The constructed Platform instance.
+        """
         settings = self._settings or load_platform_settings()
 
         if self._configure_logging:

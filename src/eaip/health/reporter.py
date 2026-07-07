@@ -15,12 +15,22 @@ class HealthReporter:
     """Registers checks and produces a roll-up :class:`HealthReport`."""
 
     def __init__(self, *, name: str = "platform") -> None:
+        """Initializes a new HealthReporter.
+
+        Args:
+            name: The name of the reporter component. Defaults to "platform".
+        """
         self._name = name
         self._checks: dict[str, HealthCheck] = {}
         self._log = get_logger("eaip.health.reporter")
 
     @property
     def name(self) -> str:
+        """Returns the name of the reporter.
+
+        Returns:
+            The reporter name.
+        """
         return self._name
 
     def register(self, check: HealthCheck) -> None:
@@ -33,9 +43,22 @@ class HealthReporter:
         self._checks[check.name] = check
 
     def unregister(self, name: str) -> bool:
+        """Remove the health check by name.
+
+        Args:
+            name: The name of the health check to remove.
+
+        Returns:
+            True if the check existed and was removed, False otherwise.
+        """
         return self._checks.pop(name, None) is not None
 
     def registered(self) -> list[str]:
+        """Returns the names of all registered health checks.
+
+        Returns:
+            A list of check names in alphabetical order.
+        """
         return sorted(self._checks)
 
     async def report(self) -> HealthReport:

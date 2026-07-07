@@ -38,6 +38,11 @@ class HealthReport(BaseModel):
     children: tuple[HealthReport, ...] = Field(default=())
 
     def is_healthy(self) -> bool:
+        """Checks if the component is healthy.
+
+        Returns:
+            True if status is HEALTHY, False otherwise.
+        """
         return self.status is HealthStatus.HEALTHY
 
 
@@ -47,7 +52,13 @@ class HealthCheck(Protocol):
 
     name: str
 
-    async def check(self) -> HealthReport: ...
+    async def check(self) -> HealthReport:
+        """Runs the health check.
+
+        Returns:
+            A :class:`HealthReport` describing the health of the component.
+        """
+        ...
 
 
 def callable_check(name: str, fn: Callable[[], Awaitable[HealthReport]]) -> HealthCheck:
@@ -55,9 +66,15 @@ def callable_check(name: str, fn: Callable[[], Awaitable[HealthReport]]) -> Heal
 
     class _AdHoc:
         def __init__(self) -> None:
+            """Initializes the AdHoc health check."""
             self.name = name
 
         async def check(self) -> HealthReport:
+            """Runs the health check by calling the wrapped function.
+
+            Returns:
+                A :class:`HealthReport` result.
+            """
             return await fn()
 
     return _AdHoc()

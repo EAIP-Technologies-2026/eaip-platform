@@ -24,6 +24,11 @@ class Factory(Generic[T]):
     __slots__ = ("_builders", "_name")
 
     def __init__(self, *, name: str) -> None:
+        """Initializes a new Factory.
+
+        Args:
+            name: The name of the factory.
+        """
         if not name:
             raise ValueError("factory name must be non-empty")
         self._name = name
@@ -31,6 +36,11 @@ class Factory(Generic[T]):
 
     @property
     def name(self) -> str:
+        """Returns the name of the factory.
+
+        Returns:
+            The factory name.
+        """
         return self._name
 
     def register(self, key: str, builder: Builder[T], *, replace: bool = False) -> None:
@@ -53,7 +63,18 @@ class Factory(Generic[T]):
         return self._builders.pop(key, None) is not None
 
     def create(self, key: str, /, **kwargs: object) -> T:
-        """Invoke the builder registered under ``key``."""
+        """Invoke the builder registered under ``key``.
+
+        Args:
+            key: The key under which the builder is registered.
+            **kwargs: Keyword arguments to pass to the builder.
+
+        Returns:
+            The object created by the builder.
+
+        Raises:
+            NotFoundError: If no builder is registered under ``key``.
+        """
         builder = self._builders.get(key)
         if builder is None:
             raise NotFoundError(
@@ -63,12 +84,30 @@ class Factory(Generic[T]):
         return builder(**kwargs)
 
     def keys(self) -> list[str]:
+        """Returns the registered keys in alphabetical order.
+
+        Returns:
+            A list of keys.
+        """
         return sorted(self._builders)
 
     def __contains__(self, key: str) -> bool:
+        """Checks if a key is registered.
+
+        Args:
+            key: The key to check.
+
+        Returns:
+            True if the key is registered, False otherwise.
+        """
         return key in self._builders
 
     def __len__(self) -> int:
+        """Returns the number of registered builders.
+
+        Returns:
+            The number of builders.
+        """
         return len(self._builders)
 
 

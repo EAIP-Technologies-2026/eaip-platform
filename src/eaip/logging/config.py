@@ -37,7 +37,11 @@ class LoggingConfig(BaseModel):
     )
 
 
-_configured: bool = False
+class _State:
+    configured: bool = False
+
+
+_state = _State()
 
 
 def configure_logging(config: LoggingConfig | None = None) -> None:
@@ -94,13 +98,12 @@ def configure_logging(config: LoggingConfig | None = None) -> None:
         cache_logger_on_first_use=True,
     )
 
-    global _configured
-    _configured = True
+    _state.configured = True
 
 
 def is_configured() -> bool:
     """Return ``True`` if :func:`configure_logging` has run at least once."""
-    return _configured
+    return _state.configured
 
 
 __all__ = ["LogFormat", "LoggingConfig", "configure_logging", "is_configured"]

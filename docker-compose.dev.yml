@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — Local development stack
 # -----------------------------------------------------------------------------
@@ -27,7 +28,6 @@ services:
       - eaip-pip-cache:/root/.cache/pip
       - eaip-precommit-cache:/root/.cache/pre-commit
     command: bash
-
 volumes:
   eaip-pip-cache:
   eaip-precommit-cache:

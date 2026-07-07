@@ -8,7 +8,7 @@ APIs, which conflicts with using it as a "no value supplied" marker. The
 from __future__ import annotations
 
 from enum import Enum
-from typing import Final, Literal
+from typing import Final, Literal, Self
 
 
 class UnsetType(Enum):
@@ -20,10 +20,12 @@ class UnsetType(Enum):
 
     UNSET = "UNSET"
 
-    def __bool__(self) -> Literal[False]:  # pragma: no cover - trivial
+    def __bool__(self: Self) -> Literal[False]:  # pragma: no cover - trivial
+        """Return False for truthiness check."""
         return False
 
-    def __repr__(self) -> str:  # pragma: no cover - trivial
+    def __repr__(self: Self) -> str:  # pragma: no cover - trivial
+        """Return the representation of the sentinel."""
         return "UNSET"
 
 

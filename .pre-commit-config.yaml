@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — pre-commit configuration
 # -----------------------------------------------------------------------------
@@ -7,11 +8,9 @@
 
 default_language_version:
   python: python3
-
 default_stages: [pre-commit]
 fail_fast: false
 minimum_pre_commit_version: "3.7.0"
-
 repos:
   # ---------------------------------------------------------------------------
   # Generic hygiene
@@ -28,7 +27,7 @@ repos:
       - id: check-symlinks
       - id: check-toml
       - id: check-yaml
-        args: ["--unsafe"]   # allow custom tags (GitHub Actions, MkDocs)
+        args: ["--unsafe"] # allow custom tags (GitHub Actions, MkDocs)
       - id: check-json
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -37,7 +36,6 @@ repos:
         args: ["--fix=lf"]
       - id: detect-private-key
       - id: forbid-submodules
-
   # ---------------------------------------------------------------------------
   # Python — ruff (lint + format) and black (canonical formatter)
   # ---------------------------------------------------------------------------
@@ -47,13 +45,11 @@ repos:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
       - id: ruff-format
-
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 24.10.0
     hooks:
       - id: black
         args: ["--config=pyproject.toml"]
-
   # ---------------------------------------------------------------------------
   # Python — type checking
   # ---------------------------------------------------------------------------
@@ -62,10 +58,9 @@ repos:
     hooks:
       - id: mypy
         args: ["--config-file=pyproject.toml"]
-        additional_dependencies: []
+        additional_dependencies: ["pydantic", "pydantic-settings", "structlog", "anyio"]
         # Restrict to src/ to avoid noise from generated/vendored trees.
         files: ^src/
-
   # ---------------------------------------------------------------------------
   # Secrets scanning
   # ---------------------------------------------------------------------------
@@ -82,7 +77,6 @@ repos:
             package-lock\.json|
             .*\.svg
           )$
-
   # ---------------------------------------------------------------------------
   # Markdown
   # ---------------------------------------------------------------------------
@@ -91,7 +85,6 @@ repos:
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013", "MD033", "MD041", "MD024", "--"]
-
   # ---------------------------------------------------------------------------
   # YAML / TOML / JSON formatting
   # ---------------------------------------------------------------------------
@@ -102,7 +95,6 @@ repos:
         args: ["-conf", ".yamlfmt.yml"]
         # Ship a minimal yamlfmt config inline by allowing default if missing.
         require_serial: true
-
   # ---------------------------------------------------------------------------
   # Shell scripts
   # ---------------------------------------------------------------------------
@@ -110,7 +102,6 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-
   # ---------------------------------------------------------------------------
   # GitHub Actions workflow linting
   # ---------------------------------------------------------------------------
@@ -118,7 +109,6 @@ repos:
     rev: v1.7.3
     hooks:
       - id: actionlint
-
   # ---------------------------------------------------------------------------
   # Commit message — Conventional Commits + DCO sign-off
   # ---------------------------------------------------------------------------

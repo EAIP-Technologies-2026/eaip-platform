@@ -1,9 +1,9 @@
+---
 name: 🐛 Bug Report
 description: Report a reproducible defect in EAIP.
 title: "bug: <concise summary>"
 labels: ["type/bug", "needs-triage"]
 assignees: []
-
 body:
   - type: markdown
     attributes:
@@ -15,7 +15,6 @@ body:
         Before submitting, please:
         - Search [open](https://github.com/subham1902/eaip-platform/issues?q=is%3Aissue+is%3Aopen+label%3Atype%2Fbug) and [closed](https://github.com/subham1902/eaip-platform/issues?q=is%3Aissue+is%3Aclosed+label%3Atype%2Fbug) issues to avoid duplicates.
         - Verify the bug reproduces on the latest released version (or `main`).
-
   - type: checkboxes
     id: prerequisites
     attributes:
@@ -27,7 +26,6 @@ body:
           required: true
         - label: This is **not** a security vulnerability (which must go through `SECURITY.md`).
           required: true
-
   - type: textarea
     id: summary
     attributes:
@@ -36,7 +34,6 @@ body:
       placeholder: "Calling `eaip agents run` exits 0 even when the run fails."
     validations:
       required: true
-
   - type: textarea
     id: reproduction
     attributes:
@@ -50,7 +47,6 @@ body:
       render: bash
     validations:
       required: true
-
   - type: textarea
     id: expected
     attributes:
@@ -58,7 +54,6 @@ body:
       placeholder: "Exit code should be non-zero when the run errors."
     validations:
       required: true
-
   - type: textarea
     id: actual
     attributes:
@@ -67,7 +62,6 @@ body:
       render: shell
     validations:
       required: true
-
   - type: input
     id: version
     attributes:
@@ -75,7 +69,6 @@ body:
       placeholder: "0.0.1 (or commit SHA)"
     validations:
       required: true
-
   - type: dropdown
     id: python
     attributes:
@@ -87,7 +80,6 @@ body:
         - other (specify in additional context)
     validations:
       required: true
-
   - type: dropdown
     id: os
     attributes:
@@ -100,7 +92,6 @@ body:
         - Other
     validations:
       required: true
-
   - type: dropdown
     id: severity
     attributes:
@@ -112,7 +103,6 @@ body:
         - Critical — data loss, security, or outage
     validations:
       required: true
-
   - type: textarea
     id: additional
     attributes:

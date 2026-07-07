@@ -2,8 +2,8 @@
 
 All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog 1.1.0](<https://keepachangelog.com/en/1.1.0/>),
+and this project adheres to [Semantic Versioning 2.0.0](<https://semver.org/spec/v2.0.0.html>).
 
 Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **Fixed** · **Security**.
 
@@ -53,11 +53,11 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 - **Registries** — generic observable `Registry[T]` plus domain wrappers (`CapabilityRegistry`, `PluginRegistry`, feature flags).
 - **Plugin contract** — `PluginManifest`, `Plugin` Protocol, `PluginLoader` with contract-version validation.
 - **Structured logging** — `structlog`-backed JSON & console formats, contextvar propagation, redaction of sensitive keys.
-- **Events** — in-process `EventBus` with sync/async handlers, subclass routing, and isolated failure semantics.
+- **Events** — in-process `EventBus` with sync/async handlers, subclass routing, and isolated failure.
 - **Health** — tri-state `HealthStatus`, async `HealthCheck` protocol, aggregating `HealthReporter`.
-- **Config & settings** — layered config sources (`DictSource`, `EnvSource`, `FileSource`, `LayeredSource`) and a typed `PlatformSettings` hierarchy.
+- **Config & settings** — layered sources (`DictSource`, `EnvSource`, `FileSource`, `LayeredSource`) and a typed `PlatformSettings` hierarchy.
 - **Ports & default adapters** — `ClockPort`, `IdGeneratorPort`, `SecretProviderPort` with `SystemClock`, `UuidIdGenerator`, `EnvSecretProvider` defaults.
-- **Shared primitives** — typed `str` identifiers (`CorrelationId`, `RunId`, `ComponentId`, `Slug`), `Result`/`Ok`/`Err`, `Duration`, `UNSET` sentinel, JSON type aliases.
+- **Shared primitives** — typed `str` identifiers (`CorrelationId`, `RunId`, `ComponentId`, `Slug`), `Result`/`Ok`/`Err`, `Duration`, `UNSET`, JSON aliases.
 - **Exceptions** — single hierarchy under `EAIPError` with stable `ErrorCode`s and structured `context`.
 - **Tests** — 14 unit-test modules with **152 tests passing in <1s**; 84% coverage; pytest + pytest-asyncio fixtures.
 
@@ -114,6 +114,6 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
-[Unreleased]: https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD
-[0.0.2]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2
-[0.0.1]: https://github.com/subham1902/eaip-platform/releases/tag/v0.0.1
+[Unreleased]: <https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD>
+[0.0.2]: <https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2>
+[0.0.1]: <https://github.com/subham1902/eaip-platform/releases/tag/v0.0.1>

@@ -1,5 +1,7 @@
-"""Imperative validation helpers used by services that cannot rely on
-Pydantic's declarative parsing (e.g. dynamic config from plugins).
+"""Imperative validation helpers.
+
+These helpers are used by services that cannot rely on Pydantic's declarative
+parsing (e.g. dynamic config from plugins).
 """
 
 from __future__ import annotations

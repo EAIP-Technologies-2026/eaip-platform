@@ -66,7 +66,7 @@ This document describes the **target architecture** of the Enterprise Autonomous
 │                                AGENT RUNTIME                                    │
 │  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Planner  │→ │ Router  │→ │ Executor │→ │ Guardrails│→ │ State / Memory  │  │
-│  └──────────┘  └─────────┘  └──────────┘  └──────────┘  └──────────────────┘  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘  │
 └────────────────────────────────────────────────────────────────────────────────┘
                                               │
         ┌─────────────────┬──────────────────┼──────────────────┬─────────────────┐
@@ -314,11 +314,11 @@ async def main() -> None:
 
 ### Architectural Invariants
 
-* The Foundation **never** imports from a capability pack. Dependency arrows always point **down** the layer diagram.
-* All public symbols are typed; `mypy --strict` is the contract.
-* No module performs I/O at import time.
-* All timestamps are timezone-aware UTC; identifiers are typed `str` subclasses.
-* Cross-cutting failures (DI cycles, registry conflicts, plugin contract violations) raise typed exceptions carrying stable `ErrorCode`s.
+- The Foundation **never** imports from a capability pack. Dependency arrows always point **down** the layer diagram.
+- All public symbols are typed; `mypy --strict` is the contract.
+- No module performs I/O at import time.
+- All timestamps are timezone-aware UTC; identifiers are typed `str` subclasses.
+- Cross-cutting failures (DI cycles, registry conflicts, plugin contract violations) raise typed exceptions carrying stable `ErrorCode`s.
 
 ---
 

@@ -12,6 +12,11 @@ class SystemClock(ClockPort):
     """Wall-clock implementation returning timezone-aware UTC datetimes."""
 
     def now(self) -> datetime:
+        """Returns the current UTC time.
+
+        Returns:
+            The current timezone-aware UTC datetime.
+        """
         return utc_now()
 
 

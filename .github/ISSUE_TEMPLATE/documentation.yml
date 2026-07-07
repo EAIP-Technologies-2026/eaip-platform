@@ -1,9 +1,9 @@
+---
 name: 📚 Documentation
 description: Report a documentation gap, error, or improvement.
 title: "docs: <concise summary>"
 labels: ["type/docs", "needs-triage"]
 assignees: []
-
 body:
   - type: textarea
     id: location
@@ -13,7 +13,6 @@ body:
       placeholder: "ARCHITECTURE.md → Memory section"
     validations:
       required: true
-
   - type: dropdown
     id: kind
     attributes:
@@ -27,7 +26,6 @@ body:
         - Other
     validations:
       required: true
-
   - type: textarea
     id: details
     attributes:
@@ -35,7 +33,6 @@ body:
       description: What is wrong or missing? If you have a suggested fix, please include it.
     validations:
       required: true
-
   - type: checkboxes
     id: contribution
     attributes:

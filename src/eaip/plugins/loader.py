@@ -24,12 +24,18 @@ class PluginLoader:
     """Validates plugin contracts, registers them, and orchestrates activation."""
 
     def __init__(self, registry: PluginRegistry) -> None:
+        """Initializes a new PluginLoader instance.
+
+        Args:
+            registry: The plugin registry to use.
+        """
         self._registry = registry
         self._activated: set[str] = set()
         self._log = get_logger("eaip.plugins.loader")
 
     @property
     def activated(self) -> list[str]:
+        """Returns the list of activated plugin names."""
         return sorted(self._activated)
 
     # ------------------------------------------------------------------
@@ -46,6 +52,14 @@ class PluginLoader:
         )
 
     def uninstall(self, name: str) -> bool:
+        """Uninstalls a plugin by name.
+
+        Args:
+            name: The name of the plugin to uninstall.
+
+        Returns:
+            True if the plugin was removed, False otherwise.
+        """
         if name in self._activated:
             raise PluginError(
                 f"cannot uninstall active plugin {name!r}; deactivate first",
@@ -58,6 +72,7 @@ class PluginLoader:
 
     @staticmethod
     def _validate_contract(plugin: Plugin) -> None:
+        """Validates the plugin contract."""
         if not isinstance(plugin, Plugin):  # runtime_checkable Protocol
             raise PluginContractViolationError(
                 "plugin does not satisfy the Plugin protocol",
@@ -80,6 +95,12 @@ class PluginLoader:
     # Activation
     # ------------------------------------------------------------------
     async def activate(self, name: str, platform: Platform) -> None:
+        """Activates a plugin by name.
+
+        Args:
+            name: The name of the plugin to activate.
+            platform: The platform instance.
+        """
         plugin = self._registry.get(name)
         if name in self._activated:
             return  # idempotent
@@ -95,6 +116,12 @@ class PluginLoader:
         self._log.info("plugin.activated", plugin=name)
 
     async def deactivate(self, name: str, platform: Platform) -> None:
+        """Deactivates a plugin by name.
+
+        Args:
+            name: The name of the plugin to deactivate.
+            platform: The platform instance.
+        """
         if name not in self._activated:
             return  # idempotent
         plugin = self._registry.get(name)
@@ -105,10 +132,20 @@ class PluginLoader:
             self._log.info("plugin.deactivated", plugin=name)
 
     async def activate_all(self, platform: Platform) -> None:
+        """Activates all installed plugins.
+
+        Args:
+            platform: The platform instance.
+        """
         for plugin in self._registry.all():
             await self.activate(plugin.manifest.name, platform)
 
     async def deactivate_all(self, platform: Platform) -> None:
+        """Deactivates all activated plugins in reverse order of activation.
+
+        Args:
+            platform: The platform instance.
+        """
         # Reverse order of activation.
         for name in reversed(list(self._activated)):
             await self.deactivate(name, platform)

@@ -36,8 +36,7 @@ make check              # ruff + black + mypy + pytest
 
 Verify the Foundation is wired correctly:
 
-```bash
-PYTHONPATH=src python -c "
+```python
 import asyncio
 from eaip.application import build_platform
 
@@ -47,7 +46,6 @@ async def main():
         print(p.name, p.version, p.phase)
 
 asyncio.run(main())
-"
 ```
 
 ## The Five-Minute Tour
@@ -171,9 +169,9 @@ greeter = container.resolve(Greeter)
 ```
 
 Scopes:
-* `SINGLETON` — built once per container (default).
-* `TRANSIENT` — rebuilt on every resolution.
-* `SCOPED` — one per child container created via `container.create_scope()`.
+- `SINGLETON` — built once per container (default).
+- `TRANSIENT` — rebuilt on every resolution.
+- `SCOPED` — one per child container created via `container.create_scope()`.
 
 Cyclic dependencies raise `DependencyCycleError`; type mismatches raise
 `RegistryTypeMismatchError`.
@@ -299,17 +297,17 @@ The platform is built **without** real logging configuration in tests
 
 ## Style & Conventions
 
-* Public symbols are fully typed. `Any` requires justification.
-* No I/O at import time.
-* All datetimes are timezone-aware UTC (`datetime.now(timezone.utc)`).
-* Identifiers are typed `str` subclasses (`ComponentId`, `RunId`, ...).
-* Errors are typed and carry stable `ErrorCode`s; never `except Exception:`
+- Public symbols are fully typed. `Any` requires justification.
+- No I/O at import time.
+- All datetimes are timezone-aware UTC (`datetime.now(timezone.utc)`).
+- Identifiers are typed `str` subclasses (`ComponentId`, `RunId`, ...).
+- Errors are typed and carry stable `ErrorCode`s; never `except Exception:`
   without re-raising or logging.
-* Public functions and classes carry Google-style docstrings.
+- Public functions and classes carry Google-style docstrings.
 
 ## Reference
 
-* **Architecture:** [`ARCHITECTURE.md`](ARCHITECTURE.md)
-* **Decisions:** [`DECISION_REGISTER.md`](DECISION_REGISTER.md)
-* **Versioning:** [`VERSIONING.md`](VERSIONING.md)
-* **Per-package docs:** every directory under `src/eaip/*/README.md`.
+- **Architecture:** [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- **Decisions:** [`DECISION_REGISTER.md`](DECISION_REGISTER.md)
+- **Versioning:** [`VERSIONING.md`](VERSIONING.md)
+- **Per-package docs:** every directory under `src/eaip/*/README.md`.

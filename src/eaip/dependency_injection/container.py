@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, TypeVar, cast
 
 from eaip.dependency_injection.scope import Scope
@@ -40,7 +40,8 @@ class Provider:
     factory: Factory
     scope: Scope
     instance: Any = None
-    _has_instance: bool = field(default=False, repr=False)
+    _has_instance: bool = False
+
 
 
 class _ResolveStack:
@@ -49,6 +50,7 @@ class _ResolveStack:
     __slots__ = ("frames",)
 
     def __init__(self) -> None:
+        """Initialize an empty resolution stack."""
         self.frames: list[type[Any]] = []
 
 
@@ -62,6 +64,11 @@ class Container:
     """
 
     def __init__(self, *, parent: Container | None = None) -> None:
+        """Initialize a new DI container.
+
+        Args:
+            parent: An optional parent container, whose singletons will be shared.
+        """
         self._providers: dict[type[Any], Provider] = {}
         self._lock = threading.RLock()
         self._stack = _ResolveStack()
@@ -191,9 +198,22 @@ class Container:
     # Introspection & lifecycle
     # ------------------------------------------------------------------
     def has(self, key: type[Any]) -> bool:
+        """Check if a binding is registered for ``key``.
+
+        Args:
+            key: The type to check.
+
+        Returns:
+            True if a binding exists, False otherwise.
+        """
         return self._find(key) is not None
 
     def keys(self) -> list[type[Any]]:
+        """Return the list of all registered keys.
+
+        Returns:
+            A list of all registered types.
+        """
         return list(self._providers)
 
     def create_scope(self) -> Container:

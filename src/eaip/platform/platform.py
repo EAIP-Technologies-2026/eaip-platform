@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from eaip._version import __version__
 from eaip.capabilities.registry import CapabilityRegistry
 from eaip.core.feature_flags import FeatureFlagRegistry
 from eaip.dependency_injection.container import Container
@@ -60,6 +61,19 @@ class Platform:
         plugin_loader: PluginLoader,
         feature_flags: FeatureFlagRegistry,
     ) -> None:
+        """Initializes the Platform with all required subsystems.
+
+        Args:
+            settings: The platform settings.
+            container: The DI container.
+            lifecycle: The lifecycle manager.
+            events: The event bus.
+            health: The health reporter.
+            capabilities: The capability registry.
+            plugins: The plugin registry.
+            plugin_loader: The plugin loader.
+            feature_flags: The feature flag registry.
+        """
         self._settings = settings
         self._container = container
         self._lifecycle = lifecycle
@@ -76,20 +90,22 @@ class Platform:
     # ------------------------------------------------------------------
     @property
     def name(self) -> str:
+        """Returns the application name."""
         return self._settings.core.app_name
 
     @property
     def version(self) -> str:
-        from eaip._version import __version__
-
+        """Returns the application version."""
         return __version__
 
     @property
     def settings(self) -> PlatformSettings:
+        """Returns the platform settings."""
         return self._settings
 
     @property
     def phase(self) -> LifecyclePhase:
+        """Returns the current lifecycle phase."""
         return self._lifecycle.phase
 
     # ------------------------------------------------------------------
@@ -97,40 +113,49 @@ class Platform:
     # ------------------------------------------------------------------
     @property
     def container(self) -> Container:
+        """Returns the DI container."""
         return self._container
 
     @property
     def lifecycle(self) -> LifecycleManager:
+        """Returns the lifecycle manager."""
         return self._lifecycle
 
     @property
     def events(self) -> EventBus:
+        """Returns the event bus."""
         return self._events
 
     @property
     def health(self) -> HealthReporter:
+        """Returns the health reporter."""
         return self._health
 
     @property
     def capabilities(self) -> CapabilityRegistry:
+        """Returns the capability registry."""
         return self._capabilities
 
     @property
     def plugins(self) -> PluginRegistry:
+        """Returns the plugin registry."""
         return self._plugins
 
     @property
     def plugin_loader(self) -> PluginLoader:
+        """Returns the plugin loader."""
         return self._plugin_loader
 
     @property
     def feature_flags(self) -> FeatureFlagRegistry:
+        """Returns the feature flag registry."""
         return self._feature_flags
 
     # ------------------------------------------------------------------
     # Lifecycle convenience
     # ------------------------------------------------------------------
     async def start(self) -> None:
+        """Starts the platform and all its plugins."""
         bind_context(
             app=self.name,
             env=str(self._settings.core.environment),
@@ -143,6 +168,7 @@ class Platform:
         self._log.info("platform.running")
 
     async def stop(self) -> None:
+        """Stops the platform and all its plugins."""
         self._log.info("platform.stopping")
         try:
             await self._plugin_loader.deactivate_all(self)
@@ -151,10 +177,12 @@ class Platform:
         self._log.info("platform.stopped")
 
     async def __aenter__(self) -> Platform:
+        """Enters the asynchronous context manager."""
         await self.start()
         return self
 
     async def __aexit__(self, *_: object) -> None:
+        """Exits the asynchronous context manager."""
         await self.stop()
 
 

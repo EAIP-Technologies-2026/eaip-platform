@@ -12,7 +12,13 @@ if TYPE_CHECKING:  # pragma: no cover
 class Healthcheckable(Protocol):
     """A component that can report its own health on demand."""
 
-    async def check_health(self) -> HealthReport: ...
+    async def check_health(self) -> HealthReport:
+        """Reports the component's health.
+
+        Returns:
+            The health report.
+        """
+        ...
 
 
 __all__ = ["Healthcheckable"]

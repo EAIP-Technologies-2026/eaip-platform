@@ -4,7 +4,7 @@
 [![Python Versions](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](pyproject.toml)
 [![Code Style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Linter: ruff](https://img.shields.io/badge/lint-ruff-46aef7.svg)](https://github.com/astral-sh/ruff)
-[![Type Checker: mypy](https://img.shields.io/badge/types-mypy-blue.svg)](http://mypy-lang.org/)
+[![Type Checker: mypy](https://img.shields.io/badge/types-mypy-blue.svg)](<http://mypy-lang.org/>)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen)](https://pre-commit.com/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org)
 

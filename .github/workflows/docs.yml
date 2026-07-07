@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # EAIP — Documentation & repository health checks
 # -----------------------------------------------------------------------------
@@ -7,7 +8,6 @@
 # =============================================================================
 
 name: Docs
-
 on:
   push:
     branches: [main, "release/**"]
@@ -24,14 +24,11 @@ on:
       - "scripts/healthcheck.sh"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: docs-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate-docs:
     name: validate documentation
@@ -39,13 +36,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-
       - name: Validate Markdown links + governance docs
         run: bash scripts/validate-docs.sh
-
       - name: Repository healthcheck
         run: bash scripts/healthcheck.sh

@@ -40,7 +40,7 @@ This project and everyone participating in it is governed by the [EAIP Code of C
 - **Design** — UX, diagrams, accessibility audits.
 - **Operations** — CI, release tooling, observability dashboards.
 
-If you are not sure where to start, look for issues labelled [`good first issue`](https://github.com/subham1902/eaip-platform/labels/good%20first%20issue) or [`help wanted`](https://github.com/subham1902/eaip-platform/labels/help%20wanted).
+If you are not sure where to start, look for issues labelled [`good first issue`](<https://github.com/subham1902/eaip-platform/labels/good%20first%20issue>) or [`help wanted`](<https://github.com/subham1902/eaip-platform/labels/help%20wanted>).
 
 ## Getting Started
 
@@ -54,7 +54,7 @@ If you are not sure where to start, look for issues labelled [`good first issue`
 ### Bootstrap
 
 ```bash
-git clone https://github.com/subham1902/eaip-platform.git
+git clone <https://github.com/subham1902/eaip-platform.git>
 cd eaip-platform
 make bootstrap        # creates .venv/, installs dev deps, installs pre-commit hooks
 ```
@@ -85,7 +85,7 @@ We do **not** use long-lived feature branches. If your work spans multiple PRs, 
 
 ## Commit Messages
 
-We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+We follow [Conventional Commits 1.0.0](<https://www.conventionalcommits.org/en/v1.0.0/>).
 
 ```
 <type>(<scope>)!: <subject>
@@ -117,7 +117,7 @@ Signed-off-by: Jane Doe <jane@example.com>
 
 ## Sign-Off (DCO)
 
-Every commit must carry a `Signed-off-by` trailer asserting the [Developer Certificate of Origin](https://developercertificate.org/):
+Every commit must carry a `Signed-off-by` trailer asserting the [Developer Certificate of Origin](<https://developercertificate.org/>):
 
 ```bash
 git commit -s -m "feat(cli): add `eaip agents list` command"
@@ -164,7 +164,7 @@ The DCO check is enforced in CI. Unsigned commits will block the merge.
 ## Documentation Standards
 
 - Update `README.md`, `ARCHITECTURE.md`, and any relevant doc when behaviour or contracts change.
-- Add an entry to `CHANGELOG.md` under `## [Unreleased]` using the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) categories.
+- Add an entry to `CHANGELOG.md` under `## [Unreleased]` using the [Keep a Changelog](<https://keepachangelog.com/en/1.1.0/>) categories.
 - New architectural decisions get an entry in `DECISION_REGISTER.md` (lightweight ADR).
 - New risks or debt get logged in `RISK_REGISTER.md` / `TECH_DEBT.md` with an owner.
 
@@ -194,7 +194,7 @@ Always search existing issues first.
 
 ## Governance
 
-- **BDFL / Lead Maintainer:** Subham Panigrahi ([@subham1902](https://github.com/subham1902)).
+- **BDFL / Lead Maintainer:** Subham Panigrahi ([@subham1902](<https://github.com/subham1902>)).
 - **Maintainers:** listed in [`.github/CODEOWNERS`](.github/CODEOWNERS).
 - **Decisions:** consensus-seeking; lead maintainer breaks ties. Significant decisions are recorded in [`DECISION_REGISTER.md`](DECISION_REGISTER.md).
 

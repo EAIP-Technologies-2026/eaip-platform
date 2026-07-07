@@ -10,7 +10,13 @@ from typing import Protocol, runtime_checkable
 class ClockPort(Protocol):
     """Anything that can answer "what time is it (UTC)?"."""
 
-    def now(self) -> datetime: ...
+    def now(self) -> datetime:
+        """Returns the current UTC time.
+
+        Returns:
+            The current UTC time.
+        """
+        ...
 
 
 __all__ = ["ClockPort"]

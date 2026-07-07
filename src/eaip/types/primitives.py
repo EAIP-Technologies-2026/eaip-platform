@@ -17,8 +17,10 @@ NonEmptyStr = Annotated[
     StringConstraints(strip_whitespace=True, min_length=1, max_length=4096),
 ]
 
-#: A TCP port number (1–65535).
+#: A TCP port number (1-65535).
 Port = Annotated[int, Field(ge=1, le=65_535)]
+
+MAX_HOSTNAME_LENGTH = 253
 
 
 def _validate_host(value: str) -> str:
@@ -27,8 +29,8 @@ def _validate_host(value: str) -> str:
         raise ValueError("host name must not be empty")
     if any(ch.isspace() for ch in value):
         raise ValueError("host name must not contain whitespace")
-    if len(value) > 253:
-        raise ValueError("host name exceeds 253 characters")
+    if len(value) > MAX_HOSTNAME_LENGTH:
+        raise ValueError(f"host name exceeds {MAX_HOSTNAME_LENGTH} characters")
     return value
 
 

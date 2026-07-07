@@ -72,6 +72,15 @@ class EAIPError(Exception):
         cause: BaseException | None = None,
         severity: ErrorSeverity | None = None,
     ) -> None:
+        """Initialize a new EAIP error.
+
+        Args:
+            message: Human-readable, English-language description.
+            code: A stable :class:`ErrorCode`. Defaults to :attr:`ErrorCode.UNKNOWN`.
+            context: Optional structured metadata attached to the error.
+            cause: The underlying exception, if any.
+            severity: Classification used by logging/observability. Defaults to ERROR.
+        """
         super().__init__(message)
         self.code: ErrorCode = code or self.default_code
         self.context: dict[str, Any] = dict(context) if context else {}
@@ -102,7 +111,8 @@ class EAIPError(Exception):
             "cause": repr(self.__cause__) if self.__cause__ else None,
         }
 
-    def __repr__(self) -> str:  # pragma: no cover - trivial
+    def __repr__(self) -> str:
+        """Return a string representation of the error."""
         return (
             f"{type(self).__name__}(code={self.code!s}, "
             f"message={str(self)!r}, context={self.context!r})"

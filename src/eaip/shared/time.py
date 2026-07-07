@@ -9,9 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Final, Protocol, final, runtime_checkable
-
-UTC: Final = UTC
+from typing import Protocol, Self, final, runtime_checkable
 
 
 def utc_now() -> datetime:
@@ -23,7 +21,9 @@ def utc_now() -> datetime:
 class Clock(Protocol):
     """Abstract clock interface — see :mod:`eaip.infrastructure.clock`."""
 
-    def now(self) -> datetime: ...
+    def now(self: Self) -> datetime:
+        """Return the current time."""
+        ...
 
 
 @final
@@ -37,30 +37,37 @@ class Duration:
 
     microseconds: int
 
-    def __post_init__(self) -> None:
+    def __post_init__(self: Self) -> None:
+        """Validate that the duration is non-negative."""
         if self.microseconds < 0:
             raise ValueError("Duration must be non-negative")
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> Duration:
+    def from_seconds(cls: type[Self], seconds: float) -> Self:
+        """Create a Duration from seconds."""
         return cls(round(seconds * 1_000_000))
 
     @classmethod
-    def from_milliseconds(cls, ms: float) -> Duration:
+    def from_milliseconds(cls: type[Self], ms: float) -> Self:
+        """Create a Duration from milliseconds."""
         return cls(round(ms * 1_000))
 
     @classmethod
-    def from_timedelta(cls, td: timedelta) -> Duration:
+    def from_timedelta(cls: type[Self], td: timedelta) -> Self:
+        """Create a Duration from a timedelta."""
         return cls(int(td.total_seconds() * 1_000_000))
 
     @property
-    def seconds(self) -> float:
+    def seconds(self: Self) -> float:
+        """Return the duration in seconds."""
         return self.microseconds / 1_000_000
 
-    def to_timedelta(self) -> timedelta:
+    def to_timedelta(self: Self) -> timedelta:
+        """Convert to a timedelta."""
         return timedelta(microseconds=self.microseconds)
 
-    def __str__(self) -> str:  # pragma: no cover - trivial
+    def __str__(self: Self) -> str:  # pragma: no cover - trivial
+        """Return the string representation."""
         return f"{self.seconds:.6f}s"
 
 

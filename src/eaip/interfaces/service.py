@@ -48,6 +48,12 @@ class AbstractService(ABC):
     __slots__ = ("_id", "_name", "_state")
 
     def __init__(self, *, name: str, component_id: ComponentId | None = None) -> None:
+        """Initialize the service.
+
+        Args:
+            name: The name of the service.
+            component_id: The unique identifier for the service.
+        """
         if not name or not name.strip():
             raise ValueError("service name must be a non-empty string")
         self._id: ComponentId = component_id or ComponentId.new()
@@ -56,18 +62,22 @@ class AbstractService(ABC):
 
     @property
     def id(self) -> ComponentId:
+        """Return the unique identifier of the service."""
         return self._id
 
     @property
     def name(self) -> str:
+        """Return the name of the service."""
         return self._name
 
     @property
     def state(self) -> ServiceState:
+        """Return the current state of the service."""
         return self._state
 
     @final
     async def start(self) -> None:
+        """Start the service, transitioning it to the RUNNING state."""
         self._transition(ServiceState.STARTING)
         try:
             await self._on_start()
@@ -78,6 +88,7 @@ class AbstractService(ABC):
 
     @final
     async def stop(self) -> None:
+        """Stop the service, transitioning it to the STOPPED state."""
         # Stopping is permitted from RUNNING or FAILED.
         if self._state not in {ServiceState.RUNNING, ServiceState.FAILED}:
             raise LifecycleError(
@@ -99,6 +110,14 @@ class AbstractService(ABC):
         """Subclass hook performing the actual shutdown work."""
 
     def _transition(self, target: ServiceState) -> None:
+        """Transition the service state.
+
+        Args:
+            target: The target state to transition to.
+
+        Raises:
+            LifecycleError: If the transition is illegal.
+        """
         if target not in _ALLOWED[self._state]:
             raise LifecycleError(
                 f"illegal state transition: {self._state} → {target}",

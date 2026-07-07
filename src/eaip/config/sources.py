@@ -27,9 +27,19 @@ class DictSource(ConfigSource):
     __slots__ = ("_data",)
 
     def __init__(self, data: Mapping[str, Any]) -> None:
+        """Initialize DictSource with configuration data.
+
+        Args:
+            data: The initial dictionary-based configuration.
+        """
         self._data = dict(data)
 
     def load(self) -> Mapping[str, Any]:
+        """Return the configuration snapshot.
+
+        Returns:
+            The configuration mapping.
+        """
         return dict(self._data)
 
 
@@ -43,6 +53,15 @@ class EnvSource(ConfigSource):
     __slots__ = ("_environ", "_prefix")
 
     def __init__(self, *, prefix: str = "EAIP_", environ: Mapping[str, str] | None = None) -> None:
+        """Initialize EnvSource.
+
+        Args:
+            prefix: The environment variable prefix to match.
+            environ: Optional environment mapping; defaults to ``os.environ``.
+
+        Raises:
+            ConfigurationError: If prefix is empty or does not end with ``_``.
+        """
         if not prefix or not prefix.endswith("_"):
             raise ConfigurationError(
                 "EnvSource prefix must be non-empty and end with '_'",
@@ -52,6 +71,11 @@ class EnvSource(ConfigSource):
         self._environ = environ if environ is not None else os.environ
 
     def load(self) -> Mapping[str, Any]:
+        """Load configuration from environment variables.
+
+        Returns:
+            The loaded configuration mapping.
+        """
         result: dict[str, Any] = {}
         for raw_key, raw_value in self._environ.items():
             if not raw_key.startswith(self._prefix):
@@ -62,6 +86,13 @@ class EnvSource(ConfigSource):
 
     @staticmethod
     def _assign(target: dict[str, Any], path: list[str], value: str) -> None:
+        """Assign a value to the nested target dictionary.
+
+        Args:
+            target: The dictionary to update.
+            path: The path of keys to traverse.
+            value: The value to assign.
+        """
         node = target
         for key in path[:-1]:
             existing = node.get(key)
@@ -78,10 +109,24 @@ class FileSource(ConfigSource):
     __slots__ = ("_path", "_required")
 
     def __init__(self, path: str | Path, *, required: bool = True) -> None:
+        """Initialize FileSource.
+
+        Args:
+            path: Path to the configuration file.
+            required: Whether the file is required.
+        """
         self._path = Path(path)
         self._required = required
 
     def load(self) -> Mapping[str, Any]:
+        """Load configuration from a file.
+
+        Returns:
+            The loaded configuration mapping.
+
+        Raises:
+            ConfigurationError: If the file is not found (and required) or fails to parse.
+        """
         if not self._path.exists():
             if self._required:
                 raise ConfigurationError(
@@ -114,11 +159,24 @@ class LayeredSource(ConfigSource):
     __slots__ = ("_sources",)
 
     def __init__(self, *sources: ConfigSource) -> None:
+        """Initialize LayeredSource with multiple sources.
+
+        Args:
+            *sources: The configuration sources to layer.
+
+        Raises:
+            ConfigurationError: If no sources are provided.
+        """
         if not sources:
             raise ConfigurationError("LayeredSource requires at least one source")
         self._sources = sources
 
     def load(self) -> Mapping[str, Any]:
+        """Load configuration from all layered sources.
+
+        Returns:
+            The merged configuration mapping.
+        """
         result: dict[str, Any] = {}
         for source in self._sources:
             _deep_merge(result, dict(source.load()))
@@ -126,6 +184,12 @@ class LayeredSource(ConfigSource):
 
 
 def _deep_merge(dest: dict[str, Any], src: Mapping[str, Any]) -> None:
+    """Deep merge source mapping into destination dictionary.
+
+    Args:
+        dest: The destination dictionary to update.
+        src: The source mapping to merge.
+    """
     for key, value in src.items():
         if isinstance(value, Mapping) and isinstance(dest.get(key), dict):
             _deep_merge(dest[key], value)

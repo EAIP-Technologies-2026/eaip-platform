@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.version import PLATFORM_VERSION, Version
+from eaip.version import Version, __version__
 
 
 def test_platform_version_is_semver() -> None:
-    parsed = Version.parse(PLATFORM_VERSION)
+    parsed = Version.parse(__version__)
     assert parsed.major >= 0
 
 
