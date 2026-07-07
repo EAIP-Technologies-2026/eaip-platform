@@ -45,7 +45,7 @@ If you need guaranteed response times, prioritised fixes, private support channe
 
 ## Issue Lifecycle
 
-```
+```text
 new → triage → accepted → in-progress → fixed → released → closed
                 ↓
             needs-info → (stale after 30d) → closed

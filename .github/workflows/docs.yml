@@ -6,7 +6,6 @@
 # READMEs, and runs the repository healthcheck script. Independent of CI.yml
 # so doc-only PRs don't have to wait on the full test matrix.
 # =============================================================================
-
 name: Docs
 on:
   push:

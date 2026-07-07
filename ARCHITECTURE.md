@@ -48,7 +48,7 @@ This document describes the **target architecture** of the Enterprise Autonomous
 
 ## System Overview
 
-```
+```text
                          ┌────────────────────────────────────────────────┐
                          │                Operators / SDK / CLI           │
                          └────────────────────────────────────────────────┘
@@ -168,7 +168,7 @@ Policies are expressed in a declarative DSL *(initial implementation may wrap OP
 
 EAIP is designed to run on Kubernetes; a single-node Docker Compose variant is provided for development.
 
-```
+```text
 [Ingress] → [Control Plane (HPA)] ─┐
                                    ├─→ [PostgreSQL] [Redis] [Object Store]
 [Ingress] → [Agent Runtime (HPA)] ─┘
@@ -249,7 +249,7 @@ The Foundation source tree under `src/eaip/` is organised by **architectural
 layer**, not by feature. Each package documents its own contract and exposes
 a curated `__init__.py`. Layers depend strictly downward:
 
-```
+```text
                             ┌──────────────────────────────┐
                             │      application/            │   bootstrap + runner
                             └──────────────────────────────┘

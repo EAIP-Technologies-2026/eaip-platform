@@ -29,7 +29,7 @@ This document describes **how to contribute** to the Enterprise Autonomous Intel
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [EAIP Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Report unacceptable behaviour to **conduct@eaip.dev**.
+This project and everyone participating in it is governed by the [EAIP Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Report unacceptable behaviour to `<conduct@eaip.dev>`.
 
 ## Ways to Contribute
 
@@ -87,7 +87,7 @@ We do **not** use long-lived feature branches. If your work spans multiple PRs, 
 
 We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
 
-```
+```text
 <type>(<scope>)!: <subject>
 
 <body>
@@ -104,7 +104,7 @@ We follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1
 
 Example:
 
-```
+```text
 feat(runtime): add token-budget enforcement to orchestrator
 
 Introduces per-request and per-tenant token budgets enforced before each

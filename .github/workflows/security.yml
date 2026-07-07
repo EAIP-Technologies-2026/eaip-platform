@@ -7,7 +7,6 @@
 #   • pip-audit    — dependency CVE scan
 #   • gitleaks     — secret scanning
 # =============================================================================
-
 name: Security
 on:
   push:

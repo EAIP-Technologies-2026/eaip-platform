@@ -169,6 +169,7 @@ greeter = container.resolve(Greeter)
 ```
 
 Scopes:
+
 - `SINGLETON` — built once per container (default).
 - `TRANSIENT` — rebuilt on every resolution.
 - `SCOPED` — one per child container created via `container.create_scope()`.
@@ -203,7 +204,7 @@ settings = load_platform_settings()
 
 Environment variables follow the `EAIP_<SECTION>__<KEY>` pattern:
 
-```
+```text
 EAIP_CORE__APP_NAME=my-service
 EAIP_LOGGING__LEVEL=DEBUG
 EAIP_FEATURE_FLAGS__ENABLED=["beta-routing"]

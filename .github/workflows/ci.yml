@@ -5,7 +5,6 @@
 # Lint + type-check + test matrix across supported Python versions and OSes.
 # Security workflow lives in security.yml.
 # =============================================================================
-
 name: CI
 on:
   push:

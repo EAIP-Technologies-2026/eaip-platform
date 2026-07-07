@@ -3,7 +3,7 @@
 The platform's **canonical settings hierarchy**, built on
 [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/).
 
-```
+```text
 PlatformSettings
 ├── core: CoreSettings              # app_name, environment, instance_id, debug
 ├── logging: LoggingSettings        # level, format, include_caller

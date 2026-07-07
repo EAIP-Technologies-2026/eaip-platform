@@ -4,7 +4,7 @@ A single, consistent exception hierarchy used by every Foundation layer.
 
 ## Layout
 
-```
+```text
 EAIPError                     (base, carries ErrorCode + context + severity)
 ├── ConfigurationError
 ├── ValidationError

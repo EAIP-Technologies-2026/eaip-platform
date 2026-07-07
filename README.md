@@ -53,7 +53,7 @@ Most agent frameworks optimise for *demos*. EAIP optimises for *production*:
 
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full system view. In short:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────┐
 │                          Control Plane                             │
 │   Identity · Tenants · Policies · Quotas · Audit · Admin UI/API    │
@@ -110,7 +110,7 @@ make test          # pytest (no tests yet → exits 0 with `--passed-with-no-tes
 
 ## Repository Layout
 
-```
+```text
 .
 ├── .github/                # Issue/PR templates, CODEOWNERS, CI workflows
 ├── .vscode/                # Recommended editor settings & extensions

@@ -7,7 +7,6 @@
 # Run the test suite in the container:
 #     docker compose -f docker-compose.dev.yml run --rm eaip make test
 # =============================================================================
-
 services:
   eaip:
     build:
