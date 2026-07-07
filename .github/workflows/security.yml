@@ -62,7 +62,9 @@ jobs:
           python -m pip install -e ".[dev,test]"
           python -m pip install "pip-audit>=2.7.3"
       - name: Audit
-        run: pip-audit --strict --progress-spinner off --skip-editable
+        run: |
+          pip freeze --exclude-editable > /tmp/requirements.txt
+          pip-audit --strict --progress-spinner off -r /tmp/requirements.txt
   gitleaks:
     name: gitleaks (secrets)
     runs-on: ubuntu-latest
