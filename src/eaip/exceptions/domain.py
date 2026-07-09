@@ -80,6 +80,12 @@ class SerializationError(EAIPError):
     default_code = ErrorCode.SERIALIZATION_FAILED
 
 
+class PolicyViolationError(EAIPError):
+    """Raised when a request is denied by the authorization manager."""
+
+    default_code = ErrorCode.POLICY_VIOLATION
+
+
 __all__ = [
     "ConfigurationError",
     "DependencyCycleError",
@@ -89,6 +95,7 @@ __all__ = [
     "NotFoundError",
     "PluginContractViolationError",
     "PluginError",
+    "PolicyViolationError",
     "RegistryError",
     "RegistryTypeMismatchError",
     "SerializationError",

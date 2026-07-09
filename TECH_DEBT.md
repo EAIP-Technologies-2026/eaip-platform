@@ -2,7 +2,7 @@
 
 > **Purpose:** Track conscious shortcuts, deferred work, and known suboptimal choices so they don't quietly accrete.
 > **Convention:** Every entry has an **owner**, a **trigger** (when it should be revisited), and a **cost-of-delay** estimate.
-> **Last updated:** 2026-01-15
+> **Last updated:** 2026-07-08
 
 ---
 
@@ -24,8 +24,9 @@
 | TD-0006 | No threat model document                           | high     | L      | high     | TBD         | EP-0017.                  |
 | TD-0007 | Single maintainer (`@subham1902`) → bus factor = 1 | critical | XL     | critical | @subham1902 | After 1st external contributor. |
 | TD-0008 | No performance baselines or SLOs                   | medium   | L      | medium   | TBD         | EP-0018.                  |
-| TD-0009 | `mypy --strict` not yet applied to a real package  | low      | S      | low      | @subham1902 | EP-0002.                  |
+| TD-0009 | `mypy` not yet applied across all packages          | low      | S      | low      | @subham1902 | EP-0002.                  |
 | TD-0010 | Conventional-commit enforcement is pre-commit only | low      | S      | low      | @subham1902 | When external PRs arrive. |
+| TD-0011 | QdrantStore coverage at 24% without live Qdrant   | medium   | S      | low      | @subham1902 | When CI adds Qdrant service container. |
 
 ## Resolved Debt
 
@@ -73,14 +74,21 @@
 
 - **Resolution plan:** EP-0018 establishes p50/p95/p99 latency, throughput, and error-rate SLOs with synthetic and load-test harnesses.
 
-### TD-0009 — `mypy --strict` not yet applied to a real package
+### TD-0009 — `mypy` not yet applied across all packages
 
-- **Resolution plan:** Wire up `mypy` against `src/eaip/` in EP-0002; fix any issues immediately.
+- **Progress:** `mypy --strict` passes with zero errors on `src/eaip/runtime/`, `src/eaip/metrics/`, `src/eaip/services/`, `src/eaip/app/`, and `src/eaip/knowledge/`. Remaining packages under `src/eaip/` still need explicit mypy coverage.
+- **Resolution plan:** Wire up `mypy` against `src/eaip/` incrementally per-bundle; fix any issues immediately.
 
 ### TD-0010 — Conventional-commit enforcement is pre-commit only
 
 - **Risk:** Contributors who skip hooks (`-n`) can land non-conforming commits.
 - **Resolution plan:** Add server-side validation in CI (PR title + commitlint over the squash range).
+
+### TD-0011 — QdrantStore coverage at 24% without live Qdrant
+
+- **Why it exists:** `QdrantStore` connects to a Qdrant vector database; without a running Qdrant instance in CI, most methods cannot be exercised meaningfully. The existing tests verify construction and the no-op client fallback path.
+- **Risk:** Low — `QdrantStore` is one of several `VectorStore` implementations; the knowledge module core logic is independently tested at ~86% coverage without it.
+- **Resolution plan:** Add a Qdrant service container to the CI test matrix (Docker Compose or GitHub Actions service container), implement an integration test suite that exercises CRUD and search against the live instance.
 
 ---
 

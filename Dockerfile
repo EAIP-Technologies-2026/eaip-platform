@@ -37,4 +37,4 @@ RUN python -m pip install --upgrade pip wheel setuptools \
 # Copy the rest after deps so editing source doesn't bust the dep layer.
 COPY . .
 
-CMD ["bash"]
+CMD ["python", "-m", "eaip"]

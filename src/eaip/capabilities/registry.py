@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Self
 
 from eaip.capabilities.capability import Capability, CapabilityStatus
-from eaip.exceptions.domain import NotFoundError
-from eaip.registry.registry import Registry
+from eaip.registry.registry import Observer, Registry
 
 
 class CapabilityRegistry:
-    """High-level wrapper around :class:`Registry` for capabilities."""
+    """High-level wrapper around :class:`Registry` for capabilities.
+
+    Extends the base with capability-specific lifecycle methods (enable,
+    disable, deprecate) and exposes the underlying observer for graph
+    integration.
+    """
 
     def __init__(self: Self) -> None:
         """Initialize the capability registry."""
@@ -39,6 +44,10 @@ class CapabilityRegistry:
         """
         return self._inner.unregister(name)
 
+    def clear(self: Self) -> None:
+        """Remove all registered capabilities."""
+        self._inner.clear()
+
     # ------------------------------------------------------------------
     # Lookups
     # ------------------------------------------------------------------
@@ -50,8 +59,22 @@ class CapabilityRegistry:
 
         Returns:
             The capability.
+
+        Raises:
+            NotFoundError: If the capability is not registered.
         """
         return self._inner.get(name)
+
+    def try_get(self: Self, name: str) -> Capability | None:
+        """Get a capability by name, or None if not found.
+
+        Args:
+            name: The name of the capability.
+
+        Returns:
+            The capability or None.
+        """
+        return self._inner.try_get(name)
 
     def has(self: Self, name: str) -> bool:
         """Check if a capability exists.
@@ -80,6 +103,22 @@ class CapabilityRegistry:
         """
         return [c for c in self._inner.values() if c.status is CapabilityStatus.ENABLED]
 
+    def keys(self: Self) -> list[str]:
+        """Get all registered capability names.
+
+        Returns:
+            A list of capability names.
+        """
+        return self._inner.keys()
+
+    def items(self: Self) -> list[tuple[str, Capability]]:
+        """Get all (name, capability) pairs.
+
+        Returns:
+            A list of name-capability tuples.
+        """
+        return self._inner.items()
+
     # ------------------------------------------------------------------
     # Status transitions (replaces the record because Capability is frozen)
     # ------------------------------------------------------------------
@@ -92,11 +131,11 @@ class CapabilityRegistry:
 
         Returns:
             The updated capability.
+
+        Raises:
+            NotFoundError: If the capability is not registered.
         """
-        try:
-            current = self._inner.get(name)
-        except NotFoundError:
-            raise
+        current = self._inner.get(name)
         updated = current.model_copy(update={"status": status})
         self._inner.register(name, updated, replace=True)
         return updated
@@ -133,6 +172,17 @@ class CapabilityRegistry:
             The deprecated capability.
         """
         return self.set_status(name, CapabilityStatus.DEPRECATED)
+
+    # ------------------------------------------------------------------
+    # Observability
+    # ------------------------------------------------------------------
+    def observe(self: Self, observer: Observer[Capability]) -> Callable[[], None]:
+        """Register an observer for registry changes.
+
+        Returns:
+            A callable that removes the observer.
+        """
+        return self._inner.observe(observer)
 
     # ------------------------------------------------------------------
     # Misc

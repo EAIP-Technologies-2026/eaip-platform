@@ -8,6 +8,7 @@ from eaip.settings.core_settings import (
     FeatureFlagSettings,
     LoggingSettings,
     PlatformSettings,
+    TelemetrySettings,
     load_platform_settings,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "FeatureFlagSettings",
     "LoggingSettings",
     "PlatformSettings",
+    "TelemetrySettings",
     "load_platform_settings",
 ]

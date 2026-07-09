@@ -44,12 +44,27 @@ class CoreSettings(EAIPSettingsBase):
     debug: bool = Field(default=False)
 
 
+class TelemetrySettings(EAIPSettingsBase):
+    """Settings for OpenTelemetry export.
+
+    Read from ``EAIP_TELEMETRY_*`` environment variables.
+    """
+
+    service_name: str = Field(default="eaip")
+    otlp_endpoint: str = Field(default="http://localhost:4318")
+    otlp_protocol: str = Field(default="http/protobuf")
+    sampling_ratio: float = Field(default=1.0, ge=0.0, le=1.0)
+    tracing_enabled: bool = Field(default=True)
+    metrics_enabled: bool = Field(default=True)
+
+
 class PlatformSettings(EAIPSettingsBase):
     """The root settings object exposed via :func:`load_platform_settings`."""
 
     core: CoreSettings = Field(default_factory=CoreSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     feature_flags: FeatureFlagSettings = Field(default_factory=FeatureFlagSettings)
+    telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
 
 
 def load_platform_settings() -> PlatformSettings:
@@ -66,5 +81,6 @@ __all__ = [
     "FeatureFlagSettings",
     "LoggingSettings",
     "PlatformSettings",
+    "TelemetrySettings",
     "load_platform_settings",
 ]

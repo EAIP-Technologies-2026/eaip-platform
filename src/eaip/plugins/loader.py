@@ -38,6 +38,19 @@ class PluginLoader:
         """Returns the list of activated plugin names."""
         return sorted(self._activated)
 
+    @property
+    def activated_count(self) -> int:
+        """Returns the number of activated plugins."""
+        return len(self._activated)
+
+    def all(self) -> list[Plugin]:
+        """Returns all installed plugins."""
+        return self._registry.all()
+
+    def count(self) -> int:
+        """Returns the number of installed plugins."""
+        return len(self._registry)
+
     # ------------------------------------------------------------------
     # Installation & validation
     # ------------------------------------------------------------------
