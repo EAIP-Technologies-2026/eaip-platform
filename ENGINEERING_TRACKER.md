@@ -39,6 +39,24 @@ Every EP corresponds to a labelled GitHub Project view (`EP/EP-NNNNX`) and a mil
 | **EP-0003.1** | **Tool Calling & Function Support (Bundle-020)** | ✅ Done    | @subham1902  | 2026-07-09 | Tool models, Tool protocol, ToolRegistry, OpenAICompatProvider tool calling, 3 reference tools. |
 | **EP-0003.2** | **LLM Adapter Contract (Bundle-021)**           | ✅ Done    | @subham1902  | 2026-07-10 | LLMAdapter protocol, ToolCallOrchestrator, OpenAIAdapter, AnthropicAdapter. |
 | **EP-0004.1** | **Agent Runtime (Bundle-022)**                 | ✅ Done    | @subham1902  | 2026-07-10 | AgentRuntime, planners, executor, guardrails, events, health, 80 tests. |
+| **EP-0023** | **Workflow & Multi-Agent Orchestration (Bundle-023)** | ✅ Done | @subham1902 | 2026-07-10 | Workflow engine, state machine, DAG/sequential/parallel execution, retry, timeout, approval checkpoints, parent/child workflows, agent delegation/messaging, 155 tests. |
+| **EP-0024** | **Governance & Policy Runtime (Bundle-024)**  | ✅ Done    | @subham1902  | 2026-07-10 | Resource, tool, department, workflow, approval policies. Extended policy engine. 19 tests. |
+| **EP-0025** | **Context & Prompt Intelligence (Bundle-025)** | ✅ Done    | @subham1902  | 2026-07-10 | Prompt registry, versioning, templates, context builder, context compression, health, runtime integration. 89 tests. |
+| **EP-0026** | **Knowledge & RAG Orchestrator (Bundle-026)** | ✅ Done    | @subham1902  | 2026-07-10 | RetrievalEngine, hybrid/keyword/semantic search, reranking, federation, department/enterprise brain, retrieval policies. 53 tests. |
+| **EP-0027** | **Scheduler & Long Running Jobs (Bundle-027)** | ✅ Done    | @subham1902  | 2026-07-10 | Cron/interval job scheduling, long-running job executor with progress/checkpoint/retry, job health, runtime integration. 26 tests. |
+| **EP-0028** | **Enterprise API Gateway (Bundle-028)** | ✅ Done    | @subham1902  | 2026-07-10 | ApiRouter, middleware pipeline (auth, rate-limit, logging, metrics, CORS), ApiKeyStore, RateLimiter, health, integration. 79 tests. |
+| **EP-0029** | **Administration Runtime (Bundle-029)** | ✅ Done    | @subham1902  | 2026-07-10 | AuditLogger, RuntimeManager, ConfigManager, admin capabilities, health, runtime integration. 62 tests. |
+| **EP-0030** | **Production Hardening (Bundle-030)** | ✅ Done    | @subham1902  | 2026-07-10 | Circuit breaker, bulkhead, error budget, resilience health check, runtime integration. 16 tests. |
+| **EP-0031** | **Enterprise Brain (Bundle-031)** | ✅ Done    | @subham1902  | 2026-07-10 | Enterprise brain with unified knowledge/memory/context/agent query, result merging/ranking. 36 tests. |
+| **EP-0032** | **Department Brains (Bundle-032)** | ✅ Done    | @subham1902  | 2026-07-10 | Scoped department brains, brain registry, access control, sync. 36 tests. |
+| **EP-0033** | **Digital Workforce Runtime (Bundle-033)** | ✅ Done    | @subham1902  | 2026-07-10 | Worker registry, workforce orchestrator, workforce scheduler. 71 tests. |
+| **EP-0034** | **Business Goal Engine (Bundle-034)** | ✅ Done    | @subham1902  | 2026-07-10 | Goal engine, KPI tracking, objective deployment, progress evaluation. 78 tests. |
+| **EP-0035** | **Enterprise Search & Federation (Bundle-035)** | ✅ Done | @subham1902 | 2026-07-10 | Enterprise search engine, search providers, federation, ranking, pagination. 90 tests. |
+| **EP-0036** | **Context & Session Intelligence (Bundle-036)** | ✅ Done | @subham1902 | 2026-07-10 | Session manager, context propagation, serialization, lifecycle management. 95 tests. |
+| **EP-0037** | **Collaboration & Workflow Runtime (Bundle-037)** | ✅ Done | @subham1902 | 2026-07-10 | Multi-agent collaboration, task delegation, approval workflows, coordination engine, execution tracking. 123 tests. |
+| **EP-0038** | **Enterprise Analytics & Insights (Bundle-038)** | ✅ Done | @subham1902 | 2026-07-10 | KPI engine, analytics service, trends, aggregation, dashboards, telemetry collector. 145 tests. |
+| **EP-0039** | **Knowledge Graph Runtime (Bundle-039)** | ✅ Done | @subham1902 | 2026-07-10 | Enterprise knowledge graph with entities, relationships, traversal, semantic APIs. 139 tests. |
+| **EP-0040** | **Enterprise Automation Runtime (Bundle-040)** | ✅ Done | @subham1902 | 2026-07-10 | Automation engine with rules, event triggers, scheduling, execution history. 128 tests. |
 
 > Add new EPs by appending below — never reorder.
 
@@ -705,6 +723,376 @@ Agent Runtime — orchestrated agent execution with planning, tool use, guardrai
 ### Exit Notes
 
 Bundle-022 delivers the Agent Runtime (EP-0004.1) — the execution engine that ties together planning, tool calling, guardrails, events, and health into a single orchestrated loop. `AgentRuntime.create_run → start_run` provides a clean two-phase API, domain events enable observability, and the modular planner/executor/guardrail architecture supports easy extension. The next logical steps are multi-agent orchestration, persistent run storage, and human-in-the-loop support.
+
+## EP-0023 — Enterprise Workflow & Multi-Agent Orchestration (Bundle-023)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enhanced workflow engine with full enterprise orchestration:
+
+- **State Machine** — `WorkflowStateMachine` and `StepStateMachine` for workflow/step lifecycle enforcement with valid transitions and terminal states.
+- **Parallel Execution** — `ParallelGroup` DAG execution with async parallel step dispatch, completion conditions, and timeouts.
+- **Enhanced Retry** — Jitter support in `RetryPolicy`, exponential backoff with cap.
+- **Timeout Handling** — `TimeoutConfig` for workflow-level and step-level timeouts; `TIMED_OUT` status separate from `FAILED`.
+- **Failure Propagation** — `ChildWorkflowError`, `ParallelExecutionError`, `DurableExecutionError`.
+- **Human Approval Checkpoints** — `requires_approval` on steps, checkpoint save/restore, approval timeout escalation.
+- **Parent/Child Workflows** — `ParentChildConfig` with inherit context, propagate failure, wait for completion.
+- **Agent Messaging** — Agent inboxes, broadcast, unread counting.
+- **Shared Memory Integration** — Memory context loading and output saving for agent delegation.
+- **Durable Execution Model** — `DurableExecutionConfig` for persist/recovery.
+- **Events** — `WorkflowStepTimedOut`, `WorkflowTimedOut`, `WorkflowPaused`, `WorkflowResumed`, `WorkflowChildStarted`, `WorkflowChildCompleted`, `WorkflowParallelGroupStarted`, `WorkflowParallelGroupCompleted`.
+
+### Deliverables
+
+- 11 source modules under `src/eaip/workflow/` (state_machine.py added, all others enhanced).
+- 6 test modules with **155 passing tests** (82 new for this bundle).
+- Full quality-gate pass: ruff zero non-docstring errors, mypy strict zero errors, pytest 155/155 pass.
+
+---
+
+## EP-0024 — Enterprise Governance & Policy Runtime (Bundle-024)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise policy types extending the existing policy engine:
+
+- **Resource Policy** — `ResourcePolicy` model with resource types, patterns, allowed/denied actions, priority.
+- **Tool Policy** — `ToolPolicy` with access levels (allow/deny/restricted), parameter restrictions, rate limits, role binding.
+- **Department Policy** — `DepartmentPolicy` for tenant/department-level governance across resource, tool, workflow, and approval policies.
+- **Workflow Policy** — `WorkflowPolicy` for workflow duration limits, agent allow/deny lists, step approval requirements.
+- **Approval Policy** — `ApprovalPolicy` with trigger conditions, required approvers, escalation, timeouts.
+- **Policy Evaluation Report** — `PolicyEvaluationReport` for detailed audit trails.
+
+### Deliverables
+
+- 1 new source module (`src/eaip/policy/resource_policies.py`).
+- Updated `__init__.py` with new exports.
+- 1 test module with **19 passing tests**.
+- Full quality-gate pass: ruff zero non-docstring errors, mypy strict zero errors.
+
+---
+
+## EP-0025 — Context & Prompt Intelligence (Bundle-025)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+New context and prompt intelligence subsystem:
+
+- **PromptRegistry** — Observable registry with version tracking, `PromptTemplate`/`PromptVersion`/`PromptRegistryEntry`.
+- **PromptManager** — Template creation, rendering with variable injection, validation, version management, and policy checking.
+- **ContextBuilder** — Context assembly from documents, relevance filtering, token truncation, memory/knowledge engine integration.
+- **ContextCompressor** — Three compression strategies: extractive (score-based), summarize (top-k), truncate (token-limit).
+- **Domain Events** — `PromptCreated`, `PromptVersioned`, `ContextAssembled`, `ContextCompressed`.
+- **Health Check** — `ContextHealthCheck` implementing `HealthCheck` protocol.
+- **Runtime Integration** — `ContextRuntimeModule` implementing `RuntimeModule` protocol.
+
+### Deliverables
+
+- 10 new source modules under `src/eaip/context/`.
+- 7 test modules with **89 passing tests**.
+- Full quality-gate pass: ruff zero non-docstring errors, mypy strict zero errors.
+
+---
+
+## EP-0026 — Knowledge & RAG Orchestrator (Bundle-026)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+RAG orchestrator extending the existing knowledge engine:
+
+- **RetrievalEngine** — Unified hybrid search (semantic + keyword), configurable alpha weighting, reranking, multi-collection search.
+- **Search Strategies** — `SearchStrategy` protocol with `SemanticSearchStrategy`, `KeywordSearchStrategy` (BM25-like), `HybridSearchStrategy` (weighted score merge); `SimpleReranker` and `CrossEncoderReranker` (placeholder).
+- **KnowledgeFederation** — Federated search across collections, knowledge+memory, department brain (scoped), enterprise brain (cross-department), deduplication, score normalization.
+- **Retrieval Policies** — `RetrievalPolicy`, `CollectionAccessPolicy`, `RetrievalPolicyEnforcer` for RBAC on knowledge collections.
+- **Events** — `HybridSearchExecuted`, `FederatedSearchExecuted`.
+
+### Deliverables
+
+- 4 new source modules under `src/eaip/knowledge/`.
+- Updated `__init__.py` and `events.py`.
+- 4 test modules with **53 passing tests**.
+- Full quality-gate pass: ruff zero non-docstring errors, mypy strict zero errors.
+
+---
+
+## EP-0031 — Enterprise Brain (Bundle-031)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Centralized intelligence layer orchestrating knowledge, memory, context, and agent insights:
+
+- `EnterpriseBrain` — unified query across KnowledgeEngine, MemoryEngine, ContextBuilder, AgentRuntime.
+- `BrainQuery` / `BrainResult` / `BrainSource` models for query/response with confidence scoring.
+- Result merging, deduplication, threshold filtering, reranking, confidence computation.
+- 4 domain events: `BrainQueryExecuted`, `BrainKnowledgeRetrieved`, `BrainMemoryRetrieved`, `BrainContextBuilt`.
+- `BrainHealthCheck` and `BrainRuntimeModule` for kernel lifecycle integration.
+
+### Deliverables
+
+- 7 source modules under `src/eaip/brain/`.
+- 3 test modules with **36 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0032 — Department Brains (Bundle-032)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Scoped brain instances for individual business departments:
+
+- `DepartmentBrain` — scoped query limited to department collections/memory/context.
+- `BrainRegistry` — register/get/list departments, parallel enterprise-wide queries.
+- `BrainAccessManager` — subject/role-based access control for brain queries.
+- 3 new events: `DepartmentBrainQueryExecuted`, `BrainAccessDenied`, `BrainSyncCompleted`.
+- `BrainAccessDeniedError` exception.
+
+### Deliverables
+
+- 3 new modules, 3 modified modules under `src/eaip/brain/`.
+- 3 test modules with **36 new passing tests** (90 total across brain package).
+- Full quality-gate pass.
+
+---
+
+## EP-0033 — Digital Workforce Runtime (Bundle-033)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Orchestrates agents, workflows, and jobs into a cohesive workforce:
+
+- `WorkerRegistry` — register/unregister/list workers (agent/workflow/job types).
+- `WorkforceOrchestrator` — assign tasks, auto-assign best worker, execute via AgentRuntime/WorkflowEngine/JobScheduler.
+- `WorkforceScheduler` — cron/interval scheduling for worker execution.
+- 6 domain events: `WorkerRegistered`, `WorkerUnregistered`, `WorkerAssigned`, `WorkerAssignmentCompleted`, `WorkerAssignmentFailed`, `WorkerScheduled`.
+- Worker models: `WorkerDefinition`, `WorkerAssignment`, `WorkforceConfig`, `WorkforceMetrics`.
+
+### Deliverables
+
+- 9 source modules under `src/eaip/workforce/`.
+- 5 test modules with **71 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0034 — Business Goal Engine (Bundle-034)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Define, track, and execute business goals with KPI measurement:
+
+- `GoalEngine` — create/update/get/list/delete goals, evaluate progress, assign/deploy objectives.
+- `GoalTracker` — KPI recording, history, trend analysis, threshold checking.
+- Models: `BusinessGoal`, `Objective`, `KpiDefinition`, `GoalProgress`, `GoalConfig`.
+- 8 domain events: `GoalCreated`, `GoalUpdated`, `GoalCompleted`, `GoalFailed`, `GoalProgressUpdated`, `ObjectiveAssigned`, `KpiUpdated`, `KpiThresholdMet`.
+- Status enums: `GoalStatus`, `Priority`, `MeasurementType`, `KpiDirection`, `ObjectiveStatus`.
+
+### Deliverables
+
+- 8 source modules under `src/eaip/goals/`.
+- 5 test modules with **78 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0035 — Enterprise Search & Federation (Bundle-035)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise-wide federated search across knowledge, memory, and custom providers:
+
+- `EnterpriseSearchEngine` — provider registration, cross-provider search with merging/dedup/pagination.
+- `SearchProvider` protocol + `KnowledgeSearchProvider`, `MemorySearchProvider`, `CompositeSearchProvider`.
+- `RankingService` — score normalization, query-aware reranking, configurable weights (recency/relevance/popularity).
+- `SearchFederation` — federated search across named sources, enterprise-wide and department-scoped.
+- Models: `SearchQuery`, `SearchResult`, `SearchResultItem`, `SearchFilter`, `Pagination`.
+- Events, exceptions, health check, runtime module.
+
+### Deliverables
+
+- 10 source modules under `src/eaip/search/`.
+- 7 test modules with **90 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0036 — Context & Session Intelligence (Bundle-036)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise session management and context propagation:
+
+- `SessionManager` — create/get/update/close/suspend/resume/expire sessions with TTL-based expiry.
+- `EnterpriseContextManager` — scope-based attribute management, propagation to child sessions, session context building.
+- `SessionSerializer` — serialize/deserialize/export/import for session transfer.
+- `SessionLifecycleManager` — expiry cycles, tenant cleanup, session transfer, merge.
+- Models: `Session`, `SessionContext`, `ContextScope`, `ExecutionContext`, `SessionConfig`.
+- Events, exceptions, health check, runtime module.
+
+### Deliverables
+
+- 10 source modules under `src/eaip/session/`.
+- 7 test modules with **95 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0037 — Collaboration & Workflow Runtime (Bundle-037)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Multi-agent collaboration with coordination, task delegation, and approval workflows:
+
+- `CoordinationEngine` — session lifecycle with 4 strategy implementations: sequential, parallel, broadcast, auction.
+- `TaskDelegationService` — delegate/accept/reject/complete task lifecycle, agent capability query.
+- `CollaborationApprovalService` — multi-party approval with required-all semantics.
+- `SharedStateManager` — versioned shared state with set/get/merge/contribution tracking.
+- `ExecutionTracker` — session/agent timelines, execution reports, metrics.
+- Models: `CollaborationSession`, `AgentTask`, `DelegationRequest`, `CoordinationConfig`, `CollaborationResult`, `SharedState`.
+- 15 domain events, 6 exceptions, health check, runtime module.
+
+### Deliverables
+
+- 11 source modules under `src/eaip/collaboration/`.
+- 8 test modules with **123 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0038 — Enterprise Analytics & Insights (Bundle-038)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise analytics with KPI engine, trends, aggregation, and dashboards:
+
+- `AnalyticsService` — metric recording, time-series queries, report generation.
+- `KpiEngine` — KPI evaluation, status checks, trend retrieval, GoalTracker integration.
+- `TrendAnalyzer` — trend detection, anomaly detection (std-dev), forecasting (linear regression), period comparison, seasonality detection.
+- `AggregationEngine` — sum/avg/min/max/count/latest, rollups, derived metrics, percentiles (p50/p95/p99).
+- `DashboardService` — full CRUD, widget rendering, dashboard rendering.
+- `TelemetryCollector` — operational and platform metric collection.
+- 9 Pydantic models, 7 domain events, health check, runtime module.
+
+### Deliverables
+
+- 12 source modules under `src/eaip/analytics/`.
+- 9 test modules with **145 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0039 — Knowledge Graph Runtime (Bundle-039)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise knowledge graph with entity/relationship models, graph traversal, queries, indexing, and semantic APIs:
+
+- `KnowledgeGraph` — in-memory graph with adjacency lists, entity/relationship CRUD, cascade delete, graph queries (BFS, DFS, shortest_path, subgraph), neighbor lookup, property-based search.
+- `GraphTraversalService` — BFS/DFS with depth limits and predicates, shortest path (BFS), subgraph extraction, conditional path finding, cycle detection, degree centrality computation.
+- `GraphIndex` — inverted index for entities by type and property, indexed relationship search, rebuild/clear.
+- `SemanticRelationshipService` — relationship inference via shared properties, Jaccard similarity computation, entity clustering, missing relationship suggestions.
+- Models: `Entity`, `Relationship`, `GraphQuery`, `GraphResult`, `Path`, `GraphConfig`, `EntityIndex`, `GraphStats`.
+- 10 domain events, 6 exceptions, health check, runtime module.
+
+### Deliverables
+
+- 10 source modules under `src/eaip/kgraph/`.
+- 7 test modules with **139 passing tests**.
+- Full quality-gate pass.
+
+---
+
+## EP-0040 — Enterprise Automation Runtime (Bundle-040)
+
+- **Status:** ✅ Done
+- **Owner:** @subham1902
+- **Reviewers:** AI-assisted (opencode)
+- **Started / Completed:** 2026-07-10 / 2026-07-10
+
+### Scope (In)
+
+Enterprise automation engine with rule execution, event triggers, scheduling, and observability:
+
+- `AutomationEngine` — register/unregister/list rules, evaluate conditions, execute actions, manage concurrency with `asyncio.Semaphore`, execution lifecycle.
+- `TriggerService` — event processing, listener management with wildcard support, EventBus integration.
+- `ActionExecutor` — webhook (httpx), workflow, agent, command (subprocess), event, notification actions with exponential backoff retry.
+- `AutomationScheduler` — cron-based rule scheduling via croniter, schedule/unschedule/list, due rule checking.
+- `ExecutionHistory` — record/query/cleanup execution history, per-rule statistics (success rate, avg duration).
+- Models: `AutomationRule`, `RuleCondition`, `RuleAction`, `AutomationExecution`, `TriggerEvent`, `AutomationConfig`, `ExecutionHistoryEntry`.
+- 11 domain events, 6 exceptions, health check, runtime module.
+
+### Deliverables
+
+- 11 source modules under `src/eaip/automation/`.
+- 8 test modules with **128 passing tests**.
+- Full quality-gate pass.
+
+---
 
 ## Lifecycle & Conventions
 - **Creation:** open a discussion proposing the EP; once accepted, append to the [EP Index](#ep-index) and create a section.

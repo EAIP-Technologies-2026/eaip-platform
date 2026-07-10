@@ -69,11 +69,34 @@ class KnowledgeQuery(KnowledgeEngineEvent):
     collection: str = ""
 
 
+class HybridSearchExecuted(KnowledgeEngineEvent):
+    """Published after a hybrid (semantic + keyword) search is executed."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.hybrid_search.executed"
+    query: str
+    collection: str
+    result_count: int
+    duration_ms: float
+    alpha: float = 0.5
+
+
+class FederatedSearchExecuted(KnowledgeEngineEvent):
+    """Published after a federated search across multiple sources."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.federated_search.executed"
+    query: str
+    sources: tuple[str, ...] = ()
+    result_count: int
+    duration_ms: float
+
+
 __all__ = [
     "CollectionCreated",
     "CollectionDeleted",
     "DocumentDeleted",
     "DocumentIngested",
+    "FederatedSearchExecuted",
+    "HybridSearchExecuted",
     "KnowledgeEngineEvent",
     "KnowledgeQuery",
     "RetrievalExecuted",

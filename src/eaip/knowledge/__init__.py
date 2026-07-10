@@ -1,6 +1,7 @@
-"""Knowledge Engine — document ingestion, vector indexing, hybrid retrieval.
+"""Knowledge Engine — document ingestion, vector indexing, hybrid retrieval,
+and RAG orchestration.
 
-Bundle-016 of the EAIP Platform Foundation Milestone.
+Bundle-016 / Bundle-026 of the EAIP Platform Foundation Milestone.
 
 Provides:
 - Knowledge Provider Interface & Models
@@ -14,6 +15,10 @@ Provides:
 - Incremental indexing and event-driven ingestion
 - Policy-aware knowledge access
 - Plugin, Runtime, Capability Registry, Metrics and Health integration
+- RetrievalEngine — hybrid search (semantic + keyword), reranking, multi-collection
+- Search strategies — semantic, keyword, hybrid, reranking protocols
+- KnowledgeFederation — federated search across collections, memory, departments
+- Retrieval policies — access control and policy enforcement
 """
 
 from __future__ import annotations
@@ -39,8 +44,18 @@ from eaip.knowledge.events import (
     CollectionDeleted,
     DocumentDeleted,
     DocumentIngested,
+    FederatedSearchExecuted,
+    HybridSearchExecuted,
     KnowledgeQuery,
     RetrievalExecuted,
+)
+from eaip.knowledge.federation import KnowledgeFederation
+from eaip.knowledge.policies import (
+    AccessLevel,
+    CollectionAccessPolicy,
+    PolicyResolver,
+    RetrievalPolicy,
+    RetrievalPolicyEnforcer,
 )
 from eaip.knowledge.exceptions import (
     ChunkingError,
@@ -85,16 +100,29 @@ from eaip.knowledge.models import (
 from eaip.knowledge.qdrant_store import QdrantStore
 from eaip.knowledge.registry import KnowledgeRegistry
 from eaip.knowledge.retrieval import KnowledgeRetriever
+from eaip.knowledge.retrieval_engine import RetrievalEngine
+from eaip.knowledge.search_strategies import (
+    CrossEncoderReranker,
+    HybridSearchStrategy,
+    KeywordSearchStrategy,
+    RerankingStrategy,
+    SearchStrategy,
+    SemanticSearchStrategy,
+    SimpleReranker,
+)
 
 __all__ = [
+    "AccessLevel",
     "AssembledContext",
     "Chunker",
     "ChunkingConfig",
     "ChunkingError",
     "ChunkingStrategy",
+    "CollectionAccessPolicy",
     "CollectionCreated",
     "CollectionDeleted",
     "CollectionNotFoundError",
+    "CrossEncoderReranker",
     "DOCXParser",
     "DocumentChunk",
     "DocumentDeleted",
@@ -106,18 +134,23 @@ __all__ = [
     "EmbeddingConfig",
     "EmbeddingError",
     "EmbeddingProvider",
+    "FederatedSearchExecuted",
     "FixedSizeChunker",
     "HTMLParser",
+    "HybridSearchExecuted",
+    "HybridSearchStrategy",
     "IndexingStatus",
     "IngestionConfig",
     "IngestionError",
     "IngestionPipeline",
     "IngestionResult",
+    "KeywordSearchStrategy",
     "KnowledgeCollection",
     "KnowledgeDiscovery",
     "KnowledgeDocument",
     "KnowledgeEngine",
     "KnowledgeError",
+    "KnowledgeFederation",
     "KnowledgeHealthCheck",
     "KnowledgeProvider",
     "KnowledgeQuery",
@@ -127,15 +160,23 @@ __all__ = [
     "MarkdownParser",
     "MockEmbeddingProvider",
     "PDFParser",
+    "PolicyResolver",
     "ProviderEmbedding",
     "QdrantStore",
     "RecursiveChunker",
+    "RerankingStrategy",
+    "RetrievalEngine",
     "RetrievalError",
     "RetrievalExecuted",
+    "RetrievalPolicy",
+    "RetrievalPolicyEnforcer",
     "RetrievalQuery",
     "RetrievalResult",
     "RetrievedChunk",
+    "SearchStrategy",
     "SemanticChunker",
+    "SemanticSearchStrategy",
+    "SimpleReranker",
     "SourceAttribution",
     "TextParser",
     "UnsupportedFormatError",
