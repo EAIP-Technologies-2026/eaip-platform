@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from eaip.session.context_manager import EnterpriseContextManager, ScopedStore
-from eaip.session.models import ContextPropagationConfig, ContextScope, Session, SessionContext
+from eaip.session.models import ContextPropagationConfig, Session, SessionContext
 
 
 class TestScopedStore:
@@ -74,7 +74,7 @@ class TestEnterpriseContextManager:
         mgr = EnterpriseContextManager()
         try:
             asyncio.run(mgr.get_context("invalid", "x"))
-            assert False
+            raise AssertionError()
         except ValueError:
             pass
 
@@ -82,7 +82,7 @@ class TestEnterpriseContextManager:
         mgr = EnterpriseContextManager()
         try:
             asyncio.run(mgr.set_attribute("invalid", "x", "k", "v"))
-            assert False
+            raise AssertionError()
         except ValueError:
             pass
 

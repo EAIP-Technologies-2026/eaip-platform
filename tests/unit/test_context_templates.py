@@ -56,7 +56,7 @@ class TestPromptManager:
         )
         try:
             mgr.render("missing", {"a": "only"})
-            assert False
+            raise AssertionError()
         except TemplateRenderError:
             pass
 
@@ -64,7 +64,7 @@ class TestPromptManager:
         mgr = PromptManager()
         try:
             mgr.render("nonexistent", {})
-            assert False
+            raise AssertionError()
         except PromptNotFoundError:
             pass
 
@@ -76,7 +76,7 @@ class TestPromptManager:
                 name="Empty",
                 content="   ",
             )
-            assert False
+            raise AssertionError()
         except TemplateRenderError:
             pass
 
@@ -89,7 +89,7 @@ class TestPromptManager:
                 content="{a} and {b}",
                 variables=("a",),
             )
-            assert False
+            raise AssertionError()
         except TemplateRenderError:
             pass
 
@@ -102,7 +102,7 @@ class TestPromptManager:
                 content="{a}",
                 variables=("a", "b"),
             )
-            assert False
+            raise AssertionError()
         except TemplateRenderError:
             pass
 
@@ -177,7 +177,7 @@ class TestPromptManager:
                 name="Fail",
                 content="test",
             )
-            assert False
+            raise AssertionError()
         except TemplatePolicyError:
             pass
 

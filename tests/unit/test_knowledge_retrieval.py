@@ -8,7 +8,6 @@ from eaip.knowledge.embedding import MockEmbeddingProvider
 from eaip.knowledge.models import (
     DocumentChunk,
     RetrievalQuery,
-    RetrievedChunk,
     SourceAttribution,
 )
 from eaip.knowledge.retrieval import KnowledgeRetriever
@@ -58,19 +57,21 @@ class TestKnowledgeRetriever:
     @pytest.mark.asyncio
     async def test_search_with_results(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {
-                "id": "chunk1",
-                "score": 0.95,
-                "payload": {
-                    "document_id": "doc1",
-                    "content": "Test content",
-                    "chunk_index": 0,
-                    "source": "test.txt",
-                    "title": "Test Doc",
+        store.set_results(
+            [
+                {
+                    "id": "chunk1",
+                    "score": 0.95,
+                    "payload": {
+                        "document_id": "doc1",
+                        "content": "Test content",
+                        "chunk_index": 0,
+                        "source": "test.txt",
+                        "title": "Test Doc",
+                    },
                 },
-            },
-        ])
+            ]
+        )
         embedding = MockEmbeddingProvider()
         retriever = KnowledgeRetriever(store, embedding)
 
@@ -84,9 +85,15 @@ class TestKnowledgeRetriever:
     @pytest.mark.asyncio
     async def test_search_multi(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "A", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "A", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         retriever = KnowledgeRetriever(store, embedding)
 
@@ -97,9 +104,11 @@ class TestKnowledgeRetriever:
     @pytest.mark.asyncio
     async def test_search_filters_empty_payload(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.8, "payload": {}},
-        ])
+        store.set_results(
+            [
+                {"id": "c1", "score": 0.8, "payload": {}},
+            ]
+        )
         embedding = MockEmbeddingProvider()
         retriever = KnowledgeRetriever(store, embedding)
 
@@ -109,9 +118,11 @@ class TestKnowledgeRetriever:
     @pytest.mark.asyncio
     async def test_search_no_payload(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.8},
-        ])
+        store.set_results(
+            [
+                {"id": "c1", "score": 0.8},
+            ]
+        )
         embedding = MockEmbeddingProvider()
         retriever = KnowledgeRetriever(store, embedding)
 
@@ -123,18 +134,30 @@ class TestContextAssembly:
     @pytest.mark.asyncio
     async def test_assemble_context(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {
-                "id": "c1",
-                "score": 0.95,
-                "payload": {"document_id": "d1", "content": "First chunk", "chunk_index": 0, "title": "Doc 1"},
-            },
-            {
-                "id": "c2",
-                "score": 0.85,
-                "payload": {"document_id": "d2", "content": "Second chunk", "chunk_index": 1, "source": "path/to/file"},
-            },
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.95,
+                    "payload": {
+                        "document_id": "d1",
+                        "content": "First chunk",
+                        "chunk_index": 0,
+                        "title": "Doc 1",
+                    },
+                },
+                {
+                    "id": "c2",
+                    "score": 0.85,
+                    "payload": {
+                        "document_id": "d2",
+                        "content": "Second chunk",
+                        "chunk_index": 1,
+                        "source": "path/to/file",
+                    },
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         retriever = KnowledgeRetriever(store, embedding)
 

@@ -36,10 +36,12 @@ _log = get_logger("eaip.tracing.provider")
 
 
 def _build_resource(settings: TelemetrySettings) -> Resource:
-    return Resource.create({
-        "service.name": settings.service_name,
-        "service.version": "0.0.2",
-    })
+    return Resource.create(
+        {
+            "service.name": settings.service_name,
+            "service.version": "0.0.2",
+        }
+    )
 
 
 def setup_telemetry(settings: TelemetrySettings) -> None:

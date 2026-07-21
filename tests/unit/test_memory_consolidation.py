@@ -10,7 +10,13 @@ from eaip.memory.consolidation import (
     NeverConsolidateStrategy,
     TimeBasedConsolidationStrategy,
 )
-from eaip.memory.models import ConsolidationConfig, ConsolidationReport, MemoryItem, MemoryScope, MemoryType
+from eaip.memory.models import (
+    ConsolidationConfig,
+    ConsolidationReport,
+    MemoryItem,
+    MemoryScope,
+    MemoryType,
+)
 
 
 @pytest.fixture
@@ -26,27 +32,37 @@ def config() -> ConsolidationConfig:
 @pytest.fixture
 def memories(scope: MemoryScope) -> list[MemoryItem]:
     return [
-        MemoryItem(memory_id=f"m{i}", memory_type=MemoryType.EPISODIC, scope=scope, content=f"event {i}")
+        MemoryItem(
+            memory_id=f"m{i}", memory_type=MemoryType.EPISODIC, scope=scope, content=f"event {i}"
+        )
         for i in range(5)
     ]
 
 
 class TestTimeBasedConsolidationStrategy:
     @pytest.mark.asyncio
-    async def test_should_consolidate_enough_memories(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_should_consolidate_enough_memories(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         strategy = TimeBasedConsolidationStrategy()
         result = await strategy.should_consolidate(memories, config)
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_should_not_consolidate_few_memories(self, config: ConsolidationConfig, scope: MemoryScope) -> None:
+    async def test_should_not_consolidate_few_memories(
+        self, config: ConsolidationConfig, scope: MemoryScope
+    ) -> None:
         strategy = TimeBasedConsolidationStrategy()
-        few = [MemoryItem(memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope, content="x")]
+        few = [
+            MemoryItem(memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope, content="x")
+        ]
         result = await strategy.should_consolidate(few, config)
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_consolidate(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_consolidate(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         strategy = TimeBasedConsolidationStrategy()
         report = await strategy.consolidate(memories, config)
         assert report.source_count == 5
@@ -55,12 +71,16 @@ class TestTimeBasedConsolidationStrategy:
 
 class TestNeverConsolidateStrategy:
     @pytest.mark.asyncio
-    async def test_never_consolidates(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_never_consolidates(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         strategy = NeverConsolidateStrategy()
         assert await strategy.should_consolidate(memories, config) is False
 
     @pytest.mark.asyncio
-    async def test_consolidate_returns_empty(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_consolidate_returns_empty(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         strategy = NeverConsolidateStrategy()
         report = await strategy.consolidate(memories, config)
         assert report.source_count == 0
@@ -68,13 +88,17 @@ class TestNeverConsolidateStrategy:
 
 class TestConditionalConsolidationStrategy:
     @pytest.mark.asyncio
-    async def test_default_condition(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_default_condition(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         strategy = ConditionalConsolidationStrategy()
         result = await strategy.should_consolidate(memories, config)
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_custom_condition(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_custom_condition(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         def condition(_mems: list[MemoryItem], _cfg: ConsolidationConfig) -> bool:
             return False
 
@@ -83,7 +107,9 @@ class TestConditionalConsolidationStrategy:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_custom_action(self, config: ConsolidationConfig, memories: list[MemoryItem]) -> None:
+    async def test_custom_action(
+        self, config: ConsolidationConfig, memories: list[MemoryItem]
+    ) -> None:
         def action(_mems: list[MemoryItem], _cfg: ConsolidationConfig) -> ConsolidationReport:
             return ConsolidationReport(source_count=len(_mems), consolidated_count=2)
 
@@ -95,10 +121,18 @@ class TestConditionalConsolidationStrategy:
 
 class TestMemoryConsolidationService:
     @pytest.mark.asyncio
-    async def test_consolidate_episodic_to_semantic(self, config: ConsolidationConfig, scope: MemoryScope) -> None:
+    async def test_consolidate_episodic_to_semantic(
+        self, config: ConsolidationConfig, scope: MemoryScope
+    ) -> None:
         service = MemoryConsolidationService(config=config)
         memories = [
-            MemoryItem(memory_id=f"m{i}", memory_type=MemoryType.EPISODIC, scope=scope, content=f"event {i}", tags=("tag",))
+            MemoryItem(
+                memory_id=f"m{i}",
+                memory_type=MemoryType.EPISODIC,
+                scope=scope,
+                content=f"event {i}",
+                tags=("tag",),
+            )
             for i in range(5)
         ]
         report = await service.consolidate_episodic_to_semantic(memories)
@@ -128,9 +162,15 @@ class TestMemoryConsolidationService:
     async def test_deduplicate(self, scope: MemoryScope) -> None:
         service = MemoryConsolidationService()
         memories = [
-            MemoryItem(memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope, content="same"),
-            MemoryItem(memory_id="m2", memory_type=MemoryType.EPISODIC, scope=scope, content="same"),
-            MemoryItem(memory_id="m3", memory_type=MemoryType.EPISODIC, scope=scope, content="different"),
+            MemoryItem(
+                memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope, content="same"
+            ),
+            MemoryItem(
+                memory_id="m2", memory_type=MemoryType.EPISODIC, scope=scope, content="same"
+            ),
+            MemoryItem(
+                memory_id="m3", memory_type=MemoryType.EPISODIC, scope=scope, content="different"
+            ),
         ]
         unique, duplicates = await service.deduplicate(memories)
         assert len(unique) == 2

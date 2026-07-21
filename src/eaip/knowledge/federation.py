@@ -98,16 +98,22 @@ class KnowledgeFederation:
                 )
 
         merged = await self._merge_and_normalize(
-            all_chunks, query_str, top_k, score_threshold, enable_reranking,
+            all_chunks,
+            query_str,
+            top_k,
+            score_threshold,
+            enable_reranking,
         )
         duration = (time.monotonic() - t0) * 1000
 
-        self._publish_event(FederatedSearchExecuted(
-            query=query_str,
-            sources=tuple(collections),
-            result_count=merged.total_results,
-            duration_ms=duration,
-        ))
+        self._publish_event(
+            FederatedSearchExecuted(
+                query=query_str,
+                sources=tuple(collections),
+                result_count=merged.total_results,
+                duration_ms=duration,
+            )
+        )
 
         return RetrievalResult(
             query=query_str,
@@ -195,7 +201,11 @@ class KnowledgeFederation:
             all_chunks.extend(memory_result.chunks)
 
         merged = await self._merge_and_normalize(
-            all_chunks, query_str, top_k, score_threshold, enable_reranking=True,
+            all_chunks,
+            query_str,
+            top_k,
+            score_threshold,
+            enable_reranking=True,
         )
         duration = (time.monotonic() - t0) * 1000
 
@@ -203,12 +213,14 @@ class KnowledgeFederation:
         if memory_result is not None:
             src_list.append("memory")
 
-        self._publish_event(FederatedSearchExecuted(
-            query=query_str,
-            sources=tuple(src_list),
-            result_count=merged.total_results,
-            duration_ms=duration,
-        ))
+        self._publish_event(
+            FederatedSearchExecuted(
+                query=query_str,
+                sources=tuple(src_list),
+                result_count=merged.total_results,
+                duration_ms=duration,
+            )
+        )
 
         return RetrievalResult(
             query=query_str,

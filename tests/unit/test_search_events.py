@@ -11,7 +11,9 @@ from eaip.search.events import (
 
 class TestSearchEvents:
     def test_search_executed(self) -> None:
-        event = SearchExecuted(query="test query", provider_name="knowledge", result_count=5, duration_ms=42.0)
+        event = SearchExecuted(
+            query="test query", provider_name="knowledge", result_count=5, duration_ms=42.0
+        )
         assert event.event_type == "eaip.search.executed"
         assert event.query == "test query"
         assert event.provider_name == "knowledge"

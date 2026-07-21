@@ -9,7 +9,6 @@ from eaip.admin.models import AdminAction, RuntimeSnapshot
 from eaip.logging.context import get_logger
 
 if TYPE_CHECKING:
-    from eaip.capabilities.capability import CapabilityStatus as CapStatus
     from eaip.events.bus import EventBus
     from eaip.health.checks import HealthReport
     from eaip.platform.platform import Platform
@@ -59,10 +58,10 @@ class RuntimeManager:
         component_states: dict[str, str] = {}
         self._collect_states(health_report, component_states)
 
-        capabilities = list(platform.capabilities.list())
-        active_capabilities = [c.name for c in capabilities if c.status == "enabled"]  # type: ignore[union-attr]
+        capabilities = list(platform.capabilities.all())
+        active_capabilities = [c.name for c in capabilities if c.status == "enabled"]
 
-        active_modules = list(self._kernel._modules.keys())  # noqa: SLF001
+        active_modules = list(self._kernel._modules.keys())
 
         uptime = 0.0
 
@@ -143,7 +142,7 @@ class RuntimeManager:
             await loader.activate(plugin_name, platform)
             success = True
             message = "ok"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             success = False
             message = str(exc)
 
@@ -177,7 +176,7 @@ class RuntimeManager:
         Returns:
             A list of module names registered in the kernel.
         """
-        return list(self._kernel._modules.keys())  # noqa: SLF001
+        return list(self._kernel._modules.keys())
 
     def list_active_capabilities(self) -> list[str]:
         """List names of all active (enabled) capabilities.
@@ -185,8 +184,8 @@ class RuntimeManager:
         Returns:
             A list of enabled capability names.
         """
-        capabilities = list(self.platform.capabilities.list())
-        return [c.name for c in capabilities if c.status == "enabled"]  # type: ignore[union-attr]
+        capabilities = list(self.platform.capabilities.all())
+        return [c.name for c in capabilities if c.status == "enabled"]
 
     def get_health_summary(self) -> dict[str, Any]:
         """Return an aggregated health summary string.

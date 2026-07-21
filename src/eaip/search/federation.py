@@ -7,7 +7,6 @@ from typing import Any
 
 from eaip.logging.context import get_logger
 from eaip.search.events import SearchFederated
-from eaip.search.exceptions import SearchQueryError
 from eaip.search.models import SearchQuery, SearchResult, SearchResultItem
 from eaip.search.providers import SearchProvider
 
@@ -117,12 +116,14 @@ class SearchFederation:
             query=query.query,
         )
 
-        self._publish_event(SearchFederated(
-            query=query.query,
-            sources=tuple(targets),
-            result_count=result.total_count,
-            duration_ms=duration,
-        ))
+        self._publish_event(
+            SearchFederated(
+                query=query.query,
+                sources=tuple(targets),
+                result_count=result.total_count,
+                duration_ms=duration,
+            )
+        )
 
         return result
 
@@ -176,11 +177,10 @@ class SearchFederation:
                 query=query.query,
             )
 
-        result = await self.federated_search(
+        return await self.federated_search(
             query,
             sources=tuple(dept_sources),
         )
-        return result
 
     async def health(self) -> dict[str, Any]:
         """Check the health of all registered federation sources.

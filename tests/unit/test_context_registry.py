@@ -31,7 +31,7 @@ class TestPromptRegistry:
         reg = PromptRegistry()
         try:
             reg.get("nonexistent")
-            assert False
+            raise AssertionError()
         except PromptNotFoundError:
             pass
 
@@ -82,7 +82,7 @@ class TestPromptRegistry:
         reg.register(_T.make("nf"))
         try:
             reg.get_version("nf", "99.0.0")
-            assert False
+            raise AssertionError()
         except PromptNotFoundError:
             pass
 

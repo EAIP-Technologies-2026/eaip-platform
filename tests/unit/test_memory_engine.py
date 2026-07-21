@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -16,11 +16,9 @@ from eaip.memory.events import (
     MemorySearchExecuted,
     MemoryUpdated,
 )
-from eaip.memory.exceptions import MemoryEngineError, MemoryNotFoundError
+from eaip.memory.exceptions import MemoryNotFoundError
 from eaip.memory.models import (
-    ConsolidationConfig,
     MemoryConfig,
-    MemoryItem,
     MemoryQuery,
     MemoryScope,
     MemoryStatus,
@@ -57,9 +55,13 @@ class TestMemoryEngine:
         assert item.version == 1
 
     @pytest.mark.asyncio
-    async def test_create_memory_with_tags_and_metadata(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_create_memory_with_tags_and_metadata(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         item = await engine.create_memory(
-            "tagged memory", MemoryType.EPISODIC, scope,
+            "tagged memory",
+            MemoryType.EPISODIC,
+            scope,
             tags=("important", "test"),
             metadata={"source": "test"},
             importance=0.9,
@@ -69,18 +71,24 @@ class TestMemoryEngine:
         assert item.importance == 0.9
 
     @pytest.mark.asyncio
-    async def test_create_memory_with_importance_clamped(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_create_memory_with_importance_clamped(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         item = await engine.create_memory("x", MemoryType.WORKING, scope, importance=2.0)
         assert item.importance == 1.0
 
     @pytest.mark.asyncio
-    async def test_create_memory_with_expires_at(self, engine: MemoryEngine, scope: MemoryScope) -> None:
-        dt = datetime(2026, 12, 31, tzinfo=timezone.utc)
+    async def test_create_memory_with_expires_at(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
+        dt = datetime(2026, 12, 31, tzinfo=UTC)
         item = await engine.create_memory("x", MemoryType.WORKING, scope, expires_at=dt)
         assert item.expires_at == dt
 
     @pytest.mark.asyncio
-    async def test_create_memory_with_embedding(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_create_memory_with_embedding(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         emb = (0.1, 0.2, 0.3)
         item = await engine.create_memory("x", MemoryType.WORKING, scope, embedding=emb)
         assert item.embedding == emb
@@ -92,7 +100,9 @@ class TestMemoryEngine:
         assert item is None
 
     @pytest.mark.asyncio
-    async def test_get_memory_increments_access_count(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_get_memory_increments_access_count(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         created = await engine.create_memory("test", MemoryType.WORKING, scope)
         await engine.get_memory(created.memory_id, scope)
         stored = await engine.store.read(ScopedMemoryId(memory_id=created.memory_id, scope=scope))
@@ -113,13 +123,17 @@ class TestMemoryEngine:
         assert updated.tags == ("new",)
 
     @pytest.mark.asyncio
-    async def test_update_memory_metadata_merged(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_update_memory_metadata_merged(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         created = await engine.create_memory("x", MemoryType.WORKING, scope, metadata={"a": 1})
         updated = await engine.update_memory(created.memory_id, scope, metadata={"b": 2})
         assert updated.metadata == {"a": 1, "b": 2}
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_memory_raises(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_update_nonexistent_memory_raises(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         with pytest.raises(MemoryNotFoundError):
             await engine.update_memory("nonexistent", scope, content="x")
 
@@ -130,7 +144,9 @@ class TestMemoryEngine:
         assert await engine.get_memory(created.memory_id, scope) is None
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_returns_false(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_delete_nonexistent_returns_false(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         assert await engine.delete_memory("nonexistent", scope) is False
 
     @pytest.mark.asyncio
@@ -192,7 +208,9 @@ class TestMemoryEngine:
         assert count >= 0
 
     @pytest.mark.asyncio
-    async def test_summarize_without_summarizer(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_summarize_without_summarizer(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         created = await engine.create_memory("summary test", MemoryType.WORKING, scope)
         result = await engine.summarize([created.memory_id], scope)
         assert result is None
@@ -258,7 +276,9 @@ class TestMemoryEngineAuthorization:
         assert "get_memory" in called
 
     @pytest.mark.asyncio
-    async def test_authorize_called_on_update(self, engine: MemoryEngine, scope: MemoryScope) -> None:
+    async def test_authorize_called_on_update(
+        self, engine: MemoryEngine, scope: MemoryScope
+    ) -> None:
         store = InMemoryStore()
         called: list[str] = []
 

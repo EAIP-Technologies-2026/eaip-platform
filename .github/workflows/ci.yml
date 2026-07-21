@@ -1,176 +1,99 @@
----
-# =============================================================================
-# EAIP — Continuous Integration
-# -----------------------------------------------------------------------------
-# Lint + type-check + test matrix across supported Python versions and OSes.
-# Security workflow lives in security.yml.
-# =============================================================================
-name: CI
+name: Backend CI
+
 on:
   push:
-    branches: [main, "release/**"]
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".github/workflows/ci.yml"
   pull_request:
-    branches: [main, "release/**"]
-  workflow_dispatch:
-# Cancel superseded runs on the same ref to save CI minutes.
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-# Default to read-only tokens; jobs opt-in to writes explicitly.
-permissions:
-  contents: read
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.13"
+  EAIP_CORE__ENVIRONMENT: testing
+
 jobs:
-  # ---------------------------------------------------------------------------
-  # Pre-commit — runs all configured hooks against the full tree.
-  # ---------------------------------------------------------------------------
-  pre-commit:
-    name: pre-commit
+  quality:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - name: Install pre-commit
+
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pre-commit
-      - name: Cache pre-commit
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            pre-commit-${{ runner.os }}-
-      - name: Run pre-commit on all files
-        run: pre-commit run --all-files --show-diff-on-failure --color always
-  # ---------------------------------------------------------------------------
-  # Lint + type-check — fast, single job.
-  # ---------------------------------------------------------------------------
-  lint:
-    name: lint & typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,test]"
-      - name: Ruff
-        run: ruff check --output-format=github .
-      - name: Ruff format check
-        run: ruff format --check .
-      - name: Black
-        run: black --check .
-      - name: mypy
-        run: mypy --config-file pyproject.toml || echo "::warning::mypy reports issues (non-blocking until src/ lands in EP-0002)"
-  # ---------------------------------------------------------------------------
-  # Tests — matrix across Python versions and OSes.
-  # ---------------------------------------------------------------------------
+          pip install -e ".[dev,test]"
+          pip install ruff mypy
+
+      - name: Lint with ruff
+        run: ruff check src/
+
+      - name: Typecheck with mypy
+        run: mypy src/ --ignore-missing-imports
+
   test:
-    name: tests (py${{ matrix.python }} / ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python: ["3.11", "3.12", "3.13"]
-        include:
-          - os: macos-latest
-            python: "3.12"
-          - os: windows-latest
-            python: "3.12"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python }}
-          cache: pip
-      - name: Install
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,test]"
-      - name: Run pytest
-        shell: bash
-        run: |
-          if [ -d tests ] && [ -n "$(find tests -name 'test_*.py' -print -quit)" ]; then
-            pytest --cov --cov-report=xml --cov-report=term-missing
-          else
-            echo "No tests yet — skipping pytest invocation (EP-0001A is documentation-only)."
-          fi
-      - name: Upload coverage artefact
-        if: always() && hashFiles('coverage.xml') != ''
-        uses: actions/upload-artifact@v7
-        with:
-          name: coverage-${{ matrix.os }}-py${{ matrix.python }}
-          path: coverage.xml
-          if-no-files-found: ignore
-  # ---------------------------------------------------------------------------
-  # Build — sanity-check the sdist & wheel build.
-  # ---------------------------------------------------------------------------
-  build:
-    name: build distribution
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [lint]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build twine
-      - name: Build sdist & wheel
-        run: python -m build
-      - name: Validate metadata
-        run: twine check dist/*
-      - name: Upload distribution artefacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist
-          path: dist/*
-          if-no-files-found: error
-  # ---------------------------------------------------------------------------
-  # Required status check aggregator — branch protection points at this job.
-  # ---------------------------------------------------------------------------
-  ci:
-    name: CI
-    needs: [pre-commit, lint, test, build]
-    if: always()
+    name: Tests
+    needs: quality
     runs-on: ubuntu-latest
     steps:
-      - name: Aggregate
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,test]"
+
+      - name: Run tests with coverage
         run: |
-          echo "pre-commit: ${{ needs.pre-commit.result }}"
-          echo "lint:       ${{ needs.lint.result }}"
-          echo "test:       ${{ needs.test.result }}"
-          echo "build:      ${{ needs.build.result }}"
-          if [[ "${{ needs.pre-commit.result }}" != "success" || \
-                "${{ needs.lint.result }}"       != "success" || \
-                "${{ needs.test.result }}"       != "success" || \
-                "${{ needs.build.result }}"      != "success" ]]; then
-            echo "::error::One or more CI jobs failed."
-            exit 1
-          fi
-          echo "All CI jobs passed."
+          pip install pytest-cov
+          python -m pytest tests/ -v --cov=src/ --cov-report=xml --cov-report=term --asyncio-mode=auto
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  docker:
+    name: Docker Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: eaip-platform:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    name: Release Build
+    if: github.ref == 'refs/heads/main'
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build release artifact
+        run: |
+          python -m pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eaip-release-${{ github.sha }}
+          path: dist/

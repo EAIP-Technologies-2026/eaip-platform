@@ -61,9 +61,7 @@ class PolicyRuntimeModule:
     def authorization(self) -> AuthorizationManager:
         """Return the AuthorizationManager, raising if not yet started."""
         if self._authorization is None:
-            raise RuntimeError(
-                "AuthorizationManager not available until start() is called"
-            )
+            raise RuntimeError("AuthorizationManager not available until start() is called")
         return self._authorization
 
     async def start(self, kernel: RuntimeKernel) -> None:

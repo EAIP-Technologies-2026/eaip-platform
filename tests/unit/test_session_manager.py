@@ -41,7 +41,7 @@ class TestSessionManager:
         mgr = SessionManager()
         try:
             asyncio.run(mgr.get_session("nonexistent"))
-            assert False
+            raise AssertionError()
         except SessionNotFoundError:
             pass
 
@@ -51,7 +51,7 @@ class TestSessionManager:
         asyncio.run(mgr.expire_session(s.id))
         try:
             asyncio.run(mgr.get_session(s.id))
-            assert False
+            raise AssertionError()
         except SessionExpiredError:
             pass
 
@@ -152,7 +152,7 @@ class TestSessionManager:
         asyncio.run(mgr.create_session("user", user_id="u1"))
         try:
             asyncio.run(mgr.create_session("user", user_id="u1"))
-            assert False
+            raise AssertionError()
         except SessionLimitError:
             pass
 
@@ -162,8 +162,8 @@ class TestSessionManager:
         assert mgr.config.default_ttl_seconds == 7200
 
     def test_expire_stale_sessions(self) -> None:
-        past = datetime.now() - timedelta(hours=1)
+        datetime.now() - timedelta(hours=1)
         mgr = SessionManager()
-        s = asyncio.run(mgr.create_session("user", ttl_seconds=1))
+        asyncio.run(mgr.create_session("user", ttl_seconds=1))
         count = asyncio.run(mgr._expire_stale_sessions())
         assert count == 0

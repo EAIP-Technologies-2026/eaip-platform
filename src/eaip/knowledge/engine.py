@@ -98,7 +98,8 @@ class KnowledgeEngine:
         self._ingestion_config = IngestionConfig(
             collection=default_collection,
             chunking=default_chunking or _chunking_cfg or ChunkingConfig(),
-            embedding=default_embedding or EmbeddingConfig(
+            embedding=default_embedding
+            or EmbeddingConfig(
                 provider="default",
                 model="default",
                 dimensions=384,
@@ -334,7 +335,8 @@ class KnowledgeEngine:
         col = KnowledgeCollection(
             collection_id=f"col:{name}",
             name=name,
-            embedding_config=embedding_config or EmbeddingConfig(
+            embedding_config=embedding_config
+            or EmbeddingConfig(
                 provider="default",
                 model="default",
                 dimensions=dimensions,

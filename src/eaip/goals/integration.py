@@ -59,12 +59,14 @@ class GoalRuntimeModule:
         self._log.info("goals.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="goals:engine",
-            title="Business Goal Engine",
-            status=CapabilityStatus.ENABLED,
-            tags=("goals", "engine"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="goals:engine",
+                title="Business Goal Engine",
+                status=CapabilityStatus.ENABLED,
+                tags=("goals", "engine"),
+            )
+        )
 
         kernel.register_module("goals.engine", self._engine)
         kernel.register_module("goals.tracker", self._tracker)

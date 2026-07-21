@@ -14,7 +14,9 @@ from eaip.providers.events import (
 
 class TestProviderEvents:
     def test_provider_registered(self) -> None:
-        evt = ProviderRegistered(provider_name="ollama", provider_type="ollama", default_model="llama3")
+        evt = ProviderRegistered(
+            provider_name="ollama", provider_type="ollama", default_model="llama3"
+        )
         assert evt.event_type == "eaip.provider.registered"
         assert isinstance(evt, DomainEvent)
         assert evt.provider_name == "ollama"
@@ -24,8 +26,9 @@ class TestProviderEvents:
         assert evt.event_type == "eaip.provider.unregistered"
 
     def test_provider_status_changed(self) -> None:
-        evt = ProviderStatusChanged(provider_name="ollama", previous_status="unavailable",
-                                     current_status="available")
+        evt = ProviderStatusChanged(
+            provider_name="ollama", previous_status="unavailable", current_status="available"
+        )
         assert evt.current_status == "available"
 
     def test_provider_request_started(self) -> None:
@@ -33,8 +36,9 @@ class TestProviderEvents:
         assert evt.stream is False
 
     def test_provider_request_completed(self) -> None:
-        evt = ProviderRequestCompleted(provider_name="ollama", model="llama3",
-                                        duration_ms=150.0, finish_reason="stop")
+        evt = ProviderRequestCompleted(
+            provider_name="ollama", model="llama3", duration_ms=150.0, finish_reason="stop"
+        )
         assert evt.duration_ms == 150.0
 
     def test_provider_request_failed(self) -> None:

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 from eaip.automation.events import RuleTriggered
-from eaip.automation.exceptions import TriggerProcessingError
 from eaip.automation.models import TriggerEvent, TriggerType
 from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
@@ -59,7 +59,9 @@ class TriggerService:
         return event
 
     def register_event_listener(
-        self, event_type: str, handler: Callable[[TriggerEvent], Any],
+        self,
+        event_type: str,
+        handler: Callable[[TriggerEvent], Any],
     ) -> None:
         if event_type not in self._listeners:
             self._listeners[event_type] = []
@@ -67,7 +69,9 @@ class TriggerService:
         self._log.debug("trigger.listener.registered", event_type=event_type)
 
     def unregister_event_listener(
-        self, event_type: str, handler: Callable[[TriggerEvent], Any],
+        self,
+        event_type: str,
+        handler: Callable[[TriggerEvent], Any],
     ) -> None:
         listeners = self._listeners.get(event_type, [])
         if handler in listeners:

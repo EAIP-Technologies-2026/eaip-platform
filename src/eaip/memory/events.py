@@ -111,7 +111,7 @@ class MemorySearchExecuted(MemoryEngineEvent):
 
     event_type: ClassVar[str] = "eaip.memory.search.executed"
     query: str
-    filters: dict[str, Any] = {}  # type: ignore[misc]
+    filters: dict[str, Any] = {}
     result_count: int
     duration_ms: float
 

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from eaip.brain.brain_registry import BrainRegistry
 from eaip.brain.department_brain import DepartmentBrain
 from eaip.brain.enterprise_brain import EnterpriseBrain
-from eaip.brain.models import BrainResult
 
 
 class TestBrainRegistryInit:
@@ -110,8 +109,6 @@ class TestBrainRegistryQueryAll:
         registry.register_department("hr", hr)
         registry.register_department("bad", bad)
 
-        original_eng = eng.query
-        original_hr = hr.query
         bad.query = AsyncMock(side_effect=RuntimeError("broken"))
 
         results = await registry.query_all("test")

@@ -139,14 +139,18 @@ class KeywordSearchStrategy:
         try:
             from eaip.knowledge.retrieval import RetrievalPipeline  # noqa: PLC0415
 
-            cfg = type("_Cfg", (), {
-                "collection": collection,
-                "top_k": config.top_k,
-                "score_threshold": config.score_threshold,
-            })()
+            cfg = type(
+                "_Cfg",
+                (),
+                {
+                    "collection": collection,
+                    "top_k": config.top_k,
+                    "score_threshold": config.score_threshold,
+                },
+            )()
             vs = type("_VS", (), {"search": self._vector_store_search})()
             ep = type("_EP", (), {"embed": self._noop_embed, "dimensions": 384})()
-            pipeline = RetrievalPipeline(config=cfg, vector_store=vs, embedding_provider=ep)
+            RetrievalPipeline(config=cfg, vector_store=vs, embedding_provider=ep)
         except Exception:
             pass
 
@@ -191,15 +195,17 @@ class KeywordSearchStrategy:
             meta = dict(chunk.metadata)
             meta["keyword_score"] = score
 
-            scored.append(RetrievedChunk(
-                chunk_id=chunk.chunk_id,
-                document_id=chunk.document_id,
-                collection=chunk.collection,
-                content=chunk.content,
-                score=score,
-                metadata=meta,
-                attribution=chunk.attribution,
-            ))
+            scored.append(
+                RetrievedChunk(
+                    chunk_id=chunk.chunk_id,
+                    document_id=chunk.document_id,
+                    collection=chunk.collection,
+                    content=chunk.content,
+                    score=score,
+                    metadata=meta,
+                    attribution=chunk.attribution,
+                )
+            )
 
         scored.sort(key=lambda c: c.score, reverse=True)
         return scored
@@ -300,15 +306,20 @@ class HybridSearchStrategy:
                 meta["keyword_score"] = keyword_score
                 meta["hybrid_score"] = combined
 
-                merged.append((combined, RetrievedChunk(
-                    chunk_id=chunk.chunk_id,
-                    document_id=chunk.document_id,
-                    collection=chunk.collection,
-                    content=chunk.content,
-                    score=combined,
-                    metadata=meta,
-                    attribution=chunk.attribution,
-                )))
+                merged.append(
+                    (
+                        combined,
+                        RetrievedChunk(
+                            chunk_id=chunk.chunk_id,
+                            document_id=chunk.document_id,
+                            collection=chunk.collection,
+                            content=chunk.content,
+                            score=combined,
+                            metadata=meta,
+                            attribution=chunk.attribution,
+                        ),
+                    )
+                )
 
         merged.sort(key=lambda x: x[0], reverse=True)
         return [m[1] for m in merged[:top_k]]
@@ -377,15 +388,20 @@ class CrossEncoderReranker:
             meta = dict(chunk.metadata)
             meta["cross_encoder_score"] = chunk.score
 
-            scored.append((chunk.score, RetrievedChunk(
-                chunk_id=chunk.chunk_id,
-                document_id=chunk.document_id,
-                collection=chunk.collection,
-                content=chunk.content,
-                score=chunk.score,
-                metadata=meta,
-                attribution=chunk.attribution,
-            )))
+            scored.append(
+                (
+                    chunk.score,
+                    RetrievedChunk(
+                        chunk_id=chunk.chunk_id,
+                        document_id=chunk.document_id,
+                        collection=chunk.collection,
+                        content=chunk.content,
+                        score=chunk.score,
+                        metadata=meta,
+                        attribution=chunk.attribution,
+                    ),
+                )
+            )
 
         scored.sort(key=lambda x: x[0], reverse=True)
         return [s[1] for s in scored]

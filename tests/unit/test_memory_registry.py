@@ -20,16 +20,22 @@ def registry() -> MemoryRegistry:
 
 @pytest.fixture
 def item_a(scope: MemoryScope) -> MemoryItem:
-    return MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="alpha", tags=("x",))
+    return MemoryItem(
+        memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="alpha", tags=("x",)
+    )
 
 
 @pytest.fixture
 def item_b(scope: MemoryScope) -> MemoryItem:
-    return MemoryItem(memory_id="b", memory_type=MemoryType.WORKING, scope=scope, content="beta", tags=("y",))
+    return MemoryItem(
+        memory_id="b", memory_type=MemoryType.WORKING, scope=scope, content="beta", tags=("y",)
+    )
 
 
 class TestMemoryRegistry:
-    def test_register_and_get(self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem) -> None:
+    def test_register_and_get(
+        self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem
+    ) -> None:
         registry.register(item_a)
         scoped_id = ScopedMemoryId(memory_id="a", scope=scope)
         result = registry.get(scoped_id)
@@ -46,7 +52,9 @@ class TestMemoryRegistry:
         assert registry.has(scoped_id) is True
         assert registry.has(ScopedMemoryId(memory_id="no", scope=scope)) is False
 
-    def test_unregister(self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem) -> None:
+    def test_unregister(
+        self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem
+    ) -> None:
         registry.register(item_a)
         scoped_id = ScopedMemoryId(memory_id="a", scope=scope)
         assert registry.unregister(scoped_id) is True
@@ -61,37 +69,69 @@ class TestMemoryRegistry:
         registry.register(item_b)
         assert len(registry.all()) == 2
 
-    def test_list_by_scope(self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem) -> None:
+    def test_list_by_scope(
+        self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem
+    ) -> None:
         other = MemoryScope(tenant_id="t2")
         registry.register(item_a)
-        registry.register(MemoryItem(memory_id="c", memory_type=MemoryType.WORKING, scope=other, content="other"))
+        registry.register(
+            MemoryItem(memory_id="c", memory_type=MemoryType.WORKING, scope=other, content="other")
+        )
         items = registry.list_by_scope(scope)
         assert len(items) == 1
 
     def test_list_by_type(self, registry: MemoryRegistry, scope: MemoryScope) -> None:
-        registry.register(MemoryItem(memory_id="w", memory_type=MemoryType.WORKING, scope=scope, content="x"))
-        registry.register(MemoryItem(memory_id="s", memory_type=MemoryType.SESSION, scope=scope, content="y"))
+        registry.register(
+            MemoryItem(memory_id="w", memory_type=MemoryType.WORKING, scope=scope, content="x")
+        )
+        registry.register(
+            MemoryItem(memory_id="s", memory_type=MemoryType.SESSION, scope=scope, content="y")
+        )
         assert len(registry.list_by_type(MemoryType.WORKING)) == 1
         assert len(registry.list_by_type(MemoryType.SESSION)) == 1
 
     def test_list_by_tags(self, registry: MemoryRegistry, scope: MemoryScope) -> None:
-        registry.register(MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x", tags=("important",)))
-        registry.register(MemoryItem(memory_id="b", memory_type=MemoryType.WORKING, scope=scope, content="y", tags=("normal",)))
+        registry.register(
+            MemoryItem(
+                memory_id="a",
+                memory_type=MemoryType.WORKING,
+                scope=scope,
+                content="x",
+                tags=("important",),
+            )
+        )
+        registry.register(
+            MemoryItem(
+                memory_id="b",
+                memory_type=MemoryType.WORKING,
+                scope=scope,
+                content="y",
+                tags=("normal",),
+            )
+        )
         items = registry.list_by_tags(("important",))
         assert len(items) == 1
 
     def test_count(self, registry: MemoryRegistry, scope: MemoryScope) -> None:
-        registry.register(MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x"))
+        registry.register(
+            MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x")
+        )
         assert registry.count() == 1
 
     def test_count_by_type(self, registry: MemoryRegistry, scope: MemoryScope) -> None:
-        registry.register(MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x"))
-        registry.register(MemoryItem(memory_id="b", memory_type=MemoryType.SESSION, scope=scope, content="y"))
+        registry.register(
+            MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x")
+        )
+        registry.register(
+            MemoryItem(memory_id="b", memory_type=MemoryType.SESSION, scope=scope, content="y")
+        )
         assert registry.count_by_type(MemoryType.WORKING) == 1
         assert registry.count_by_type(MemoryType.SESSION) == 1
 
     def test_count_by_scope(self, registry: MemoryRegistry, scope: MemoryScope) -> None:
-        registry.register(MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x"))
+        registry.register(
+            MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="x")
+        )
         assert registry.count_by_scope(scope) == 1
 
     def test_relations(self, registry: MemoryRegistry) -> None:
@@ -118,7 +158,9 @@ class TestMemoryRegistry:
         assert len(registry.get_relations("a")) == 0
 
     @pytest.mark.asyncio
-    async def test_health(self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem) -> None:
+    async def test_health(
+        self, registry: MemoryRegistry, scope: MemoryScope, item_a: MemoryItem
+    ) -> None:
         registry.register(item_a)
         health = await registry.health()
         assert health["status"] == "healthy"

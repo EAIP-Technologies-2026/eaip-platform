@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from eaip.capabilities.capability import CapabilityStatus
 from eaip.capabilities.discovery import CapabilityDiscovery
 from eaip.capabilities.registry import CapabilityRegistry
 from eaip.plugins.plugin import PluginManifest

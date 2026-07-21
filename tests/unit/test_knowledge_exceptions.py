@@ -40,7 +40,7 @@ class TestKnowledgeExceptions:
         assert err.default_code is ErrorCode.NOT_FOUND
 
     def test_ingestion_error(self) -> None:
-        err = IngestionError("ingestion failed")
+        IngestionError("ingestion failed")
 
     def test_retrieval_error(self) -> None:
         err = RetrievalError("retrieval failed")

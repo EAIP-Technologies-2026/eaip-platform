@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from eaip.brain.events import BrainSyncCompleted, DepartmentBrainQueryExecuted
 from eaip.brain.exceptions import BrainQueryError

@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from eaip.kgraph.events import InferredRelationshipCreated
-from eaip.kgraph.exceptions import EntityNotFoundError, GraphTraversalError
-from eaip.kgraph.models import Entity, Relationship
+from eaip.kgraph.exceptions import EntityNotFoundError
+from eaip.kgraph.models import Entity
 from eaip.logging.context import get_logger
 
 
@@ -31,16 +31,20 @@ class SemanticRelationshipService:
     async def _emit(self, event: Any) -> None:
         for handler in self._event_handlers:
             try:
-                if hasattr(handler, "__call__"):
+                if callable(handler):
                     await handler(event)
             except Exception:
                 self._log.warning("event.handler.failed", event_type=type(event).__name__)
 
     async def infer_relationships(
-        self, entity_id: str, max_distance: int = 2,
+        self,
+        entity_id: str,
+        max_distance: int = 2,
     ) -> list[dict[str, Any]]:
         if entity_id not in self._graph.entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
         source = self._graph.entities[entity_id]
         inferred: list[dict[str, Any]] = []
 
@@ -49,12 +53,14 @@ class SemanticRelationshipService:
                 continue
             score = self._compute_shared_property_score(source, target)
             if score > 0:
-                inferred.append({
-                    "source_entity_id": entity_id,
-                    "target_entity_id": eid,
-                    "relationship_type": "shared_property",
-                    "confidence": round(score, 4),
-                })
+                inferred.append(
+                    {
+                        "source_entity_id": entity_id,
+                        "target_entity_id": eid,
+                        "relationship_type": "shared_property",
+                        "confidence": round(score, 4),
+                    }
+                )
 
         if max_distance > 1:
             seen = {entity_id}
@@ -68,27 +74,32 @@ class SemanticRelationshipService:
                     if rel.target_entity_id not in seen:
                         seen.add(rel.target_entity_id)
                         for eid, target in self._graph.entities.items():
-                            if eid == rel.target_entity_id or eid == entity_id or eid in seen:
+                            if eid in (rel.target_entity_id, entity_id) or eid in seen:
                                 continue
                             score = self._compute_shared_property_score(
-                                self._graph.entities[rel.target_entity_id], target,
+                                self._graph.entities[rel.target_entity_id],
+                                target,
                             )
                             if score > 0:
-                                inferred.append({
-                                    "source_entity_id": rel.target_entity_id,
-                                    "target_entity_id": eid,
-                                    "relationship_type": "shared_property",
-                                    "confidence": round(score, 4),
-                                })
+                                inferred.append(
+                                    {
+                                        "source_entity_id": rel.target_entity_id,
+                                        "target_entity_id": eid,
+                                        "relationship_type": "shared_property",
+                                        "confidence": round(score, 4),
+                                    }
+                                )
                         queue.append((rel.target_entity_id, dist + 1))
 
         for inf in inferred:
-            await self._emit(InferredRelationshipCreated(
-                source_entity_id=inf["source_entity_id"],
-                target_entity_id=inf["target_entity_id"],
-                relationship_type=inf["relationship_type"],
-                confidence=inf["confidence"],
-            ))
+            await self._emit(
+                InferredRelationshipCreated(
+                    source_entity_id=inf["source_entity_id"],
+                    target_entity_id=inf["target_entity_id"],
+                    relationship_type=inf["relationship_type"],
+                    confidence=inf["confidence"],
+                )
+            )
 
         return inferred
 
@@ -101,11 +112,15 @@ class SemanticRelationshipService:
         return matches / total if total > 0 else 0.0
 
     async def find_similar_entities(
-        self, entity_id: str, threshold: float = 0.3,
+        self,
+        entity_id: str,
+        threshold: float = 0.3,
     ) -> list[dict[str, Any]]:
         if entity_id not in self._graph.entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
-        source = self._graph.entities[entity_id]
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
+        self._graph.entities[entity_id]
         results: list[dict[str, Any]] = []
 
         for eid, target in self._graph.entities.items():
@@ -113,28 +128,38 @@ class SemanticRelationshipService:
                 continue
             similarity = await self.compute_similarity(entity_id, eid)
             if similarity >= threshold:
-                results.append({
-                    "entity_id": eid,
-                    "entity_name": target.name,
-                    "entity_type": target.type,
-                    "similarity": round(similarity, 4),
-                })
+                results.append(
+                    {
+                        "entity_id": eid,
+                        "entity_name": target.name,
+                        "entity_type": target.type,
+                        "similarity": round(similarity, 4),
+                    }
+                )
 
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results
 
     async def compute_similarity(self, entity_a_id: str, entity_b_id: str) -> float:
         if entity_a_id not in self._graph.entities:
-            raise EntityNotFoundError(f"Entity {entity_a_id} not found", context={"entity_id": entity_a_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_a_id} not found", context={"entity_id": entity_a_id}
+            )
         if entity_b_id not in self._graph.entities:
-            raise EntityNotFoundError(f"Entity {entity_b_id} not found", context={"entity_id": entity_b_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_b_id} not found", context={"entity_id": entity_b_id}
+            )
         a = self._graph.entities[entity_a_id]
         b = self._graph.entities[entity_b_id]
 
-        a_props = set(str(v).lower() for v in a.properties.values() if isinstance(v, (str, int, float, bool)))
-        b_props = set(str(v).lower() for v in b.properties.values() if isinstance(v, (str, int, float, bool)))
-        a_tags = set(t.lower() for t in a.tags)
-        b_tags = set(t.lower() for t in b.tags)
+        a_props = {
+            str(v).lower() for v in a.properties.values() if isinstance(v, (str, int, float, bool))
+        }
+        b_props = {
+            str(v).lower() for v in b.properties.values() if isinstance(v, (str, int, float, bool))
+        }
+        a_tags = {t.lower() for t in a.tags}
+        b_tags = {t.lower() for t in b.tags}
         a_vals = a_props | a_tags
         b_vals = b_props | b_tags
 
@@ -145,11 +170,11 @@ class SemanticRelationshipService:
         return len(intersection) / len(union) if union else 0.0
 
     async def get_entity_cluster(
-        self, entity_type: str, min_connections: int = 2,
+        self,
+        entity_type: str,
+        min_connections: int = 2,
     ) -> list[list[str]]:
-        type_entities = [
-            eid for eid, e in self._graph.entities.items() if e.type == entity_type
-        ]
+        type_entities = [eid for eid, e in self._graph.entities.items() if e.type == entity_type]
         if not type_entities:
             return []
 
@@ -185,8 +210,10 @@ class SemanticRelationshipService:
 
     async def suggest_relationships(self, entity_id: str) -> list[dict[str, Any]]:
         if entity_id not in self._graph.entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
-        source = self._graph.entities[entity_id]
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
+        self._graph.entities[entity_id]
         existing_neighbors: set[str] = set()
         adj = self._graph.adjacency.get(entity_id, {})
         for rel in adj.get("out", {}).values():
@@ -200,14 +227,16 @@ class SemanticRelationshipService:
                 continue
             similarity = await self.compute_similarity(entity_id, eid)
             if similarity > 0:
-                suggestions.append({
-                    "source_entity_id": entity_id,
-                    "target_entity_id": eid,
-                    "target_name": target.name,
-                    "target_type": target.type,
-                    "similarity": round(similarity, 4),
-                    "reason": "shared_properties" if similarity > 0.5 else "weak_similarity",
-                })
+                suggestions.append(
+                    {
+                        "source_entity_id": entity_id,
+                        "target_entity_id": eid,
+                        "target_name": target.name,
+                        "target_type": target.type,
+                        "similarity": round(similarity, 4),
+                        "reason": "shared_properties" if similarity > 0.5 else "weak_similarity",
+                    }
+                )
 
         suggestions.sort(key=lambda x: x["similarity"], reverse=True)
         return suggestions

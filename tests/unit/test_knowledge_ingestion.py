@@ -112,9 +112,7 @@ class TestGetParser:
         assert isinstance(parser, HTMLParser)
 
     def test_unknown_format_raises(self) -> None:
-        from unittest.mock import PropertyMock
 
-        fmt = DocumentFormat.TXT
         with pytest.raises(UnsupportedFormatError):
             get_parser("unknown")  # type: ignore[arg-type]
 
@@ -134,9 +132,13 @@ class TestIngestionPipeline:
         store = _MockVectorStore()
         embedding = MockEmbeddingProvider()
         config = IngestionConfig(collection="test")
-        pipeline = IngestionPipeline(config=config, vector_store=store, embedding_provider=embedding)
+        pipeline = IngestionPipeline(
+            config=config, vector_store=store, embedding_provider=embedding
+        )
 
-        result = await pipeline.ingest("doc1", b"Hello world content", DocumentFormat.TXT, title="Test")
+        result = await pipeline.ingest(
+            "doc1", b"Hello world content", DocumentFormat.TXT, title="Test"
+        )
         assert result.status is IndexingStatus.INDEXED
         assert result.chunk_count > 0
         assert result.document.document_id == "doc1"
@@ -147,9 +149,13 @@ class TestIngestionPipeline:
         store = _MockVectorStore()
         embedding = MockEmbeddingProvider()
         config = IngestionConfig(collection="test")
-        pipeline = IngestionPipeline(config=config, vector_store=store, embedding_provider=embedding)
+        pipeline = IngestionPipeline(
+            config=config, vector_store=store, embedding_provider=embedding
+        )
 
-        result = await pipeline.ingest("doc2", b"# Title\n\nParagraph.", DocumentFormat.MARKDOWN, title="MD")
+        result = await pipeline.ingest(
+            "doc2", b"# Title\n\nParagraph.", DocumentFormat.MARKDOWN, title="MD"
+        )
         assert result.status is IndexingStatus.INDEXED
 
     @pytest.mark.asyncio
@@ -157,7 +163,9 @@ class TestIngestionPipeline:
         store = _MockVectorStore()
         embedding = MockEmbeddingProvider()
         config = IngestionConfig(collection="test")
-        pipeline = IngestionPipeline(config=config, vector_store=store, embedding_provider=embedding)
+        pipeline = IngestionPipeline(
+            config=config, vector_store=store, embedding_provider=embedding
+        )
 
         result = await pipeline.ingest("doc3", b"fake", "unknown_format", title="Bad")  # type: ignore[arg-type]
         assert result.status is IndexingStatus.FAILED
@@ -172,7 +180,14 @@ class TestIngestionPipeline:
         def publisher(event: object) -> None:
             events.append(event)
 
-        pipeline = IngestionPipeline(config=config, vector_store=store, embedding_provider=embedding, event_publisher=publisher)
-        result = await pipeline.ingest("doc4", b"Event test content", DocumentFormat.TXT, title="Events")
+        pipeline = IngestionPipeline(
+            config=config,
+            vector_store=store,
+            embedding_provider=embedding,
+            event_publisher=publisher,
+        )
+        result = await pipeline.ingest(
+            "doc4", b"Event test content", DocumentFormat.TXT, title="Events"
+        )
         assert result.status is IndexingStatus.INDEXED
         assert len(events) > 0

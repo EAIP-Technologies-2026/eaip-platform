@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from eaip.providers.models import ChatMessage, ChatRequest, ChatResponse
+from eaip.providers.models import ChatMessage, ChatRequest
 from eaip.providers.ollama import OllamaProvider
 
 

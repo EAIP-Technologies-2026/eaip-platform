@@ -53,8 +53,10 @@ class QdrantStore:
         if self._client is not None:
             return
         try:
-            from qdrant_client import QdrantClient as _QdrantClient  # type: ignore[import-not-found]  # noqa: PLC0415
-            from qdrant_client.http import models as _models  # type: ignore[import-not-found]  # noqa: PLC0415
+            from qdrant_client import (  # type: ignore[import-not-found]
+                QdrantClient as _QdrantClient,
+            )
+            from qdrant_client.http import models as _models  # type: ignore[import-not-found]
 
             self._models = _models
             self._client = _QdrantClient(

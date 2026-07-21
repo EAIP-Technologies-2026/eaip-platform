@@ -69,6 +69,7 @@ __all__ = [
     "DelegationRequest",
     "DelegationRequested",
     "ExecutionTracker",
+    "SessionNotFoundError",
     "SharedState",
     "SharedStateManager",
     "StateUpdated",
@@ -77,5 +78,4 @@ __all__ = [
     "TaskCompleted",
     "TaskDelegationService",
     "TaskFailed",
-    "SessionNotFoundError",
 ]

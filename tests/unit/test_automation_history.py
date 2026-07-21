@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -38,8 +38,15 @@ class TestExecutionHistory:
         assert detail.id == "exec_1"
 
     async def test_get_history_all(self, history) -> None:
-        e1 = AutomationExecution(id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED)
-        e2 = AutomationExecution(id="e2", rule_id="r2", trigger_type=TriggerType.MANUAL, status=AutomationStatus.FAILED)
+        e1 = AutomationExecution(
+            id="e1",
+            rule_id="r1",
+            trigger_type=TriggerType.MANUAL,
+            status=AutomationStatus.COMPLETED,
+        )
+        e2 = AutomationExecution(
+            id="e2", rule_id="r2", trigger_type=TriggerType.MANUAL, status=AutomationStatus.FAILED
+        )
         await history.record_execution(e1)
         await history.record_execution(e2)
         entries = await history.get_history()
@@ -55,8 +62,15 @@ class TestExecutionHistory:
         assert entries[0].rule_id == "r1"
 
     async def test_get_history_by_status(self, history) -> None:
-        e1 = AutomationExecution(id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED)
-        e2 = AutomationExecution(id="e2", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.FAILED)
+        e1 = AutomationExecution(
+            id="e1",
+            rule_id="r1",
+            trigger_type=TriggerType.MANUAL,
+            status=AutomationStatus.COMPLETED,
+        )
+        e2 = AutomationExecution(
+            id="e2", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.FAILED
+        )
         await history.record_execution(e1)
         await history.record_execution(e2)
         entries = await history.get_history(status=AutomationStatus.COMPLETED)
@@ -78,7 +92,7 @@ class TestExecutionHistory:
             id="old_exec",
             rule_id="r1",
             trigger_type=TriggerType.MANUAL,
-            started_at=datetime.now(timezone.utc) - timedelta(days=60),
+            started_at=datetime.now(UTC) - timedelta(days=60),
         )
         new = AutomationExecution(
             id="new_exec",
@@ -112,13 +126,31 @@ class TestExecutionHistory:
 
     async def test_get_statistics(self, history) -> None:
         await history.record_execution(
-            AutomationExecution(id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED, duration_ms=100.0),
+            AutomationExecution(
+                id="e1",
+                rule_id="r1",
+                trigger_type=TriggerType.MANUAL,
+                status=AutomationStatus.COMPLETED,
+                duration_ms=100.0,
+            ),
         )
         await history.record_execution(
-            AutomationExecution(id="e2", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED, duration_ms=200.0),
+            AutomationExecution(
+                id="e2",
+                rule_id="r1",
+                trigger_type=TriggerType.MANUAL,
+                status=AutomationStatus.COMPLETED,
+                duration_ms=200.0,
+            ),
         )
         await history.record_execution(
-            AutomationExecution(id="e3", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.FAILED, duration_ms=50.0),
+            AutomationExecution(
+                id="e3",
+                rule_id="r1",
+                trigger_type=TriggerType.MANUAL,
+                status=AutomationStatus.FAILED,
+                duration_ms=50.0,
+            ),
         )
         stats = await history.get_statistics()
         assert stats["total"] == 3
@@ -128,10 +160,20 @@ class TestExecutionHistory:
 
     async def test_get_statistics_by_rule(self, history) -> None:
         await history.record_execution(
-            AutomationExecution(id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED),
+            AutomationExecution(
+                id="e1",
+                rule_id="r1",
+                trigger_type=TriggerType.MANUAL,
+                status=AutomationStatus.COMPLETED,
+            ),
         )
         await history.record_execution(
-            AutomationExecution(id="e2", rule_id="r2", trigger_type=TriggerType.MANUAL, status=AutomationStatus.COMPLETED),
+            AutomationExecution(
+                id="e2",
+                rule_id="r2",
+                trigger_type=TriggerType.MANUAL,
+                status=AutomationStatus.COMPLETED,
+            ),
         )
         stats = await history.get_statistics(rule_id="r1")
         assert stats["total"] == 1

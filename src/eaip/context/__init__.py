@@ -15,7 +15,6 @@ from __future__ import annotations
 
 from eaip.context.builder import ContextBuilder
 from eaip.context.compression import ContextCompressor
-from eaip.context.models import CompressionStrategy
 from eaip.context.events import (
     ContextAssembled,
     ContextCompressed,
@@ -36,6 +35,7 @@ from eaip.context.integration import ContextRuntimeModule, create_context_integr
 from eaip.context.models import (
     AssembledContext,
     CompressionConfig,
+    CompressionStrategy,
     ContextBuilderConfig,
     ContextCacheConfig,
     ContextDocument,

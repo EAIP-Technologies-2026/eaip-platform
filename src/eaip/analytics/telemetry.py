@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
-
 from eaip.analytics.exceptions import MetricNotFoundError
-from eaip.analytics.models import MetricDefinition, MetricPoint, MetricType
+from eaip.analytics.models import MetricPoint
 from eaip.analytics.service import AnalyticsService
 from eaip.logging.context import get_logger
-from eaip.shared.time import utc_now
 
 
 class TelemetryCollector:

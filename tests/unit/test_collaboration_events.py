@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-
 from eaip.collaboration.events import (
     ApprovalCompleted,
     ApprovalRejected,
     ApprovalRequested,
-    CollaborationEvent,
     CollaborationSessionCompleted,
     CollaborationSessionCreated,
     CollaborationSessionFailed,
@@ -41,7 +38,10 @@ class TestCollaborationSessionCreated:
         assert e.agent_count == 3
 
     def test_is_domain_event(self) -> None:
-        assert isinstance(CollaborationSessionCreated(session_id="s1", name="x", session_type="s", agent_count=0), DomainEvent)
+        assert isinstance(
+            CollaborationSessionCreated(session_id="s1", name="x", session_type="s", agent_count=0),
+            DomainEvent,
+        )
 
 
 class TestCollaborationSessionStarted:

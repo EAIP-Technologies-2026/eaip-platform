@@ -6,10 +6,8 @@ from typing import Any
 
 from eaip.logging.context import get_logger
 from eaip.session.events import SessionTransferred
-from eaip.session.exceptions import SessionNotFoundError
 from eaip.session.manager import SessionManager
 from eaip.session.models import Session, SessionStatus
-from eaip.shared.time import utc_now
 
 
 class SessionLifecycleManager:

@@ -53,7 +53,9 @@ class TestWorkerAssigned:
         assert e.event_type == "eaip.workforce.worker.assigned"
 
     def test_with_values(self) -> None:
-        e = WorkerAssigned(assignment_id="a1", worker_id="w1", task_description="Analyze", priority=50)
+        e = WorkerAssigned(
+            assignment_id="a1", worker_id="w1", task_description="Analyze", priority=50
+        )
         assert e.assignment_id == "a1"
         assert e.priority == 50
 
@@ -64,7 +66,9 @@ class TestWorkerAssignmentCompleted:
         assert e.event_type == "eaip.workforce.worker.assignment_completed"
 
     def test_with_values(self) -> None:
-        e = WorkerAssignmentCompleted(assignment_id="a1", worker_id="w1", result="ok", duration_ms=150.0)
+        e = WorkerAssignmentCompleted(
+            assignment_id="a1", worker_id="w1", result="ok", duration_ms=150.0
+        )
         assert e.result == "ok"
         assert e.duration_ms == 150.0
 

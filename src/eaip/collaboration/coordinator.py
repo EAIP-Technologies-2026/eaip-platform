@@ -13,30 +13,27 @@ from eaip.collaboration.events import (
     CollaborationSessionCreated,
     CollaborationSessionFailed,
     CollaborationSessionStarted,
-    ConsensusReached,
     TaskAssigned,
     TaskCompleted,
     TaskFailed,
 )
 from eaip.collaboration.exceptions import (
-    ConsensusNotReachedError,
     SessionNotFoundError,
-    TaskAssignmentError,
 )
 from eaip.collaboration.models import (
     AgentTask,
     CollaborationResult,
     CollaborationSession,
     CoordinationConfig,
-    CoordinationStrategy,
     SessionStatus,
     SessionType,
     TaskStatus,
 )
 from eaip.logging.context import get_logger
+from eaip.shared.repository import InMemoryRepository
 
 if TYPE_CHECKING:
-    from eaip.agents.runtime import AgentRuntime
+    pass
 
 
 class CoordinationEngine:
@@ -50,12 +47,17 @@ class CoordinationEngine:
         self,
         agent_runtime: Any | None = None,
         event_bus: Any | None = None,
+        session_repository: InMemoryRepository[str, CollaborationSession] | None = None,
     ) -> None:
         self._agent_runtime: Any | None = agent_runtime
         self._event_bus: Any | None = event_bus
-        self._sessions: dict[str, CollaborationSession] = {}
+        self._sessions = session_repository or InMemoryRepository[str, CollaborationSession](
+            max_size=10_000,
+            default_ttl_seconds=3600.0,
+        )
         self._tasks: dict[str, dict[str, AgentTask]] = {}
         self._configs: dict[str, CoordinationConfig] = {}
+        self._pending_tasks: set[asyncio.Task[Any]] = set()
         self._log = get_logger("eaip.collaboration.coordinator")
 
     # ----------------------------------------------------------------
@@ -76,7 +78,7 @@ class CoordinationEngine:
         Returns:
             The created session.
         """
-        self._sessions[session.id] = session
+        await self._sessions.add(session)
         self._tasks[session.id] = {}
         self._configs[session.id] = config or CoordinationConfig()
 
@@ -103,15 +105,17 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        session = self._sessions.get(session_id)
+        session = await self._sessions.get(session_id)
         if session is None:
             raise SessionNotFoundError(session_id)
 
-        started = session.model_copy(update={
-            "status": SessionStatus.ACTIVE,
-            "updated_at": datetime.now(),
-        })
-        self._sessions[session_id] = started
+        started = session.model_copy(
+            update={
+                "status": SessionStatus.ACTIVE,
+                "updated_at": datetime.now(),
+            }
+        )
+        await self._sessions.add(started)
 
         self._publish(
             CollaborationSessionStarted(
@@ -136,7 +140,8 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        if session_id not in self._sessions:
+        session = await self._sessions.get(session_id)
+        if session is None:
             raise SessionNotFoundError(session_id)
 
         self._tasks[session_id][task.id] = task
@@ -164,7 +169,7 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        session = self._sessions.get(session_id)
+        session = await self._sessions.get(session_id)
         if session is None:
             raise SessionNotFoundError(session_id)
 
@@ -186,11 +191,13 @@ class CoordinationEngine:
             total_duration = (time.monotonic() - t0) * 1000
             consensus = self._check_consensus(results, config)
 
-            completed = session.model_copy(update={
-                "status": SessionStatus.COMPLETED,
-                "updated_at": datetime.now(),
-            })
-            self._sessions[session_id] = completed
+            completed = session.model_copy(
+                update={
+                    "status": SessionStatus.COMPLETED,
+                    "updated_at": datetime.now(),
+                }
+            )
+            await self._sessions.add(completed)
 
             self._publish(
                 CollaborationSessionCompleted(
@@ -214,11 +221,13 @@ class CoordinationEngine:
 
         except Exception as exc:
             total_duration = (time.monotonic() - t0) * 1000
-            failed = session.model_copy(update={
-                "status": SessionStatus.FAILED,
-                "updated_at": datetime.now(),
-            })
-            self._sessions[session_id] = failed
+            failed = session.model_copy(
+                update={
+                    "status": SessionStatus.FAILED,
+                    "updated_at": datetime.now(),
+                }
+            )
+            await self._sessions.add(failed)
 
             self._publish(
                 CollaborationSessionFailed(
@@ -247,7 +256,7 @@ class CoordinationEngine:
         Returns:
             The session, or None if not found.
         """
-        return self._sessions.get(session_id)
+        return await self._sessions.get(session_id)
 
     async def cancel_session(self, session_id: str) -> CollaborationSession | None:
         """Cancel a collaboration session.
@@ -258,17 +267,19 @@ class CoordinationEngine:
         Returns:
             The cancelled session, or None if not found.
         """
-        session = self._sessions.get(session_id)
+        session = await self._sessions.get(session_id)
         if session is None:
             return None
         if session.status in (SessionStatus.COMPLETED, SessionStatus.FAILED):
             return session
 
-        cancelled = session.model_copy(update={
-            "status": SessionStatus.FAILED,
-            "updated_at": datetime.now(),
-        })
-        self._sessions[session_id] = cancelled
+        cancelled = session.model_copy(
+            update={
+                "status": SessionStatus.FAILED,
+                "updated_at": datetime.now(),
+            }
+        )
+        await self._sessions.add(cancelled)
         self._log.info("session.cancelled", session_id=session_id)
         return cancelled
 
@@ -286,11 +297,13 @@ class CoordinationEngine:
         Returns:
             A list of matching sessions.
         """
-        results = list(self._sessions.values())
-        if status is not None:
-            results = [s for s in results if s.status is status]
-        if agent_id is not None:
-            results = [s for s in results if agent_id in s.agents]
+        results: list[CollaborationSession] = []
+        async for session in self._sessions.iter_all():
+            if status is not None and session.status is not status:
+                continue
+            if agent_id is not None and agent_id not in session.agents:
+                continue
+            results.append(session)
         return results
 
     # ----------------------------------------------------------------
@@ -323,10 +336,12 @@ class CoordinationEngine:
         results: list[AgentTask] = []
         for i, r in enumerate(completed):
             if isinstance(r, Exception):
-                failed = tasks[i].model_copy(update={
-                    "status": TaskStatus.FAILED,
-                    "error": str(r),
-                })
+                failed = tasks[i].model_copy(
+                    update={
+                        "status": TaskStatus.FAILED,
+                        "error": str(r),
+                    }
+                )
                 results.append(failed)
             elif isinstance(r, AgentTask):
                 results.append(r)
@@ -345,11 +360,13 @@ class CoordinationEngine:
 
         agent_tasks: list[AgentTask] = []
         for agent_id in session.agents:
-            agent_task = broadcast_task.model_copy(update={
-                "id": str(uuid.uuid4()),
-                "agent_id": agent_id,
-                "session_id": session.id,
-            })
+            agent_task = broadcast_task.model_copy(
+                update={
+                    "id": str(uuid.uuid4()),
+                    "agent_id": agent_id,
+                    "session_id": session.id,
+                }
+            )
             agent_tasks.append(agent_task)
             self._tasks[session.id][agent_task.id] = agent_task
 
@@ -358,10 +375,12 @@ class CoordinationEngine:
         results: list[AgentTask] = []
         for i, result in enumerate(completed):
             if isinstance(result, Exception):
-                failed = agent_tasks[i].model_copy(update={
-                    "status": TaskStatus.FAILED,
-                    "error": str(result),
-                })
+                failed = agent_tasks[i].model_copy(
+                    update={
+                        "status": TaskStatus.FAILED,
+                        "error": str(result),
+                    }
+                )
                 results.append(failed)
             elif isinstance(result, AgentTask):
                 results.append(result)
@@ -379,20 +398,24 @@ class CoordinationEngine:
 
         for task in sorted(tasks, key=lambda t: t.priority, reverse=True):
             if not available:
-                skipped = task.model_copy(update={
-                    "status": TaskStatus.SKIPPED,
-                    "error": "no available agents",
-                })
+                skipped = task.model_copy(
+                    update={
+                        "status": TaskStatus.SKIPPED,
+                        "error": "no available agents",
+                    }
+                )
                 results.append(skipped)
                 continue
 
             # Pick the first available agent
             agent_id = available.pop(0)
-            assigned = task.model_copy(update={
-                "agent_id": agent_id,
-                "status": TaskStatus.ASSIGNED,
-                "assigned_at": datetime.now(),
-            })
+            assigned = task.model_copy(
+                update={
+                    "agent_id": agent_id,
+                    "status": TaskStatus.ASSIGNED,
+                    "assigned_at": datetime.now(),
+                }
+            )
             self._tasks[session.id][task.id] = assigned
             result = await self._execute_task(assigned, session)
             results.append(result)
@@ -408,10 +431,12 @@ class CoordinationEngine:
         task: AgentTask,
         session: CollaborationSession,
     ) -> AgentTask:
-        running = task.model_copy(update={
-            "status": TaskStatus.RUNNING,
-            "started_at": datetime.now(),
-        })
+        running = task.model_copy(
+            update={
+                "status": TaskStatus.RUNNING,
+                "started_at": datetime.now(),
+            }
+        )
         self._tasks[session.id][task.id] = running
 
         t0 = time.monotonic()
@@ -428,12 +453,14 @@ class CoordinationEngine:
                 output = f"simulated: {task.description}"
 
             elapsed = (time.monotonic() - t0) * 1000
-            completed = task.model_copy(update={
-                "status": TaskStatus.COMPLETED,
-                "output": output,
-                "completed_at": datetime.now(),
-                "duration_ms": elapsed,
-            })
+            completed = task.model_copy(
+                update={
+                    "status": TaskStatus.COMPLETED,
+                    "output": output,
+                    "completed_at": datetime.now(),
+                    "duration_ms": elapsed,
+                }
+            )
             self._tasks[session.id][task.id] = completed
 
             self._publish(
@@ -449,12 +476,14 @@ class CoordinationEngine:
 
         except Exception as exc:
             elapsed = (time.monotonic() - t0) * 1000
-            failed = task.model_copy(update={
-                "status": TaskStatus.FAILED,
-                "error": str(exc),
-                "completed_at": datetime.now(),
-                "duration_ms": elapsed,
-            })
+            failed = task.model_copy(
+                update={
+                    "status": TaskStatus.FAILED,
+                    "error": str(exc),
+                    "completed_at": datetime.now(),
+                    "duration_ms": elapsed,
+                }
+            )
             self._tasks[session.id][task.id] = failed
 
             self._publish(
@@ -475,10 +504,12 @@ class CoordinationEngine:
         completed_ids = {t.id for t in results}
         for task in tasks:
             if task.id not in completed_ids:
-                skipped = task.model_copy(update={
-                    "status": TaskStatus.SKIPPED,
-                    "error": "skipped due to earlier failure",
-                })
+                skipped = task.model_copy(
+                    update={
+                        "status": TaskStatus.SKIPPED,
+                        "error": "skipped due to earlier failure",
+                    }
+                )
                 results.append(skipped)
 
     def _check_consensus(
@@ -508,7 +539,9 @@ class CoordinationEngine:
     def _publish(self, event: Any) -> None:
         if self._event_bus is not None:
             try:
-                self._event_bus.publish(event)
+                task = asyncio.ensure_future(self._event_bus.publish(event))
+                self._pending_tasks.add(task)
+                task.add_done_callback(self._pending_tasks.discard)
             except Exception:
                 self._log.warning("event.publish.failed", event_type=type(event).__name__)
 

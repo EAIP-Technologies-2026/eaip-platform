@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from eaip.capabilities.capability import Capability, CapabilityStatus
-from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+from eaip.health.checks import HealthCheck
 from eaip.logging.context import get_logger
 from eaip.search.engine import EnterpriseSearchEngine
 from eaip.search.federation import SearchFederation

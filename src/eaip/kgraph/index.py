@@ -29,7 +29,7 @@ class GraphIndex:
     async def _emit(self, event: Any) -> None:
         for handler in self._event_handlers:
             try:
-                if hasattr(handler, "__call__"):
+                if callable(handler):
                     await handler(event)
             except Exception:
                 self._log.warning("event.handler.failed", event_type=type(event).__name__)
@@ -86,12 +86,14 @@ class GraphIndex:
     # ── search ───────────────────────────────────────────────────
 
     async def search_entities(
-        self, query_str: str, entity_type: str | None = None,
+        self,
+        query_str: str,
+        entity_type: str | None = None,
     ) -> list[Entity]:
         q = query_str.lower()
         matched_ids: set[str] = set()
 
-        for key, idx in self._entity_indices.items():
+        for idx in self._entity_indices.values():
             if entity_type and entity_type != idx.entity_type:
                 continue
             for index_value, eids in idx.values.items():
@@ -103,11 +105,17 @@ class GraphIndex:
     async def search_relationships(self, rel_type: str | None = None) -> list[Relationship]:
         if rel_type:
             rel_ids = self._relationship_type_index.get(rel_type, [])
-            return [self._graph.relationships[rid] for rid in rel_ids if rid in self._graph.relationships]
+            return [
+                self._graph.relationships[rid]
+                for rid in rel_ids
+                if rid in self._graph.relationships
+            ]
         all_ids: list[str] = []
         for ids in self._relationship_type_index.values():
             all_ids.extend(ids)
-        return [self._graph.relationships[rid] for rid in all_ids if rid in self._graph.relationships]
+        return [
+            self._graph.relationships[rid] for rid in all_ids if rid in self._graph.relationships
+        ]
 
     # ── index management ─────────────────────────────────────────
 
@@ -120,11 +128,17 @@ class GraphIndex:
         for rel in self._graph.relationships.values():
             await self.index_relationship(rel)
 
-        await self._emit(GraphIndexRebuilt(
-            entity_count=len(self._graph.entities),
-            relationship_count=len(self._graph.relationships),
-        ))
-        self._log.info("index.rebuilt", entities=len(self._graph.entities), relationships=len(self._graph.relationships))
+        await self._emit(
+            GraphIndexRebuilt(
+                entity_count=len(self._graph.entities),
+                relationship_count=len(self._graph.relationships),
+            )
+        )
+        self._log.info(
+            "index.rebuilt",
+            entities=len(self._graph.entities),
+            relationships=len(self._graph.relationships),
+        )
 
     async def clear_index(self) -> None:
         self._entity_indices.clear()

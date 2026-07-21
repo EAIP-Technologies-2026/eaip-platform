@@ -33,7 +33,9 @@ _CHAT_RESP = b"""
 class TestOpenAICompatProvider:
     @pytest.mark.asyncio
     async def test_chat(self) -> None:
-        provider = OpenAICompatProvider(name="test-openai", endpoint="http://test-api/v1", api_key="sk-test")
+        provider = OpenAICompatProvider(
+            name="test-openai", endpoint="http://test-api/v1", api_key="sk-test"
+        )
         transport = _MockTransport(_CHAT_RESP)
         provider._client = httpx.AsyncClient(transport=transport)
 
@@ -53,7 +55,9 @@ class TestOpenAICompatProvider:
                 request_sent.append(r)
                 return httpx.Response(200, content=_CHAT_RESP, request=r)
 
-        provider = OpenAICompatProvider(name="test", endpoint="http://test-api/v1", api_key="sk-secret")
+        provider = OpenAICompatProvider(
+            name="test", endpoint="http://test-api/v1", api_key="sk-secret"
+        )
         provider._client = httpx.AsyncClient(transport=_CaptureTransport())
 
         msg = ChatMessage(role="user", content="hi")
@@ -76,8 +80,9 @@ class TestOpenAICompatProvider:
 
     @pytest.mark.asyncio
     async def test_list_models_fallback(self) -> None:
-        provider = OpenAICompatProvider(name="test", endpoint="http://bad-url/v1",
-                                        default_model="gpt-4")
+        provider = OpenAICompatProvider(
+            name="test", endpoint="http://bad-url/v1", default_model="gpt-4"
+        )
         models = await provider.list_models()
         assert len(models) == 1
         assert models[0].model_id == "gpt-4"

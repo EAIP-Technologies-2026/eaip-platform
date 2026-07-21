@@ -76,12 +76,14 @@ class WorkforceRuntimeModule:
         self._log.info("workforce.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="workforce:runtime",
-            title="Digital Workforce Runtime",
-            status=CapabilityStatus.ENABLED,
-            tags=("workforce", "runtime"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="workforce:runtime",
+                title="Digital Workforce Runtime",
+                status=CapabilityStatus.ENABLED,
+                tags=("workforce", "runtime"),
+            )
+        )
 
         kernel.register_module("workforce.registry", self._registry)
         kernel.register_module("workforce.orchestrator", self._orchestrator)

@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.knowledge.embedding import MockEmbeddingProvider
+from eaip.knowledge.federation import KnowledgeFederation
 from eaip.knowledge.models import (
     DocumentChunk,
     RetrievalQuery,
@@ -12,7 +13,6 @@ from eaip.knowledge.models import (
     RetrievedChunk,
     SourceAttribution,
 )
-from eaip.knowledge.federation import KnowledgeFederation
 from eaip.knowledge.retrieval_engine import RetrievalEngine
 
 
@@ -72,9 +72,15 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_collections_basic(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Result A", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Result A", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine)
@@ -86,14 +92,24 @@ class TestKnowledgeFederation:
     async def test_search_collections_aggregates(self) -> None:
         store = _MockVectorStore()
 
-        async def _search_with_diff(collection: str, query: RetrievalQuery) -> list[dict[str, object]]:
+        async def _search_with_diff(
+            collection: str, query: RetrievalQuery
+        ) -> list[dict[str, object]]:
             if collection == "coll_a":
                 return [
-                    {"id": "a1", "score": 0.9, "payload": {"document_id": "d1", "content": "From A", "chunk_index": 0}},
+                    {
+                        "id": "a1",
+                        "score": 0.9,
+                        "payload": {"document_id": "d1", "content": "From A", "chunk_index": 0},
+                    },
                 ]
             if collection == "coll_b":
                 return [
-                    {"id": "b1", "score": 0.8, "payload": {"document_id": "d2", "content": "From B", "chunk_index": 1}},
+                    {
+                        "id": "b1",
+                        "score": 0.8,
+                        "payload": {"document_id": "d2", "content": "From B", "chunk_index": 1},
+                    },
                 ]
             return []
 
@@ -108,9 +124,15 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_all(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Global", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Global", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine)
@@ -121,9 +143,15 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_knowledge_and_memory(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Knowledge", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Knowledge", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine, memory_search_fn=_memory_search_fn)
@@ -134,9 +162,15 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_knowledge_and_memory_no_memory_fn(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Only knowledge", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Only knowledge", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine)
@@ -147,9 +181,19 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_department_brain(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.95, "payload": {"document_id": "d1", "content": "Engineering doc", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.95,
+                    "payload": {
+                        "document_id": "d1",
+                        "content": "Engineering doc",
+                        "chunk_index": 0,
+                    },
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine)
@@ -160,9 +204,15 @@ class TestKnowledgeFederation:
     @pytest.mark.asyncio
     async def test_search_enterprise_brain(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Enterprise", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Enterprise", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
         federation = KnowledgeFederation(engine)
@@ -179,13 +229,19 @@ class TestKnowledgeFederation:
 
         chunks = [
             RetrievedChunk(
-                chunk_id="dup", document_id="d1", collection="a",
-                content="Duplicate", score=0.9,
+                chunk_id="dup",
+                document_id="d1",
+                collection="a",
+                content="Duplicate",
+                score=0.9,
                 attribution=SourceAttribution(document_id="d1", collection="a", score=0.9),
             ),
             RetrievedChunk(
-                chunk_id="dup", document_id="d1", collection="b",
-                content="Duplicate", score=0.8,
+                chunk_id="dup",
+                document_id="d1",
+                collection="b",
+                content="Duplicate",
+                score=0.8,
                 attribution=SourceAttribution(document_id="d1", collection="b", score=0.8),
             ),
         ]
@@ -196,13 +252,19 @@ class TestKnowledgeFederation:
     def test_score_normalization(self) -> None:
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="a",
-                content="Low", score=0.2,
+                chunk_id="c1",
+                document_id="d1",
+                collection="a",
+                content="Low",
+                score=0.2,
                 attribution=SourceAttribution(document_id="d1", collection="a", score=0.2),
             ),
             RetrievedChunk(
-                chunk_id="c2", document_id="d2", collection="b",
-                content="High", score=0.8,
+                chunk_id="c2",
+                document_id="d2",
+                collection="b",
+                content="High",
+                score=0.8,
                 attribution=SourceAttribution(document_id="d2", collection="b", score=0.8),
             ),
         ]

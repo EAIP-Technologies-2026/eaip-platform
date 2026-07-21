@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Any
 
 from eaip.admin.events import AuditEntryCreated
 from eaip.admin.models import AuditEntry
 from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
+from eaip.shared.identifiers import CorrelationId
 
 
 class AuditLogger:
@@ -52,7 +52,9 @@ class AuditLogger:
                 resource_type=entry.resource_type,
                 resource_id=entry.resource_id,
                 outcome=entry.outcome.value,
-                correlation_id=entry.correlation_id,
+                correlation_id=CorrelationId(entry.correlation_id)
+                if entry.correlation_id
+                else None,
             )
             await self._event_bus.publish(event)
             self._log.debug("audit.event_published", entry_id=entry.id)

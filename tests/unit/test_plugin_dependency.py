@@ -132,9 +132,7 @@ class TestPluginDependencyValidator:
         ext = _plugin(
             "ext",
             "1.0.0",
-            dependencies=(
-                PluginDependency(name="base", version_spec=">=1.0.0", optional=True),
-            ),
+            dependencies=(PluginDependency(name="base", version_spec=">=1.0.0", optional=True),),
         )
         errors = v.validate(ext, {"base": base, "ext": ext})
         assert errors == []

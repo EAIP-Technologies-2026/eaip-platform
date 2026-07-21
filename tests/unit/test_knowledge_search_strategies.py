@@ -56,9 +56,15 @@ class TestSemanticSearchStrategy:
     @pytest.mark.asyncio
     async def test_search_returns_result(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "semantic", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "semantic", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         strategy = SemanticSearchStrategy(store, embedding)
 
@@ -91,13 +97,19 @@ class TestKeywordSearchStrategy:
         strategy = KeywordSearchStrategy()
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="default",
-                content="The cat sat on the mat", score=0.5,
+                chunk_id="c1",
+                document_id="d1",
+                collection="default",
+                content="The cat sat on the mat",
+                score=0.5,
                 attribution=SourceAttribution(document_id="d1", collection="default"),
             ),
             RetrievedChunk(
-                chunk_id="c2", document_id="d2", collection="default",
-                content="The dog ran in the park", score=0.4,
+                chunk_id="c2",
+                document_id="d2",
+                collection="default",
+                content="The dog ran in the park",
+                score=0.4,
                 attribution=SourceAttribution(document_id="d2", collection="default"),
             ),
         ]
@@ -111,9 +123,15 @@ class TestHybridSearchStrategy:
     @pytest.mark.asyncio
     async def test_hybrid_search(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "semantic match", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "semantic match", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         semantic = SemanticSearchStrategy(store, embedding)
         keyword = KeywordSearchStrategy()
@@ -130,13 +148,19 @@ class TestSimpleReranker:
         reranker = SimpleReranker()
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="default",
-                content="low", score=0.3,
+                chunk_id="c1",
+                document_id="d1",
+                collection="default",
+                content="low",
+                score=0.3,
                 attribution=SourceAttribution(document_id="d1", collection="default"),
             ),
             RetrievedChunk(
-                chunk_id="c2", document_id="d2", collection="default",
-                content="high", score=0.9,
+                chunk_id="c2",
+                document_id="d2",
+                collection="default",
+                content="high",
+                score=0.9,
                 attribution=SourceAttribution(document_id="d2", collection="default"),
             ),
         ]
@@ -158,13 +182,19 @@ class TestCrossEncoderReranker:
         reranker = CrossEncoderReranker()
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="default",
-                content="first", score=0.9,
+                chunk_id="c1",
+                document_id="d1",
+                collection="default",
+                content="first",
+                score=0.9,
                 attribution=SourceAttribution(document_id="d1", collection="default"),
             ),
             RetrievedChunk(
-                chunk_id="c2", document_id="d2", collection="default",
-                content="second", score=0.7,
+                chunk_id="c2",
+                document_id="d2",
+                collection="default",
+                content="second",
+                score=0.7,
                 attribution=SourceAttribution(document_id="d2", collection="default"),
             ),
         ]
@@ -182,14 +212,18 @@ class TestCrossEncoderReranker:
 class TestSearchStrategyProtocol:
     def test_protocol_runtime_checkable(self) -> None:
         class ValidStrategy:
-            async def search(self, query: str, collection: str, config: RetrievalQuery) -> RetrievalResult:
+            async def search(
+                self, query: str, collection: str, config: RetrievalQuery
+            ) -> RetrievalResult:
                 return RetrievalResult(query=query, collection=collection, total_results=0)
 
         assert isinstance(ValidStrategy(), SearchStrategy)
 
     def test_reranking_protocol_runtime_checkable(self) -> None:
         class ValidReranker:
-            async def rerank(self, results: list[RetrievedChunk], query: str) -> list[RetrievedChunk]:
+            async def rerank(
+                self, results: list[RetrievedChunk], query: str
+            ) -> list[RetrievedChunk]:
                 return results
 
         assert isinstance(ValidReranker(), RerankingStrategy)

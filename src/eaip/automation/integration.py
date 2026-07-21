@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from eaip.automation.engine import AutomationEngine
 from eaip.automation.health import AutomationHealthCheck

@@ -65,7 +65,7 @@ class TestContextEvents:
         event = PromptCreated(prompt_id="p1", name="test", version="1.0.0")
         try:
             event.prompt_id = "p2"  # type: ignore[misc]
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 

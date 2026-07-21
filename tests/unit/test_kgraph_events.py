@@ -38,14 +38,18 @@ class TestGraphEvents:
 
     def test_relationship_added(self) -> None:
         event = RelationshipAdded(
-            relationship_id="r1", relationship_type="knows",
-            source_entity_id="e1", target_entity_id="e2",
+            relationship_id="r1",
+            relationship_type="knows",
+            source_entity_id="e1",
+            target_entity_id="e2",
         )
         assert event.event_type == "eaip.kgraph.relationship.added"
         assert event.source_entity_id == "e1"
 
     def test_relationship_updated(self) -> None:
-        event = RelationshipUpdated(relationship_id="r1", relationship_type="knows", changes={"weight": 0.5})
+        event = RelationshipUpdated(
+            relationship_id="r1", relationship_type="knows", changes={"weight": 0.5}
+        )
         assert event.event_type == "eaip.kgraph.relationship.updated"
         assert event.changes["weight"] == 0.5
 
@@ -59,7 +63,9 @@ class TestGraphEvents:
         assert event.query_mode == "bfs"
 
     def test_graph_traversal_executed(self) -> None:
-        event = GraphTraversalExecuted(start_entity_id="e1", depth=3, direction="out", nodes_visited=4)
+        event = GraphTraversalExecuted(
+            start_entity_id="e1", depth=3, direction="out", nodes_visited=4
+        )
         assert event.event_type == "eaip.kgraph.traversal.executed"
         assert event.nodes_visited == 4
 
@@ -70,8 +76,10 @@ class TestGraphEvents:
 
     def test_inferred_relationship_created(self) -> None:
         event = InferredRelationshipCreated(
-            source_entity_id="e1", target_entity_id="e3",
-            relationship_type="shared_property", confidence=0.75,
+            source_entity_id="e1",
+            target_entity_id="e3",
+            relationship_type="shared_property",
+            confidence=0.75,
         )
         assert event.event_type == "eaip.kgraph.inferred_relationship.created"
         assert event.confidence == 0.75
@@ -83,6 +91,6 @@ class TestGraphEvents:
         event = EntityAdded(entity_id="e1", entity_type="person", entity_name="Alice")
         try:
             event.entity_id = "e2"
-            assert False
+            raise AssertionError()
         except (TypeError, ValueError):
             pass

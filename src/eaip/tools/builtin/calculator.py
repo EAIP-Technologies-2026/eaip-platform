@@ -74,10 +74,14 @@ class CalculatorTool:
                     tokens.append("".join(current))
                     current = []
                 i += 1
-            elif ch.isdigit() or ch == "." or (
-                ch == "-"
-                and not current
-                and (not tokens or tokens[-1] in ("(", "+", "-", "*", "/", "%", "**", "//"))
+            elif (
+                ch.isdigit()
+                or ch == "."
+                or (
+                    ch == "-"
+                    and not current
+                    and (not tokens or tokens[-1] in ("(", "+", "-", "*", "/", "%", "**", "//"))
+                )
             ):
                 current.append(ch)
                 i += 1

@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from eaip.logging.context import get_logger
 from eaip.workforce.events import (
@@ -144,7 +144,7 @@ class WorkforceOrchestrator:
         Raises:
             AssignmentError: If execution fails.
         """
-        started_at = datetime.now()
+        datetime.now()
         running = assignment.model_copy(update={"status": AssignmentStatus.RUNNING})
         self._assignments[assignment.id] = running
 
@@ -190,9 +190,11 @@ class WorkforceOrchestrator:
         if definition.worker_type is WorkerType.AGENT:
             if self._agent_runtime is None:
                 raise AssignmentError(assignment.id, "agent runtime not available")
-            run = await self._agent_runtime.create_run(definition.agent_id, assignment.task_description)
+            run = await self._agent_runtime.create_run(
+                definition.agent_id, assignment.task_description
+            )
             result = await self._agent_runtime.start_run(run.id)
-            return result.result
+            return cast(str, result.result)
 
         if definition.worker_type is WorkerType.WORKFLOW:
             if self._workflow_engine is None:
@@ -210,7 +212,7 @@ class WorkforceOrchestrator:
                 job_id=definition.job_id,
                 run_id=assignment.run_id,
             )
-            return result.result
+            return cast(str, result.result)
 
         raise AssignmentError(assignment.id, f"unknown worker type: {definition.worker_type}")
 
@@ -303,7 +305,9 @@ class WorkforceOrchestrator:
         """
         total = len(self._assignments)
         active = sum(1 for a in self._assignments.values() if a.status is AssignmentStatus.RUNNING)
-        completed = sum(1 for a in self._assignments.values() if a.status is AssignmentStatus.COMPLETED)
+        completed = sum(
+            1 for a in self._assignments.values() if a.status is AssignmentStatus.COMPLETED
+        )
         failed = sum(1 for a in self._assignments.values() if a.status is AssignmentStatus.FAILED)
         durations = [
             (a.completed_at - a.assigned_at).total_seconds() * 1000

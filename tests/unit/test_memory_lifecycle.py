@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,14 @@ from eaip.memory.lifecycle import (
     MemoryLifecycleManager,
     PriorityRetentionPolicy,
 )
-from eaip.memory.models import MemoryItem, MemoryScope, MemoryStatus, MemoryType, RetentionConfig, ScopedMemoryId
+from eaip.memory.models import (
+    MemoryItem,
+    MemoryScope,
+    MemoryStatus,
+    MemoryType,
+    RetentionConfig,
+    ScopedMemoryId,
+)
 from eaip.memory.store import InMemoryStore
 from eaip.shared.time import utc_now
 
@@ -34,8 +41,11 @@ class TestMaxAgeRetentionPolicy:
     async def test_expires_old_memory(self, scope: MemoryScope) -> None:
         old = utc_now() - timedelta(seconds=100)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.WORKING, scope=scope,
-            content="old", created_at=old,
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="old",
+            created_at=old,
         )
         policy = MaxAgeRetentionPolicy(max_age_seconds=50)
         result = await policy.evaluate(item)
@@ -45,8 +55,11 @@ class TestMaxAgeRetentionPolicy:
     async def test_retains_recent_memory(self, scope: MemoryScope) -> None:
         recent = utc_now() - timedelta(seconds=10)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.WORKING, scope=scope,
-            content="recent", created_at=recent,
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="recent",
+            created_at=recent,
         )
         policy = MaxAgeRetentionPolicy(max_age_seconds=60)
         result = await policy.evaluate(item)
@@ -56,8 +69,11 @@ class TestMaxAgeRetentionPolicy:
     async def test_type_filter(self, scope: MemoryScope) -> None:
         old = utc_now() - timedelta(seconds=100)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.SESSION, scope=scope,
-            content="old session", created_at=old,
+            memory_id="m1",
+            memory_type=MemoryType.SESSION,
+            scope=scope,
+            content="old session",
+            created_at=old,
         )
         policy = MaxAgeRetentionPolicy(max_age_seconds=50, memory_type="working")
         result = await policy.evaluate(item)
@@ -67,8 +83,11 @@ class TestMaxAgeRetentionPolicy:
     async def test_retains_semantic_zero_ttl(self, scope: MemoryScope) -> None:
         old = utc_now() - timedelta(seconds=100)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.SEMANTIC, scope=scope,
-            content="fact", created_at=old,
+            memory_id="m1",
+            memory_type=MemoryType.SEMANTIC,
+            scope=scope,
+            content="fact",
+            created_at=old,
         )
         policy = MaxAgeRetentionPolicy(max_age_seconds=0)
         result = await policy.evaluate(item)
@@ -87,14 +106,26 @@ class TestMaxCountRetentionPolicy:
 class TestPriorityRetentionPolicy:
     @pytest.mark.asyncio
     async def test_retains_high_importance(self, scope: MemoryScope) -> None:
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="important", importance=0.9)
+        item = MemoryItem(
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="important",
+            importance=0.9,
+        )
         policy = PriorityRetentionPolicy(min_importance=0.7)
         result = await policy.evaluate(item)
         assert result is None
 
     @pytest.mark.asyncio
     async def test_low_importance_returns_none(self, scope: MemoryScope) -> None:
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="low", importance=0.3)
+        item = MemoryItem(
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="low",
+            importance=0.3,
+        )
         policy = PriorityRetentionPolicy(min_importance=0.7)
         result = await policy.evaluate(item)
         assert result is None
@@ -105,8 +136,11 @@ class TestCompositeRetentionPolicy:
     async def test_first_matching_policy_wins(self, scope: MemoryScope) -> None:
         old = utc_now() - timedelta(seconds=100)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.WORKING, scope=scope,
-            content="old", created_at=old,
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="old",
+            created_at=old,
         )
         max_age = MaxAgeRetentionPolicy(max_age_seconds=50)
         priority = PriorityRetentionPolicy(min_importance=0.7)
@@ -171,10 +205,22 @@ class TestMemoryExpirationService:
 
     @pytest.mark.asyncio
     async def test_run_expiration_cycle(self, store: InMemoryStore, scope: MemoryScope) -> None:
-        past = datetime(2020, 1, 1, tzinfo=timezone.utc)
-        future = datetime(2030, 1, 1, tzinfo=timezone.utc)
-        item1 = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="x", expires_at=past)
-        item2 = MemoryItem(memory_id="m2", memory_type=MemoryType.WORKING, scope=scope, content="y", expires_at=future)
+        past = datetime(2020, 1, 1, tzinfo=UTC)
+        future = datetime(2030, 1, 1, tzinfo=UTC)
+        item1 = MemoryItem(
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="x",
+            expires_at=past,
+        )
+        item2 = MemoryItem(
+            memory_id="m2",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="y",
+            expires_at=future,
+        )
         await store.create(item1)
         await store.create(item2)
 
@@ -183,9 +229,17 @@ class TestMemoryExpirationService:
         assert count >= 1
 
     @pytest.mark.asyncio
-    async def test_run_expiration_cycle_archive_mode(self, store: InMemoryStore, scope: MemoryScope) -> None:
-        past = datetime(2020, 1, 1, tzinfo=timezone.utc)
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="x", expires_at=past)
+    async def test_run_expiration_cycle_archive_mode(
+        self, store: InMemoryStore, scope: MemoryScope
+    ) -> None:
+        past = datetime(2020, 1, 1, tzinfo=UTC)
+        item = MemoryItem(
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="x",
+            expires_at=past,
+        )
         await store.create(item)
 
         service = MemoryExpirationService(store, RetentionConfig(archive_on_expire=True))
@@ -205,8 +259,14 @@ class TestMemoryExpirationService:
 class TestMemoryLifecycleManager:
     @pytest.mark.asyncio
     async def test_run_retention_cycle(self, store: InMemoryStore, scope: MemoryScope) -> None:
-        past = datetime(2020, 1, 1, tzinfo=timezone.utc)
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="x", expires_at=past)
+        past = datetime(2020, 1, 1, tzinfo=UTC)
+        item = MemoryItem(
+            memory_id="m1",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="x",
+            expires_at=past,
+        )
         await store.create(item)
 
         expiration = MemoryExpirationService(store, RetentionConfig(archive_on_expire=False))

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+from eaip.health.checks import HealthReport, HealthStatus
 
 if TYPE_CHECKING:
     from eaip.automation.engine import AutomationEngine
@@ -34,7 +34,9 @@ class AutomationHealthCheck:
         return HealthReport(
             component="automation",
             status=status,
-            message="; ".join(error_details) if error_details else "Automation runtime is operational",
+            message="; ".join(error_details)
+            if error_details
+            else "Automation runtime is operational",
             details={
                 "rules_registered": rule_count,
                 "executions_total": execution_count,

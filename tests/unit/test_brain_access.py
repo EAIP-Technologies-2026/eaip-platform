@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
 import pytest
 
 from eaip.brain.access import BrainAccessManager, BrainSubject
 from eaip.brain.events import BrainAccessDenied
 from eaip.brain.exceptions import BrainAccessDeniedError
 from eaip.brain.models import BrainQuery
-from eaip.policy.models import Policy, PolicyDecision, PolicyEffect, PolicyRule
+from eaip.policy.models import Policy, PolicyEffect, PolicyRule
 
 
 class TestBrainSubject:
@@ -199,9 +197,7 @@ class TestBrainAccessManagerAuthorizeQuery:
         policy = Policy(id="p1", name="Eng access", rules=(rule,))
         manager = BrainAccessManager(policies=[policy])
         subject = BrainSubject(subject_id="alice")
-        manager.authorize_query(
-            subject, BrainQuery(query="test"), department_id="engineering"
-        )
+        manager.authorize_query(subject, BrainQuery(query="test"), department_id="engineering")
 
     def test_authorize_query_department_denied(self) -> None:
         rule = PolicyRule(
@@ -215,9 +211,7 @@ class TestBrainAccessManagerAuthorizeQuery:
         manager = BrainAccessManager(policies=[policy])
         subject = BrainSubject(subject_id="alice")
         with pytest.raises(BrainAccessDeniedError):
-            manager.authorize_query(
-                subject, BrainQuery(query="test"), department_id="engineering"
-            )
+            manager.authorize_query(subject, BrainQuery(query="test"), department_id="engineering")
 
     def test_authorize_query_publishes_event_on_deny(self) -> None:
         events: list[object] = []

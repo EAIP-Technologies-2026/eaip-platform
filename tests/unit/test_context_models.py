@@ -170,13 +170,13 @@ class TestFrozenModels:
         cfg = ContextBuilderConfig()
         try:
             cfg.max_tokens = 999
-            assert False, "Expected FrozenInstanceError"
+            raise AssertionError("Expected FrozenInstanceError")
         except Exception:
             pass
 
     def test_extra_forbidden(self) -> None:
         try:
             ContextDocument(content="x", unknown_field="y")  # type: ignore[call-arg]
-            assert False, "Expected ValidationError"
+            raise AssertionError("Expected ValidationError")
         except Exception:
             pass

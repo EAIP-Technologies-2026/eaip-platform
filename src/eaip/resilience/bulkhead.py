@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -74,13 +73,13 @@ class Bulkhead:
             async with self._semaphore:
                 self._active_count += 1
                 try:
-                    result = await asyncio.wait_for(
-                        coro, timeout=self._config.queue_timeout_seconds,
+                    return await asyncio.wait_for(
+                        coro,
+                        timeout=self._config.queue_timeout_seconds,
                     )
-                    return result
                 finally:
                     self._active_count -= 1
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._log.warning("bulkhead.timeout", name=self._name)
             if fallback is not None:
                 return fallback() if callable(fallback) else fallback

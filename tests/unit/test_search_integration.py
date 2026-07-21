@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,9 +8,8 @@ from eaip.search.engine import EnterpriseSearchEngine
 from eaip.search.federation import SearchFederation
 from eaip.search.health import SearchHealthCheck
 from eaip.search.integration import SearchRuntimeModule
+from eaip.search.models import SearchQuery, SearchResultItem
 from eaip.search.ranking import RankingService
-from eaip.search.models import SearchResultItem, SearchQuery
-from eaip.search.providers import SearchProvider
 
 
 class _MockProvider:
@@ -18,10 +17,9 @@ class _MockProvider:
 
     async def search(self, query: SearchQuery) -> SearchResult:
         from eaip.search.models import SearchResult
+
         return SearchResult(
-            items=(
-                SearchResultItem(id="1", collection="c", content="x", score=0.9),
-            ),
+            items=(SearchResultItem(id="1", collection="c", content="x", score=0.9),),
             total_count=1,
         )
 

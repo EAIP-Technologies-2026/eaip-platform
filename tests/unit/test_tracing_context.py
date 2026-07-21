@@ -75,8 +75,9 @@ class TestScopedTelemetryContext:
 
     async def test_merges_extra_labels(self) -> None:
         tracer = _tracer()
-        with tracer.start_as_current_span("test"), scoped_telemetry_context(
-            labels={"tenant_id": "acme"}
+        with (
+            tracer.start_as_current_span("test"),
+            scoped_telemetry_context(labels={"tenant_id": "acme"}),
         ):
             ctx = current_context()
             assert ctx.labels["tenant_id"] == "acme"
@@ -92,8 +93,9 @@ class TestScopedTelemetryContext:
 
     async def test_forwards_labels_and_tenant(self) -> None:
         tracer = _tracer()
-        with tracer.start_as_current_span("test"), scoped_telemetry_context(
-            labels={"user_id": "usr-1"}, tenant_id="tnt-1"
+        with (
+            tracer.start_as_current_span("test"),
+            scoped_telemetry_context(labels={"user_id": "usr-1"}, tenant_id="tnt-1"),
         ):
             ctx = current_context()
             assert ctx.labels["user_id"] == "usr-1"
@@ -121,9 +123,11 @@ class TestScopedTelemetryContext:
 
     async def test_multiple_calls_nest_correctly(self) -> None:
         tracer = _tracer()
-        with tracer.start_as_current_span("outer"), scoped_telemetry_context(
-            labels={"a": "1"}
-        ), scoped_telemetry_context(labels={"b": "2"}):
+        with (
+            tracer.start_as_current_span("outer"),
+            scoped_telemetry_context(labels={"a": "1"}),
+            scoped_telemetry_context(labels={"b": "2"}),
+        ):
             ctx = current_context()
             assert ctx.labels.get("a") == "1"
             assert ctx.labels.get("b") == "2"

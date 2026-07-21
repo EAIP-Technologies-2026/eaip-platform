@@ -196,12 +196,14 @@ class RetrievalEngine:
                 RetrievalQuery(query=query_str, top_k=k),
             )
             result = self._raw_to_result(raw, query_str, coll, t0)
-            self._publish_event(RetrievalExecuted(
-                query=query_str,
-                collection=coll,
-                result_count=result.total_results,
-                duration_ms=result.duration_ms,
-            ))
+            self._publish_event(
+                RetrievalExecuted(
+                    query=query_str,
+                    collection=coll,
+                    result_count=result.total_results,
+                    duration_ms=result.duration_ms,
+                )
+            )
             return result
         except Exception as exc:
             raise RetrievalError(f"Semantic search failed: {exc}") from exc

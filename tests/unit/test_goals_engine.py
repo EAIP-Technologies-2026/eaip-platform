@@ -10,10 +10,8 @@ from eaip.goals.engine import GoalEngine
 from eaip.goals.exceptions import GoalNotFoundError, GoalValidationError
 from eaip.goals.models import (
     BusinessGoal,
-    GoalConfig,
     GoalStatus,
     KpiDefinition,
-    KpiDirection,
     Objective,
     ObjectiveStatus,
     Priority,
@@ -28,7 +26,9 @@ class TestGoalEngine:
     @pytest.fixture
     def sample_goal(self) -> BusinessGoal:
         kpi = KpiDefinition(id="k1", name="Revenue", target_value=1000.0, current_value=0.0)
-        obj = Objective(id="o1", goal_id="g1", name="Increase Revenue", kpis=(kpi,), target_value=1000.0)
+        obj = Objective(
+            id="o1", goal_id="g1", name="Increase Revenue", kpis=(kpi,), target_value=1000.0
+        )
         return BusinessGoal(
             id="g1",
             name="Q4 Targets",
@@ -46,7 +46,9 @@ class TestGoalEngine:
         assert result.id == "g1"
         assert result.name == "Q4 Targets"
 
-    async def test_create_goal_duplicate(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
+    async def test_create_goal_duplicate(
+        self, engine: GoalEngine, sample_goal: BusinessGoal
+    ) -> None:
         await engine.create_goal(sample_goal)
         with pytest.raises(GoalValidationError):
             await engine.create_goal(sample_goal)
@@ -62,7 +64,9 @@ class TestGoalEngine:
 
     async def test_update_goal(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
         await engine.create_goal(sample_goal)
-        updated = await engine.update_goal("g1", {"name": "Q4 Updated", "status": GoalStatus.ACTIVE})
+        updated = await engine.update_goal(
+            "g1", {"name": "Q4 Updated", "status": GoalStatus.ACTIVE}
+        )
         assert updated.name == "Q4 Updated"
         assert updated.status is GoalStatus.ACTIVE
 
@@ -99,14 +103,18 @@ class TestGoalEngine:
         assert progress.goal_id == "g1"
         assert progress.overall_progress >= 0.0
 
-    async def test_evaluate_progress_with_kpi(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
+    async def test_evaluate_progress_with_kpi(
+        self, engine: GoalEngine, sample_goal: BusinessGoal
+    ) -> None:
         await engine.create_goal(sample_goal)
         await engine.tracker.record_kpi("k1", 500.0)
         progress = await engine.evaluate_progress("g1")
         assert progress.kpi_values.get("k1", 0) > 0
         assert 0 <= progress.overall_progress <= 100
 
-    async def test_check_goal_status_draft(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
+    async def test_check_goal_status_draft(
+        self, engine: GoalEngine, sample_goal: BusinessGoal
+    ) -> None:
         await engine.create_goal(sample_goal)
         status = await engine.check_goal_status("g1")
         assert status is GoalStatus.DRAFT
@@ -132,12 +140,16 @@ class TestGoalEngine:
         progress = await engine.get_progress("g1")
         assert progress.goal_id == "g1"
 
-    async def test_deploy_objectives_no_orchestrator(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
+    async def test_deploy_objectives_no_orchestrator(
+        self, engine: GoalEngine, sample_goal: BusinessGoal
+    ) -> None:
         await engine.create_goal(sample_goal)
         deployed = await engine.deploy_objectives("g1")
         assert deployed == []
 
-    async def test_deploy_objectives_with_orchestrator(self, engine: GoalEngine, sample_goal: BusinessGoal) -> None:
+    async def test_deploy_objectives_with_orchestrator(
+        self, engine: GoalEngine, sample_goal: BusinessGoal
+    ) -> None:
         mock_orch = AsyncMock()
         mock_orch.assign.return_value = MagicMock(worker_id="worker-1")
         engine._workforce_orchestrator = mock_orch

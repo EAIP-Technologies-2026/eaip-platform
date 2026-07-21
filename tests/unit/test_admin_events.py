@@ -85,7 +85,7 @@ class TestAdminEvents:
 
     def test_events_are_frozen(self) -> None:
         event = PluginReloaded(plugin_name="p", success=True)
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             event.plugin_name = "other"  # type: ignore[misc]
 
     def test_events_have_occurred_at(self) -> None:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from eaip.analytics.aggregation import AggregationEngine
 from eaip.analytics.dashboard import DashboardService
@@ -44,11 +44,19 @@ class AnalyticsRuntimeModule:
         telemetry_collector: TelemetryCollector | None = None,
     ) -> None:
         self._analytics_service = analytics_service or AnalyticsService()
-        self._trend_analyzer = trend_analyzer or TrendAnalyzer(analytics_service=self._analytics_service)
-        self._aggregation_engine = aggregation_engine or AggregationEngine(analytics_service=self._analytics_service)
+        self._trend_analyzer = trend_analyzer or TrendAnalyzer(
+            analytics_service=self._analytics_service
+        )
+        self._aggregation_engine = aggregation_engine or AggregationEngine(
+            analytics_service=self._analytics_service
+        )
         self._kpi_engine = kpi_engine or KpiEngine(analytics_service=self._analytics_service)
-        self._dashboard_service = dashboard_service or DashboardService(analytics_service=self._analytics_service)
-        self._telemetry_collector = telemetry_collector or TelemetryCollector(analytics_service=self._analytics_service)
+        self._dashboard_service = dashboard_service or DashboardService(
+            analytics_service=self._analytics_service
+        )
+        self._telemetry_collector = telemetry_collector or TelemetryCollector(
+            analytics_service=self._analytics_service
+        )
         self._health_check = AnalyticsHealthCheck(analytics_service=self._analytics_service)
         self._log = get_logger("eaip.analytics.integration")
 
@@ -81,24 +89,30 @@ class AnalyticsRuntimeModule:
         self._log.info("analytics.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="analytics:engine",
-            title="Analytics Engine",
-            status=CapabilityStatus.ENABLED,
-            tags=("analytics", "engine"),
-        ))
-        kernel.platform.capabilities.register(Capability(
-            name="analytics:kpi",
-            title="KPI Engine",
-            status=CapabilityStatus.ENABLED,
-            tags=("analytics", "kpi"),
-        ))
-        kernel.platform.capabilities.register(Capability(
-            name="analytics:dashboard",
-            title="Dashboard Service",
-            status=CapabilityStatus.ENABLED,
-            tags=("analytics", "dashboard"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="analytics:engine",
+                title="Analytics Engine",
+                status=CapabilityStatus.ENABLED,
+                tags=("analytics", "engine"),
+            )
+        )
+        kernel.platform.capabilities.register(
+            Capability(
+                name="analytics:kpi",
+                title="KPI Engine",
+                status=CapabilityStatus.ENABLED,
+                tags=("analytics", "kpi"),
+            )
+        )
+        kernel.platform.capabilities.register(
+            Capability(
+                name="analytics:dashboard",
+                title="Dashboard Service",
+                status=CapabilityStatus.ENABLED,
+                tags=("analytics", "dashboard"),
+            )
+        )
 
         kernel.register_module("analytics.service", self._analytics_service)
         kernel.register_module("analytics.trends", self._trend_analyzer)

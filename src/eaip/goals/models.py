@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from eaip.shared.time import utc_now
 
@@ -116,7 +116,9 @@ class GoalConfig(BaseModel):
     evaluation_interval_seconds: float = 60.0
     enable_auto_replan: bool = False
     max_objectives: int = 20
-    notification_thresholds: dict[str, float] = Field(default_factory=lambda: {"warning": 0.7, "critical": 0.9})
+    notification_thresholds: dict[str, float] = Field(
+        default_factory=lambda: {"warning": 0.7, "critical": 0.9}
+    )
 
 
 __all__ = [

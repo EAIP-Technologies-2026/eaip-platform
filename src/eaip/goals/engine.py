@@ -18,13 +18,11 @@ from eaip.goals.models import (
     GoalConfig,
     GoalProgress,
     GoalStatus,
-    KpiDefinition,
     Objective,
     ObjectiveStatus,
 )
 from eaip.goals.tracker import GoalTracker
 from eaip.logging.context import get_logger
-from eaip.shared.time import utc_now
 
 
 class GoalEngine:
@@ -59,12 +57,14 @@ class GoalEngine:
             for kpi in obj.kpis:
                 self._tracker.register_kpi(kpi)
 
-        await self._publish(GoalCreated(
-            goal_id=goal.id,
-            goal_name=goal.name,
-            owner=goal.owner,
-            priority=goal.priority.value,
-        ))
+        await self._publish(
+            GoalCreated(
+                goal_id=goal.id,
+                goal_name=goal.name,
+                owner=goal.owner,
+                priority=goal.priority.value,
+            )
+        )
         self._log.info("goal.created", goal_id=goal.id, name=goal.name)
         return goal
 
@@ -87,7 +87,9 @@ class GoalEngine:
             raise GoalNotFoundError(goal_id)
         return self._goals[goal_id]
 
-    async def list_goals(self, status: str | None = None, owner: str | None = None) -> list[BusinessGoal]:
+    async def list_goals(
+        self, status: str | None = None, owner: str | None = None
+    ) -> list[BusinessGoal]:
         """List all goals, optionally filtered by status or owner."""
         results: list[BusinessGoal] = []
         for goal in self._goals.values():
@@ -127,7 +129,9 @@ class GoalEngine:
                     kpi_values[kpi.id] = status["progress"]
                 obj_kpi_progress = obj_progress_sum / len(obj.kpis)
             else:
-                obj_kpi_progress = obj.target_value / max(obj.target_value, 1.0) if obj.target_value > 0 else 0.0
+                obj_kpi_progress = (
+                    obj.target_value / max(obj.target_value, 1.0) if obj.target_value > 0 else 0.0
+                )
             obj_kpi_progress = min(obj_kpi_progress, 1.0)
             objectives_progress[obj.id] = round(obj_kpi_progress * 100, 2)
 
@@ -145,12 +149,14 @@ class GoalEngine:
         )
         self._progress_cache[goal_id] = progress
 
-        await self._publish(GoalProgressUpdated(
-            goal_id=goal_id,
-            overall_progress=overall,
-            objectives_progress=objectives_progress,
-            kpi_values=kpi_values,
-        ))
+        await self._publish(
+            GoalProgressUpdated(
+                goal_id=goal_id,
+                overall_progress=overall,
+                objectives_progress=objectives_progress,
+                kpi_values=kpi_values,
+            )
+        )
         return progress
 
     async def check_goal_status(self, goal_id: str) -> GoalStatus:
@@ -174,11 +180,13 @@ class GoalEngine:
         if all_completed:
             updated = goal.model_copy(update={"status": GoalStatus.COMPLETED})
             self._goals[goal_id] = updated
-            await self._publish(GoalCompleted(
-                goal_id=goal_id,
-                goal_name=goal.name,
-                final_progress=progress.overall_progress,
-            ))
+            await self._publish(
+                GoalCompleted(
+                    goal_id=goal_id,
+                    goal_name=goal.name,
+                    final_progress=progress.overall_progress,
+                )
+            )
             self._log.info("goal.completed", goal_id=goal_id)
             return GoalStatus.COMPLETED
 
@@ -191,11 +199,13 @@ class GoalEngine:
         if has_failed:
             updated = goal.model_copy(update={"status": GoalStatus.FAILED})
             self._goals[goal_id] = updated
-            await self._publish(GoalFailed(
-                goal_id=goal_id,
-                goal_name=goal.name,
-                reason="one or more objectives failed",
-            ))
+            await self._publish(
+                GoalFailed(
+                    goal_id=goal_id,
+                    goal_name=goal.name,
+                    reason="one or more objectives failed",
+                )
+            )
             self._log.info("goal.failed", goal_id=goal_id)
             return GoalStatus.FAILED
 
@@ -206,23 +216,26 @@ class GoalEngine:
         for goal in self._goals.values():
             for obj in goal.objectives:
                 if obj.id == objective_id:
-                    updated = obj.model_copy(update={
-                        "assigned_worker_id": worker_id,
-                        "status": ObjectiveStatus.IN_PROGRESS,
-                    })
+                    updated = obj.model_copy(
+                        update={
+                            "assigned_worker_id": worker_id,
+                            "status": ObjectiveStatus.IN_PROGRESS,
+                        }
+                    )
                     # Reconstruct goal with updated objective
                     new_objectives = tuple(
-                        updated if o.id == objective_id else o
-                        for o in goal.objectives
+                        updated if o.id == objective_id else o for o in goal.objectives
                     )
                     new_goal = goal.model_copy(update={"objectives": new_objectives})
                     self._goals[goal.id] = new_goal
 
-                    await self._publish(ObjectiveAssigned(
-                        objective_id=objective_id,
-                        goal_id=goal.id,
-                        worker_id=worker_id,
-                    ))
+                    await self._publish(
+                        ObjectiveAssigned(
+                            objective_id=objective_id,
+                            goal_id=goal.id,
+                            worker_id=worker_id,
+                        )
+                    )
                     self._log.info(
                         "objective.assigned",
                         objective_id=objective_id,

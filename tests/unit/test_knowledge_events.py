@@ -12,7 +12,9 @@ from eaip.knowledge.events import (
 
 class TestKnowledgeEvents:
     def test_document_ingested(self) -> None:
-        event = DocumentIngested(document_id="doc1", collection="default", chunk_count=5, duration_ms=100.0)
+        event = DocumentIngested(
+            document_id="doc1", collection="default", chunk_count=5, duration_ms=100.0
+        )
         assert event.event_type == "eaip.knowledge.document.ingested"
         assert event.document_id == "doc1"
         assert event.chunk_count == 5
@@ -31,7 +33,9 @@ class TestKnowledgeEvents:
         assert event.event_type == "eaip.knowledge.collection.deleted"
 
     def test_retrieval_executed(self) -> None:
-        event = RetrievalExecuted(query="test", collection="default", result_count=3, duration_ms=50.0)
+        event = RetrievalExecuted(
+            query="test", collection="default", result_count=3, duration_ms=50.0
+        )
         assert event.event_type == "eaip.knowledge.retrieval.executed"
 
     def test_knowledge_query(self) -> None:

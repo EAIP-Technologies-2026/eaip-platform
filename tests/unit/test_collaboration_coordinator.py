@@ -10,15 +10,9 @@ from eaip.collaboration.models import (
     AgentTask,
     CollaborationSession,
     CoordinationConfig,
+    CoordinationStrategy as CS,
     SessionStatus,
     SessionType,
-    TaskStatus,
-)
-from eaip.collaboration.models import (
-    CoordinationStrategy as CS,
-)
-from eaip.collaboration.models import (
-    ErrorStrategy,
 )
 
 
@@ -162,8 +156,12 @@ class TestCoordinationEngine:
         sequential_session: CollaborationSession,
     ) -> None:
         await engine.create_session(sequential_session)
-        await engine.add_task("s1", AgentTask(id="t1", session_id="s1", agent_id="agent_a", description="Task 1"))
-        await engine.add_task("s1", AgentTask(id="t2", session_id="s1", agent_id="agent_b", description="Task 2"))
+        await engine.add_task(
+            "s1", AgentTask(id="t1", session_id="s1", agent_id="agent_a", description="Task 1")
+        )
+        await engine.add_task(
+            "s1", AgentTask(id="t2", session_id="s1", agent_id="agent_b", description="Task 2")
+        )
         result = await engine.execute_tasks("s1")
         assert result.status is SessionStatus.COMPLETED
         assert len(result.task_results) == 2
@@ -175,9 +173,15 @@ class TestCoordinationEngine:
         parallel_session: CollaborationSession,
     ) -> None:
         await engine.create_session(parallel_session)
-        await engine.add_task("s2", AgentTask(id="t1", session_id="s2", agent_id="agent_a", description="P1"))
-        await engine.add_task("s2", AgentTask(id="t2", session_id="s2", agent_id="agent_b", description="P2"))
-        await engine.add_task("s2", AgentTask(id="t3", session_id="s2", agent_id="agent_c", description="P3"))
+        await engine.add_task(
+            "s2", AgentTask(id="t1", session_id="s2", agent_id="agent_a", description="P1")
+        )
+        await engine.add_task(
+            "s2", AgentTask(id="t2", session_id="s2", agent_id="agent_b", description="P2")
+        )
+        await engine.add_task(
+            "s2", AgentTask(id="t3", session_id="s2", agent_id="agent_c", description="P3")
+        )
         result = await engine.execute_tasks("s2")
         assert result.status is SessionStatus.COMPLETED
         assert len(result.task_results) == 3
@@ -188,7 +192,10 @@ class TestCoordinationEngine:
         parallel_session: CollaborationSession,
     ) -> None:
         await engine.create_session(parallel_session)
-        await engine.add_task("s2", AgentTask(id="t1", session_id="s2", agent_id="agent_a", description="Broadcast task"))
+        await engine.add_task(
+            "s2",
+            AgentTask(id="t1", session_id="s2", agent_id="agent_a", description="Broadcast task"),
+        )
         result = await engine.execute_tasks("s2")
         assert result.status is SessionStatus.COMPLETED
 
@@ -204,8 +211,12 @@ class TestCoordinationEngine:
             agents=("agent_a", "agent_b"),
         )
         await engine.create_session(session)
-        await engine.add_task("s3", AgentTask(id="t1", session_id="s3", agent_id="agent_a", description="Task 1"))
-        await engine.add_task("s3", AgentTask(id="t2", session_id="s3", agent_id="agent_b", description="Task 2"))
+        await engine.add_task(
+            "s3", AgentTask(id="t1", session_id="s3", agent_id="agent_a", description="Task 1")
+        )
+        await engine.add_task(
+            "s3", AgentTask(id="t2", session_id="s3", agent_id="agent_b", description="Task 2")
+        )
         result = await engine.execute_tasks("s3")
         assert result.status is SessionStatus.COMPLETED
 

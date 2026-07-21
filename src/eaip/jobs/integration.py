@@ -31,10 +31,13 @@ class JobRuntimeModule:
         self._meter = meter
         self._executor = executor or LongRunningJobExecutor(event_bus=event_bus, meter=meter)
         self._scheduler = scheduler or JobScheduler(
-            executor=self._executor, event_bus=event_bus, meter=meter,
+            executor=self._executor,
+            event_bus=event_bus,
+            meter=meter,
         )
         self._health_check = JobHealthCheck(
-            scheduler=self._scheduler, executor=self._executor,
+            scheduler=self._scheduler,
+            executor=self._executor,
         )
         self._startup_duration: float = 0.0
         self._log = get_logger("eaip.jobs.integration")
@@ -56,12 +59,14 @@ class JobRuntimeModule:
         self._log.info("jobs.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="jobs:scheduler",
-            title="Job Scheduler",
-            status=CapabilityStatus.ENABLED,
-            tags=("jobs", "scheduler"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="jobs:scheduler",
+                title="Job Scheduler",
+                status=CapabilityStatus.ENABLED,
+                tags=("jobs", "scheduler"),
+            )
+        )
 
         kernel.register_module("job_scheduler", self._scheduler)
 

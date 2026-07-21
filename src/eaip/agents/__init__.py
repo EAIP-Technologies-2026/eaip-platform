@@ -2,7 +2,15 @@
 
 from eaip.agents.base import Agent, Guardrail, Planner
 from eaip.agents.events import (
+    AgentCreated,
+    AgentDeleted,
     AgentEvent,
+    AgentExecuted,
+    AgentFailed,
+    AgentPaused,
+    AgentStarted,
+    AgentStopped,
+    AgentUpdated,
     RunCompleted,
     RunFailed,
     RunStarted,
@@ -23,6 +31,7 @@ from eaip.agents.health import AgentHealthCheck
 from eaip.agents.integration import AgentRuntimeModule, create_agent_runtime
 from eaip.agents.models import (
     AgentSpec,
+    AgentStatus,
     Goal,
     Plan,
     RunRecord,
@@ -32,18 +41,29 @@ from eaip.agents.models import (
     StepType,
 )
 from eaip.agents.planner import FixedPlanner, SimpleLLMPlanner
+from eaip.agents.registry import AgentRegistry
 from eaip.agents.runtime import AgentRunContext, AgentRuntime
 
 __all__ = [
     "Agent",
+    "AgentCreated",
+    "AgentDeleted",
     "AgentError",
     "AgentEvent",
+    "AgentExecuted",
+    "AgentFailed",
     "AgentHealthCheck",
     "AgentNotFoundError",
+    "AgentPaused",
+    "AgentRegistry",
     "AgentRunContext",
     "AgentRuntime",
     "AgentRuntimeModule",
     "AgentSpec",
+    "AgentStarted",
+    "AgentStatus",
+    "AgentStopped",
+    "AgentUpdated",
     "CompositeGuardrail",
     "FixedPlanner",
     "Goal",

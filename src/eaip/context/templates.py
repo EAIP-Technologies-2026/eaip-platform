@@ -126,9 +126,7 @@ class PromptManager:
 
         missing = [v for v in template.variables if v not in variables]
         if missing:
-            raise TemplateRenderError(
-                f"Missing required variables: {', '.join(sorted(missing))}"
-            )
+            raise TemplateRenderError(f"Missing required variables: {', '.join(sorted(missing))}")
 
         try:
             rendered = _VARIABLE_PATTERN.sub(

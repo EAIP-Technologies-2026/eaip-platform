@@ -8,12 +8,10 @@ from eaip.knowledge.models import (
     DocumentFormat,
     EmbeddingConfig,
     IndexingStatus,
-    IngestionConfig,
     IngestionResult,
     KnowledgeCollection,
     KnowledgeDocument,
     RetrievalQuery,
-    RetrievalResult,
     RetrievedChunk,
     SourceAttribution,
 )
@@ -30,7 +28,9 @@ class TestDocumentModels:
         assert doc.chunk_count == 0
 
     def test_document_chunk_defaults(self) -> None:
-        chunk = DocumentChunk(chunk_id="chunk1", document_id="doc1", collection="default", content="hello")
+        chunk = DocumentChunk(
+            chunk_id="chunk1", document_id="doc1", collection="default", content="hello"
+        )
         assert chunk.chunk_id == "chunk1"
         assert chunk.content == "hello"
         assert chunk.chunk_index == 0
@@ -39,8 +39,11 @@ class TestDocumentModels:
     def test_document_chunk_with_embedding(self) -> None:
         emb = (0.1, 0.2, 0.3)
         chunk = DocumentChunk(
-            chunk_id="chunk1", document_id="doc1", collection="default",
-            content="hello", embedding=emb,
+            chunk_id="chunk1",
+            document_id="doc1",
+            collection="default",
+            content="hello",
+            embedding=emb,
         )
         assert chunk.embedding == emb
 
@@ -55,7 +58,8 @@ class TestCollectionModels:
 
     def test_knowledge_collection_with_config(self) -> None:
         col = KnowledgeCollection(
-            collection_id="col:docs", name="docs",
+            collection_id="col:docs",
+            name="docs",
             description="Documentation",
             embedding_config=EmbeddingConfig(dimensions=768, model="text-embedding-3"),
             chunking_config=ChunkingConfig(strategy=ChunkingStrategy.SEMANTIC, chunk_size=1024),
@@ -74,12 +78,18 @@ class TestRetrievalModels:
 
     def test_retrieved_chunk_with_attribution(self) -> None:
         attr = SourceAttribution(
-            document_id="doc1", document_title="Test Doc",
-            collection="default", chunk_index=0, score=0.95,
+            document_id="doc1",
+            document_title="Test Doc",
+            collection="default",
+            chunk_index=0,
+            score=0.95,
         )
         chunk = RetrievedChunk(
-            chunk_id="ch1", document_id="doc1",
-            collection="default", content="content", score=0.95,
+            chunk_id="ch1",
+            document_id="doc1",
+            collection="default",
+            content="content",
+            score=0.95,
             attribution=attr,
         )
         assert chunk.attribution is not None
@@ -102,7 +112,9 @@ class TestIngestionModels:
 
     def test_ingestion_result_with_errors(self) -> None:
         doc = KnowledgeDocument(
-            document_id="d1", collection="c", format=DocumentFormat.PDF,
+            document_id="d1",
+            collection="c",
+            format=DocumentFormat.PDF,
             indexing_status=IndexingStatus.FAILED,
         )
         result = IngestionResult(document=doc, status=IndexingStatus.FAILED, errors=("bad format",))

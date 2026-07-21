@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -27,7 +26,6 @@ from eaip.runtime.capability_integration import CapabilityRuntimeModule
 
 if TYPE_CHECKING:
     from eaip.platform.platform import Platform
-    from eaip.runtime.kernel import RuntimeKernel
 
 
 # ---------------------------------------------------------------------------

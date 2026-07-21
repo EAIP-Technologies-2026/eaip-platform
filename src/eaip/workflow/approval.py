@@ -113,7 +113,9 @@ class StepApprovalHandler(ApprovalHandler):
     # ------------------------------------------------------------------
 
     def save_checkpoint(
-        self, token: str, checkpoint_data: dict[str, Any],
+        self,
+        token: str,
+        checkpoint_data: dict[str, Any],
     ) -> None:
         self._checkpoints[token] = {
             "data": checkpoint_data,

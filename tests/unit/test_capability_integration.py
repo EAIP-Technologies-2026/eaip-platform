@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from eaip.capabilities.capability import Capability, CapabilityStatus
-from eaip.capabilities.discovery import CapabilityDiscovery
 from eaip.capabilities.registry import CapabilityRegistry
 from eaip.runtime.capability_integration import CapabilityRuntimeModule
 
 if TYPE_CHECKING:
-    from eaip.platform.platform import Platform
-    from eaip.runtime.kernel import RuntimeKernel
+    pass
 
 
 class _MockPlatform:

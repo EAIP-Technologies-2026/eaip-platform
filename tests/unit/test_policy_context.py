@@ -32,9 +32,10 @@ class TestPolicyEvaluationContext:
             resource="file",
         )
         import pydantic
+
         try:
             ctx.subject_id = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 

@@ -20,8 +20,12 @@ class TestKpiEngine:
     @pytest.fixture
     def seeded_engine(self) -> KpiEngine:
         tracker = GoalTracker()
-        kpi1 = KpiDefinition(id="k1", name="Revenue", target_value=1000.0, direction=KpiDirection.HIGHER_IS_BETTER)
-        kpi2 = KpiDefinition(id="k2", name="Latency", target_value=200.0, direction=KpiDirection.LOWER_IS_BETTER)
+        kpi1 = KpiDefinition(
+            id="k1", name="Revenue", target_value=1000.0, direction=KpiDirection.HIGHER_IS_BETTER
+        )
+        kpi2 = KpiDefinition(
+            id="k2", name="Latency", target_value=200.0, direction=KpiDirection.LOWER_IS_BETTER
+        )
         tracker.register_kpi(kpi1)
         tracker.register_kpi(kpi2)
         svc = AnalyticsService()

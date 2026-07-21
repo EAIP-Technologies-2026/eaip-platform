@@ -75,12 +75,14 @@ class CollaborationRuntimeModule:
         self._log.info("collaboration.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="collaboration:runtime",
-            title="Collaboration & Workflow Runtime",
-            status=CapabilityStatus.ENABLED,
-            tags=("collaboration", "runtime", "workflow"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="collaboration:runtime",
+                title="Collaboration & Workflow Runtime",
+                status=CapabilityStatus.ENABLED,
+                tags=("collaboration", "runtime", "workflow"),
+            )
+        )
 
         kernel.register_module("collaboration.coordinator", self._coordinator)
         kernel.register_module("collaboration.delegation", self._delegation)

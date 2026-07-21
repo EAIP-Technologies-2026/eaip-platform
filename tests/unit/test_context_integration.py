@@ -84,7 +84,7 @@ class TestContextRuntimeModule:
         module = ContextRuntimeModule()
         try:
             _ = module.builder
-            assert False
+            raise AssertionError()
         except RuntimeError:
             pass
 
@@ -92,7 +92,7 @@ class TestContextRuntimeModule:
         module = ContextRuntimeModule()
         try:
             _ = module.compressor
-            assert False
+            raise AssertionError()
         except RuntimeError:
             pass
 

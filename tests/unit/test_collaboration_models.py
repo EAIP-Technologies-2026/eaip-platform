@@ -11,17 +11,13 @@ from eaip.collaboration.models import (
     CollaborationResult,
     CollaborationSession,
     CoordinationConfig,
-    DelegationRequest,
-    ErrorStrategy,
-    SharedState,
-)
-from eaip.collaboration.models import (
     CoordinationStrategy as CS,
-)
-from eaip.collaboration.models import (
+    DelegationRequest,
     DelegationStatus,
+    ErrorStrategy,
     SessionStatus,
     SessionType,
+    SharedState,
     TaskStatus,
 )
 from eaip.shared.time import utc_now

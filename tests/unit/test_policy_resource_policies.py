@@ -27,12 +27,14 @@ class TestResourcePolicy:
 
     def test_with_rules(self) -> None:
         rule = PolicyRule(
-            id="rule_1", name="Allow Read",
+            id="rule_1",
+            name="Allow Read",
             effect=PolicyEffect.ALLOW,
             actions=("read",),
         )
         rp = ResourcePolicy(
-            id="rp_2", name="DB Policy",
+            id="rp_2",
+            name="DB Policy",
             resource_type="database",
             resource_pattern="prod::*",
             allowed_actions=("read", "write"),
@@ -63,7 +65,8 @@ class TestToolPolicy:
 
     def test_restricted_tool(self) -> None:
         tp = ToolPolicy(
-            id="tp_2", name="Restricted Shell",
+            id="tp_2",
+            name="Restricted Shell",
             tool_pattern="shell:*",
             access_level=ToolAccessLevel.RESTRICTED,
             allowed_parameters={"command": ["ls", "cat"]},
@@ -90,7 +93,9 @@ class TestDepartmentPolicy:
 
     def test_with_policies(self) -> None:
         dp = DepartmentPolicy(
-            id="dp_2", name="Finance", department_id="fin",
+            id="dp_2",
+            name="Finance",
+            department_id="fin",
             resource_policies=("rp_1", "rp_2"),
             tool_policies=("tp_1",),
             max_concurrent_workflows=5,
@@ -115,7 +120,8 @@ class TestWorkflowPolicy:
 
     def test_with_restrictions(self) -> None:
         wp = WorkflowPolicy(
-            id="wp_2", name="Prod WF",
+            id="wp_2",
+            name="Prod WF",
             workflow_pattern="production:*",
             max_duration_seconds=3600.0,
             max_steps=20,
@@ -143,7 +149,8 @@ class TestApprovalPolicy:
 
     def test_with_approvers(self) -> None:
         ap = ApprovalPolicy(
-            id="ap_2", name="High Value",
+            id="ap_2",
+            name="High Value",
             trigger_conditions=({"amount": ">1000"},),
             required_approvers=("manager", "director"),
             min_approvals_required=2,
@@ -193,8 +200,11 @@ class TestPolicyEvaluationReport:
 
     def test_frozen(self) -> None:
         per = PolicyEvaluationReport(
-            request_id="r", subject_id="s", action="a",
-            resource="r", effect=PolicyEffect.ALLOW,
+            request_id="r",
+            subject_id="s",
+            action="a",
+            resource="r",
+            effect=PolicyEffect.ALLOW,
         )
         with pytest.raises(ValueError):
             per.subject_id = "changed"  # type: ignore[misc]

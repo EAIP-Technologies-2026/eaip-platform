@@ -42,7 +42,10 @@ class TestBrainKnowledgeRetrieved:
 
     def test_with_collections(self) -> None:
         ev = BrainKnowledgeRetrieved(
-            query="q1", collections=("docs", "wiki"), result_count=5, duration_ms=150.0,
+            query="q1",
+            collections=("docs", "wiki"),
+            result_count=5,
+            duration_ms=150.0,
         )
         assert "docs" in ev.collections
 
@@ -58,7 +61,9 @@ class TestBrainMemoryRetrieved:
 
 class TestBrainContextBuilt:
     def test_defaults(self) -> None:
-        ev = BrainContextBuilt(query="ctx query", document_count=2, total_tokens=500, duration_ms=30.0)
+        ev = BrainContextBuilt(
+            query="ctx query", document_count=2, total_tokens=500, duration_ms=30.0
+        )
         assert ev.event_type == "eaip.brain.context.built"
         assert ev.document_count == 2
         assert ev.total_tokens == 500
@@ -68,7 +73,10 @@ class TestBrainContextBuilt:
 class TestDepartmentBrainQueryExecuted:
     def test_defaults(self) -> None:
         ev = DepartmentBrainQueryExecuted(
-            department_id="eng", query="test", source_count=3, duration_ms=50.0,
+            department_id="eng",
+            query="test",
+            source_count=3,
+            duration_ms=50.0,
         )
         assert ev.event_type == "eaip.brain.department.query.executed"
         assert ev.department_id == "eng"
@@ -79,7 +87,11 @@ class TestDepartmentBrainQueryExecuted:
 
     def test_with_confidence(self) -> None:
         ev = DepartmentBrainQueryExecuted(
-            department_id="hr", query="q1", source_count=1, duration_ms=10.0, confidence=0.9,
+            department_id="hr",
+            query="q1",
+            source_count=1,
+            duration_ms=10.0,
+            confidence=0.9,
         )
         assert ev.confidence == 0.9
 
@@ -87,7 +99,9 @@ class TestDepartmentBrainQueryExecuted:
 class TestBrainAccessDenied:
     def test_defaults(self) -> None:
         ev = BrainAccessDenied(
-            subject_id="alice", brain_type="enterprise", action="query",
+            subject_id="alice",
+            brain_type="enterprise",
+            action="query",
         )
         assert ev.event_type == "eaip.brain.access.denied"
         assert ev.subject_id == "alice"
@@ -97,8 +111,11 @@ class TestBrainAccessDenied:
 
     def test_with_department(self) -> None:
         ev = BrainAccessDenied(
-            subject_id="bob", brain_type="department", department_id="eng",
-            action="query", reason="Not authorized",
+            subject_id="bob",
+            brain_type="department",
+            department_id="eng",
+            action="query",
+            reason="Not authorized",
         )
         assert ev.department_id == "eng"
         assert ev.reason == "Not authorized"

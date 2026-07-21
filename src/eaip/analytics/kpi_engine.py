@@ -5,15 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from eaip.analytics.exceptions import MetricNotFoundError
-from eaip.analytics.models import AggregationType, MetricDefinition, MetricType, TrendDirection
 from eaip.analytics.service import AnalyticsService
 from eaip.analytics.trends import TrendAnalyzer
 from eaip.goals.exceptions import KpiNotFoundError
 from eaip.goals.models import KpiDefinition, KpiDirection
 from eaip.goals.tracker import GoalTracker
 from eaip.logging.context import get_logger
-from eaip.shared.time import utc_now
 
 
 class KpiEngine:
@@ -30,7 +27,9 @@ class KpiEngine:
         self._trends = trend_analyzer or TrendAnalyzer(analytics_service=self._analytics)
         self._log = get_logger("eaip.analytics.kpi_engine")
 
-    async def record_kpi_value(self, kpi_id: str, value: float, timestamp: datetime | None = None) -> float:
+    async def record_kpi_value(
+        self, kpi_id: str, value: float, timestamp: datetime | None = None
+    ) -> float:
         """Record a KPI measurement and return the previous value."""
         return await self._tracker.record_kpi(kpi_id, value, timestamp)
 
@@ -43,7 +42,13 @@ class KpiEngine:
         value = current_value if current_value is not None else kpi.current_value
 
         if kpi.target_value == 0:
-            return {"kpi_id": kpi_id, "status": "met", "progress": 1.0, "current_value": value, "target_value": 0.0}
+            return {
+                "kpi_id": kpi_id,
+                "status": "met",
+                "progress": 1.0,
+                "current_value": value,
+                "target_value": 0.0,
+            }
 
         if kpi.direction is KpiDirection.HIGHER_IS_BETTER:
             progress = min(value / kpi.target_value, 1.0)
@@ -72,8 +77,7 @@ class KpiEngine:
 
     async def list_kpis(self, goal_id: str | None = None) -> list[KpiDefinition]:
         """List all registered KPIs, optionally filtered by goal."""
-        kpis = list(self._tracker._kpis.values())
-        return kpis
+        return list(self._tracker._kpis.values())
 
 
 __all__ = ["KpiEngine"]

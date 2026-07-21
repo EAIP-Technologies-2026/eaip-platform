@@ -36,14 +36,14 @@ class _FakeProvider:
         return []
 
 
-def _instance(name: str, model_id: str, priority: int = 0,
-              status: ProviderStatus = ProviderStatus.AVAILABLE) -> ProviderInstance:
+def _instance(
+    name: str, model_id: str, priority: int = 0, status: ProviderStatus = ProviderStatus.AVAILABLE
+) -> ProviderInstance:
     return ProviderInstance(
         name=name,
         provider_type="test",
         endpoint=f"http://{name}",
-        models=(ModelCapability(model_id=model_id, provider=name,
-                                features=(ModelFeature.CHAT,)),),
+        models=(ModelCapability(model_id=model_id, provider=name, features=(ModelFeature.CHAT,)),),
         status=status,
         priority=priority,
     )
@@ -83,7 +83,7 @@ class TestProviderSelector:
         selector = ProviderSelector(registry, providers)
         try:
             selector.select_provider("nonexistent-model")
-            assert False
+            raise AssertionError()
         except ModelNotFoundError:
             pass
 
@@ -119,8 +119,9 @@ class TestProviderSelector:
                 self.name = name
 
             async def chat(self, request: ChatRequest) -> ChatResponse:
-                return ChatResponse(model=request.model, provider=self.name,
-                                     content="failover works")
+                return ChatResponse(
+                    model=request.model, provider=self.name, content="failover works"
+                )
 
             async def chat_stream(self, request: ChatRequest):
                 yield "ok"

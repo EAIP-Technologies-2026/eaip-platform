@@ -27,6 +27,7 @@ from eaip.plugins.registry import PluginRegistry
 from eaip.ports.clock import ClockPort
 from eaip.ports.id_generator import IdGeneratorPort
 from eaip.ports.secret_provider import SecretProviderPort
+from eaip.infrastructure.infrastructure import PlatformInfrastructure
 from eaip.runtime.kernel import RuntimeKernel
 from eaip.services.collection import ServiceCollection
 from eaip.services.extensions import add_default_services
@@ -188,6 +189,9 @@ class ApplicationBuilder:
             kernel = RuntimeKernel(platform)
             self._log.debug("app.runtime_kernel_created")
 
+        # Build infrastructure (DB, cache, background tasks)
+        infrastructure = PlatformInfrastructure(container, events, settings)
+
         self._log.info(
             "app.built",
             services=container.keys(),
@@ -195,7 +199,7 @@ class ApplicationBuilder:
             runtime_kernel=self._enable_runtime_kernel,
         )
 
-        return ApplicationLifecycle(platform=platform, kernel=kernel)
+        return ApplicationLifecycle(platform=platform, kernel=kernel, infrastructure=infrastructure)
 
     # ------------------------------------------------------------------
     # Internals

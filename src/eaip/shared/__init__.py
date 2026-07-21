@@ -11,23 +11,27 @@ Re-exports the most commonly used primitives so callers can write
 from __future__ import annotations
 
 from eaip.shared.identifiers import ComponentId, CorrelationId, RunId, Slug
+from eaip.shared.repository import InMemoryRepository
 from eaip.shared.result import Err, Ok, Result
+from eaip.shared.sandbox import safe_exec
 from eaip.shared.sentinels import UNSET, UnsetType
+from eaip.shared.tenant import (
+    TenantAwareRepository,
+    TenantContext,
+    get_current_tenant,
+    set_current_tenant,
+)
 from eaip.shared.time import Clock, Duration, utc_now
 from eaip.shared.types import JSONArray, JSONObject, JSONValue
 
 __all__ = [
-    # sentinels
     "UNSET",
-    # time
     "Clock",
-    # identifiers
     "ComponentId",
     "CorrelationId",
     "Duration",
-    # result
     "Err",
-    # types
+    "InMemoryRepository",
     "JSONArray",
     "JSONObject",
     "JSONValue",
@@ -35,6 +39,11 @@ __all__ = [
     "Result",
     "RunId",
     "Slug",
+    "TenantAwareRepository",
+    "TenantContext",
     "UnsetType",
+    "get_current_tenant",
+    "safe_exec",
+    "set_current_tenant",
     "utc_now",
 ]

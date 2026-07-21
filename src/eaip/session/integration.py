@@ -12,7 +12,6 @@ from eaip.session.context_manager import EnterpriseContextManager
 from eaip.session.health import SessionHealthCheck
 from eaip.session.lifecycle import SessionLifecycleManager
 from eaip.session.manager import SessionManager
-from eaip.session.models import SessionConfig
 from eaip.session.serialization import SessionSerializer
 
 if TYPE_CHECKING:

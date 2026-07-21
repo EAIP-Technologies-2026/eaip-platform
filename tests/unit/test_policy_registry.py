@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from eaip.exceptions.domain import DuplicateRegistrationError, NotFoundError
-from eaip.policy.models import Policy, PolicyRule, PolicyEffect
+from eaip.policy.models import Policy
 from eaip.policy.registry import PolicyRegistry
 from eaip.registry.registry import RegistryChange, RegistryEvent
 
@@ -22,7 +22,7 @@ class TestPolicyRegistry:
         reg.register(_policy())
         try:
             reg.register(_policy())
-            assert False, "expected DuplicateRegistrationError"
+            raise AssertionError("expected DuplicateRegistrationError")
         except DuplicateRegistrationError:
             pass
 
@@ -36,7 +36,7 @@ class TestPolicyRegistry:
         reg = PolicyRegistry()
         try:
             reg.get("nonexistent")
-            assert False, "expected NotFoundError"
+            raise AssertionError("expected NotFoundError")
         except NotFoundError:
             pass
 

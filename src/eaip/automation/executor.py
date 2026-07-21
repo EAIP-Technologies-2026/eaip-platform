@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import shlex
 import time
 from typing import Any
 
@@ -47,7 +48,7 @@ class ActionExecutor:
                     ),
                 )
                 if attempt < max_retries:
-                    delay = 2.0 ** attempt
+                    delay = 2.0**attempt
                     await asyncio.sleep(delay)
 
         raise ActionExecutionError(
@@ -59,25 +60,25 @@ class ActionExecutor:
     async def _dispatch(self, action: RuleAction, context: dict[str, Any]) -> str:
         if action.type == ActionType.WEBHOOK:
             return await self.execute_webhook(action, context)
-        elif action.type == ActionType.WORKFLOW:
+        if action.type == ActionType.WORKFLOW:
             return await self.execute_workflow(action, context)
-        elif action.type == ActionType.AGENT:
+        if action.type == ActionType.AGENT:
             return await self.execute_agent(action, context)
-        elif action.type == ActionType.COMMAND:
+        if action.type == ActionType.COMMAND:
             return await self.execute_command(action, context)
-        elif action.type == ActionType.EVENT:
+        if action.type == ActionType.EVENT:
             return await self.execute_event(action, context)
-        elif action.type == ActionType.NOTIFICATION:
+        if action.type == ActionType.NOTIFICATION:
             return await self.execute_notification(action, context)
-        else:
-            raise ActionExecutionError(
-                f"Unknown action type: {action.type}",
-                context={"action_type": action.type},
-            )
+        raise ActionExecutionError(
+            f"Unknown action type: {action.type}",
+            context={"action_type": action.type},
+        )
 
     async def execute_webhook(self, action: RuleAction, context: dict[str, Any]) -> str:
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=action.timeout_seconds) as client:
                 response = await client.post(
                     action.target,
@@ -100,15 +101,23 @@ class ActionExecutor:
         return f"agent:{action.target}"
 
     async def execute_command(self, action: RuleAction, context: dict[str, Any]) -> str:
-        import asyncio.subprocess as subprocess
+        from asyncio import subprocess
+
         try:
-            proc = await asyncio.create_subprocess_shell(
-                action.target,
+            args = shlex.split(action.target)
+            if not args:
+                raise ActionExecutionError(
+                    "Empty command target",
+                    context={"target": action.target},
+                )
+            proc = await asyncio.create_subprocess_exec(
+                *args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=action.timeout_seconds,
+                proc.communicate(),
+                timeout=action.timeout_seconds,
             )
             if proc.returncode != 0:
                 raise ActionExecutionError(
@@ -127,6 +136,7 @@ class ActionExecutor:
 
     async def execute_event(self, action: RuleAction, context: dict[str, Any]) -> str:
         from eaip.automation.events import RuleTriggered
+
         await self._event_bus.publish(
             RuleTriggered(
                 rule_id="",

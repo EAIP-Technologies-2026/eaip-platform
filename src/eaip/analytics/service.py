@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any
 
 from eaip.analytics.exceptions import MetricNotFoundError
 from eaip.analytics.models import (
@@ -53,7 +52,9 @@ class AnalyticsService:
             result = [m for m in result if all(t in m.tags for t in tags)]
         return result
 
-    async def record_metric(self, metric_id: str, value: float, tags: dict[str, str] | None = None) -> MetricPoint:
+    async def record_metric(
+        self, metric_id: str, value: float, tags: dict[str, str] | None = None
+    ) -> MetricPoint:
         """Record a metric data point."""
         if metric_id not in self._metrics:
             raise MetricNotFoundError(metric_id)
@@ -61,8 +62,9 @@ class AnalyticsService:
         definition = self._metrics[metric_id]
         if not definition.enabled:
             self._log.warning("analytics.metric.disabled", metric_id=metric_id)
-            point = MetricPoint(metric_id=metric_id, timestamp=utc_now(), value=value, tags=tags or {})
-            return point
+            return MetricPoint(
+                metric_id=metric_id, timestamp=utc_now(), value=value, tags=tags or {}
+            )
 
         point = MetricPoint(
             metric_id=metric_id,
@@ -127,7 +129,9 @@ class AnalyticsService:
             else:
                 agg_val = sum(vals)
 
-            tspans.append(TimeSeriesPoint(timestamp=bucket_ts, value=round(agg_val, 6), label=str(label)))
+            tspans.append(
+                TimeSeriesPoint(timestamp=bucket_ts, value=round(agg_val, 6), label=str(label))
+            )
 
         return TimeSeriesResult(
             metric_id=metric_id,
@@ -148,7 +152,9 @@ class AnalyticsService:
         results: dict[str, TimeSeriesResult] = {}
         for mid in metric_ids:
             if mid in self._metrics:
-                results[mid] = await self.query_time_series(mid, time_range[0], time_range[1], interval)
+                results[mid] = await self.query_time_series(
+                    mid, time_range[0], time_range[1], interval
+                )
 
         report = AnalyticsReport(
             id=f"report_{utc_now().timestamp():.0f}",
@@ -159,7 +165,9 @@ class AnalyticsService:
             interval=interval,
             results=results,
         )
-        self._log.info("analytics.report.generated", report_id=report.id, metric_count=len(metric_ids))
+        self._log.info(
+            "analytics.report.generated", report_id=report.id, metric_count=len(metric_ids)
+        )
         return report
 
     def _trim_old_points(self, metric_id: str) -> None:

@@ -54,7 +54,11 @@ class _MockKernel:
 
 class TestProviderRuntimeModule:
     def test_start_stop_lifecycle(self) -> None:
-        registry = type("reg", (object,), {"all": lambda self: [], "register": lambda self, *a: None, "__len__": lambda self: 0})()
+        registry = type(
+            "reg",
+            (object,),
+            {"all": lambda self: [], "register": lambda self, *a: None, "__len__": lambda self: 0},
+        )()
         module = ProviderRuntimeModule(registry=registry)
         kernel = _MockKernel()
         asyncio.run(module.start(kernel))
@@ -63,16 +67,27 @@ class TestProviderRuntimeModule:
         asyncio.run(module.stop(kernel))
 
     def test_registers_capabilities(self) -> None:
-        mc = ModelCapability(model_id="llama3", provider="ollama",
-                              features=(ModelFeature.CHAT, ModelFeature.STREAMING))
-        inst = ProviderInstance(name="ollama", provider_type="ollama",
-                                 endpoint="http://localhost:11434",
-                                 default_model="llama3", models=(mc,))
-        registry = type("reg", (object,), {
-            "all": lambda self: [inst],
-            "register": lambda self, i, **kw: None,
-            "__len__": lambda self: 1,
-        })()
+        mc = ModelCapability(
+            model_id="llama3",
+            provider="ollama",
+            features=(ModelFeature.CHAT, ModelFeature.STREAMING),
+        )
+        inst = ProviderInstance(
+            name="ollama",
+            provider_type="ollama",
+            endpoint="http://localhost:11434",
+            default_model="llama3",
+            models=(mc,),
+        )
+        registry = type(
+            "reg",
+            (object,),
+            {
+                "all": lambda self: [inst],
+                "register": lambda self, i, **kw: None,
+                "__len__": lambda self: 1,
+            },
+        )()
         module = ProviderRuntimeModule(registry=registry)
         kernel = _MockKernel()
         asyncio.run(module.start(kernel))
@@ -84,7 +99,7 @@ class TestProviderRuntimeModule:
         module = ProviderRuntimeModule()
         try:
             _ = module.selector
-            assert False, "expected RuntimeError"
+            raise AssertionError("expected RuntimeError")
         except RuntimeError:
             pass
 

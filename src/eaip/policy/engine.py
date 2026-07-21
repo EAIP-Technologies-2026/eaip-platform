@@ -115,12 +115,15 @@ class PolicyEngine:
         )
 
     @staticmethod
-    def _evaluate_condition_bool(
-        actual: Any, op: ConditionOp, value: Any
-    ) -> bool | None:
+    def _evaluate_condition_bool(actual: Any, op: ConditionOp, value: Any) -> bool | None:
         """Evaluate comparison operators. Returns None if not a comparison op."""
-        non_numeric = {ConditionOp.EQ, ConditionOp.NEQ, ConditionOp.IN,
-                       ConditionOp.NOT_IN, ConditionOp.MATCHES}
+        non_numeric = {
+            ConditionOp.EQ,
+            ConditionOp.NEQ,
+            ConditionOp.IN,
+            ConditionOp.NOT_IN,
+            ConditionOp.MATCHES,
+        }
         if op in non_numeric:
             return None
         try:

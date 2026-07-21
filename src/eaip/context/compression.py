@@ -8,7 +8,10 @@ from typing import Any
 from eaip.context.events import ContextCompressed
 from eaip.context.exceptions import CompressionError
 from eaip.context.models import (
-    AssembledContext, CompressionConfig, CompressionStrategy, ContextDocument,
+    AssembledContext,
+    CompressionConfig,
+    CompressionStrategy,
+    ContextDocument,
 )
 from eaip.logging.context import get_logger
 
@@ -94,11 +97,7 @@ class ContextCompressor:
                 original_tokens=original_tokens,
                 compressed_tokens=result.total_tokens,
                 strategy=self._config.strategy.value,
-                ratio=(
-                    result.total_tokens / original_tokens
-                    if original_tokens > 0
-                    else 1.0
-                ),
+                ratio=(result.total_tokens / original_tokens if original_tokens > 0 else 1.0),
             )
         )
 

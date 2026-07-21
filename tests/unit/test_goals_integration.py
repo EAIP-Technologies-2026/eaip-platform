@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
-
 from eaip.goals.engine import GoalEngine
 from eaip.goals.integration import GoalRuntimeModule
 from eaip.goals.tracker import GoalTracker

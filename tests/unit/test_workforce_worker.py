@@ -72,8 +72,12 @@ class TestWorkerRegistry:
 
     def test_count_available_all_available(self) -> None:
         reg = WorkerRegistry()
-        w1 = WorkerDefinition(id="w1", name="A", worker_type=WorkerType.AGENT, max_concurrent_runs=2)
-        w2 = WorkerDefinition(id="w2", name="B", worker_type=WorkerType.AGENT, max_concurrent_runs=1)
+        w1 = WorkerDefinition(
+            id="w1", name="A", worker_type=WorkerType.AGENT, max_concurrent_runs=2
+        )
+        w2 = WorkerDefinition(
+            id="w2", name="B", worker_type=WorkerType.AGENT, max_concurrent_runs=1
+        )
         reg.register_worker(w1)
         reg.register_worker(w2)
         assert reg.count_available() == 2

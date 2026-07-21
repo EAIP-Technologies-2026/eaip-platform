@@ -1,0 +1,101 @@
+---
+# =============================================================================
+# EAIP — Production stack
+# -----------------------------------------------------------------------------
+# Deploy the full EAIP platform with all backing services.
+#     docker compose up -d
+# =============================================================================
+services:
+  eaip-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eaip-platform:${EAIP_VERSION:-latest}
+    container_name: eaip-api
+    restart: unless-stopped
+    ports:
+      - "${EAIP_HTTP_PORT:-8080}:8080"
+    environment:
+      EAIP_CORE__ENVIRONMENT: ${EAIP_ENVIRONMENT:-production}
+      EAIP_LOGGING__LEVEL: ${EAIP_LOG_LEVEL:-INFO}
+      EAIP_AUTH_SECRET: ${EAIP_AUTH_SECRET:?required}
+      EAIP_DB__HOST: postgres
+      EAIP_DB__PORT: "5432"
+      EAIP_DB__NAME: ${EAIP_DB_NAME:-eaip}
+      EAIP_DB__USER: ${EAIP_DB_USER:-eaip}
+      EAIP_DB__PASSWORD: ${EAIP_DB_PASSWORD:?required}
+      EAIP_REDIS__HOST: redis
+      EAIP_REDIS__PORT: "6379"
+      EAIP_QDRANT__HOST: qdrant
+      EAIP_QDRANT__PORT: "6333"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - eaip-data:/var/lib/eaip
+    networks:
+      - eaip-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: eaip-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${EAIP_DB_NAME:-eaip}
+      POSTGRES_USER: ${EAIP_DB_USER:-eaip}
+      POSTGRES_PASSWORD: ${EAIP_DB_PASSWORD:?required}
+    ports:
+      - "${EAIP_DB_EXPOSE_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EAIP_DB_USER:-eaip}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eaip-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eaip-redis
+    restart: unless-stopped
+    ports:
+      - "${EAIP_REDIS_EXPOSE_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - eaip-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: eaip-qdrant
+    restart: unless-stopped
+    ports:
+      - "${EAIP_QDRANT_EXPOSE_PORT:-6333}:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - eaip-network
+
+volumes:
+  eaip-data:
+  postgres-data:
+  redis-data:
+  qdrant-data:
+
+networks:
+  eaip-network:
+    driver: bridge

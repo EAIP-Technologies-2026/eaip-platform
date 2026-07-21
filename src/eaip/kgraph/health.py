@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+from eaip.health.checks import HealthReport, HealthStatus
 from eaip.logging.context import get_logger
 
 

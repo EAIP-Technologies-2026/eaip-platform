@@ -31,8 +31,11 @@ class _MockAgentRuntime:
         run = self.runs.get(run_id)
         if run is None:
             return RunRecord(
-                id=run_id, agent_id="unknown", goal=Goal(text=""),
-                status=RunStatus.FAILED, error="not found",
+                id=run_id,
+                agent_id="unknown",
+                goal=Goal(text=""),
+                status=RunStatus.FAILED,
+                error="not found",
             )
         completed = RunRecord(
             id=run.id,
@@ -57,8 +60,11 @@ class _FailingMockAgentRuntime:
 
     async def start_run(self, run_id: str) -> RunRecord:
         return RunRecord(
-            id=run_id, agent_id="unknown", goal=Goal(text=""),
-            status=RunStatus.FAILED, error="intentional failure",
+            id=run_id,
+            agent_id="unknown",
+            goal=Goal(text=""),
+            status=RunStatus.FAILED,
+            error="intentional failure",
         )
 
 
@@ -94,7 +100,9 @@ class TestAgentOrchestratorDelegation:
         assert run_id.startswith("run_")
 
     async def test_wait_for_agent_success(
-        self, orchestrator: AgentOrchestrator, runtime: _MockAgentRuntime,
+        self,
+        orchestrator: AgentOrchestrator,
+        runtime: _MockAgentRuntime,
     ) -> None:
         run_id = await orchestrator.delegate_async("agent_d", "Delayed task")
         output = await orchestrator.wait_for_agent(run_id)

@@ -81,9 +81,7 @@ class TestLLMResponse:
             provider="openai",
             content="",
             finish_reason="tool_calls",
-            tool_calls=(
-                ToolCall(id="call_1", name="get_weather", arguments={"loc": "NYC"}),
-            ),
+            tool_calls=(ToolCall(id="call_1", name="get_weather", arguments={"loc": "NYC"}),),
             usage={"prompt_tokens": 10, "completion_tokens": 5},
             duration_ms=150.0,
             rounds=2,
@@ -101,9 +99,7 @@ class TestLLMResponse:
 
     def test_extra_fields_forbidden(self) -> None:
         with pytest.raises(ValueError):
-            LLMResponse(
-                model="gpt-4o", provider="openai", content="Hi", unknown=True
-            )  # type: ignore[call-arg]
+            LLMResponse(model="gpt-4o", provider="openai", content="Hi", unknown=True)  # type: ignore[call-arg]
 
 
 class TestRunContext:

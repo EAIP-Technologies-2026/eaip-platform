@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from eaip.automation.events import ScheduleTriggered
 from eaip.automation.exceptions import AutomationError
-from eaip.automation.models import AutomationRule, TriggerEvent, TriggerType
+from eaip.automation.models import TriggerEvent
 from eaip.events.bus import EventBus
 from eaip.jobs.models import CronExpression
 from eaip.logging.context import get_logger
 
 
 class _ScheduleEntry:
-    def __init__(self, rule_id: str, cron_expression: str, last_checked: datetime | None = None) -> None:
+    def __init__(
+        self, rule_id: str, cron_expression: str, last_checked: datetime | None = None
+    ) -> None:
         self.rule_id = rule_id
         self.cron_expression = cron_expression
         self.last_checked = last_checked
@@ -52,18 +54,21 @@ class AutomationScheduler:
 
     async def check_due_rules(self) -> list[TriggerEvent]:
         due_events: list[TriggerEvent] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for rule_id, entry in list(self._schedules.items()):
             try:
                 parsed = CronExpression.from_string(entry.cron_expression)
-                parts = [parsed.minute, parsed.hour, parsed.day_of_month, parsed.month, parsed.day_of_week]
-                from croniter import croniter  # type: ignore[import-untyped]
+                parts = [
+                    parsed.minute,
+                    parsed.hour,
+                    parsed.day_of_month,
+                    parsed.month,
+                    parsed.day_of_week,
+                ]
+                from croniter import croniter
 
-                if entry.last_checked is None:
-                    base = now
-                else:
-                    base = entry.last_checked
+                base = now if entry.last_checked is None else entry.last_checked
 
                 cron = croniter(" ".join(parts), base)
                 next_time = cron.get_next(datetime)

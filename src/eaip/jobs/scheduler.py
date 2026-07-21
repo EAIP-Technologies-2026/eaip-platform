@@ -7,8 +7,8 @@ import uuid
 from typing import Any
 
 from eaip.jobs.events import JobScheduled
-from eaip.jobs.executor import LongRunningJob, LongRunningJobExecutor
 from eaip.jobs.exceptions import JobNotFoundError
+from eaip.jobs.executor import LongRunningJob, LongRunningJobExecutor
 from eaip.jobs.models import (
     JobDefinition,
     JobHandler,
@@ -69,10 +69,16 @@ class JobScheduler:
             try:
                 loop = asyncio.get_running_loop()
                 if loop.is_running():
-                    loop.create_task(self._event_bus.publish(JobScheduled(
-                        job_id=definition.id, job_name=definition.name,
-                        schedule=schedule_str, priority=int(definition.priority),
-                    )))
+                    loop.create_task(
+                        self._event_bus.publish(
+                            JobScheduled(
+                                job_id=definition.id,
+                                job_name=definition.name,
+                                schedule=schedule_str,
+                                priority=int(definition.priority),
+                            )
+                        )
+                    )
             except RuntimeError:
                 pass
 

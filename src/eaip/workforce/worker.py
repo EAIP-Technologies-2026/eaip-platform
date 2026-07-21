@@ -30,7 +30,9 @@ class WorkerRegistry:
         """
         self._workers[definition.id] = definition
         self._active_counts.setdefault(definition.id, 0)
-        self._log.info("worker.registered", worker_id=definition.id, worker_type=str(definition.worker_type))
+        self._log.info(
+            "worker.registered", worker_id=definition.id, worker_type=str(definition.worker_type)
+        )
         self._publish(
             WorkerRegistered(
                 worker_id=definition.id,

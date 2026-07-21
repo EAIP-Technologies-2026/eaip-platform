@@ -25,8 +25,10 @@ RUN apt-get update \
 
 WORKDIR /workspaces/eaip-platform
 
-# Copy only files needed for dependency resolution first to maximise layer cache hits.
-COPY pyproject.toml ./
+# Copy metadata files required by Hatchling before installing the package.
+# README.md and LICENSE are referenced from pyproject.toml and must be
+# present for `pip install -e` to succeed (OSError otherwise).
+COPY pyproject.toml README.md LICENSE ./
 COPY src/eaip/__init__.py src/eaip/__init__.py
 COPY src/eaip/_version.py src/eaip/_version.py
 COPY src/eaip/py.typed src/eaip/py.typed

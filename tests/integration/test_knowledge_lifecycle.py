@@ -11,10 +11,8 @@ from eaip.knowledge.models import (
     ChunkingStrategy,
     DocumentFormat,
     EmbeddingConfig,
-    KnowledgeCollection,
     RetrievalQuery,
 )
-from eaip.knowledge.qdrant_store import QdrantStore
 from eaip.knowledge.registry import KnowledgeRegistry
 
 
@@ -31,35 +29,40 @@ class _MemStore:
             self.points[name] = []
 
     async def upsert_points(self, collection: str, chunks: list) -> None:
-        from eaip.knowledge.models import DocumentChunk
 
         for c in chunks:
-            self.points.setdefault(collection, []).append({
-                "id": c.chunk_id,
-                "document_id": c.document_id,
-                "content": c.content,
-                "chunk_index": c.chunk_index,
-                "embedding": list(c.embedding),
-                "score": 1.0,
-            })
+            self.points.setdefault(collection, []).append(
+                {
+                    "id": c.chunk_id,
+                    "document_id": c.document_id,
+                    "content": c.content,
+                    "chunk_index": c.chunk_index,
+                    "embedding": list(c.embedding),
+                    "score": 1.0,
+                }
+            )
 
     async def delete_points(self, collection: str, point_ids: list[str]) -> None:
-        self.points[collection] = [p for p in self.points.get(collection, []) if p["id"] not in point_ids]
+        self.points[collection] = [
+            p for p in self.points.get(collection, []) if p["id"] not in point_ids
+        ]
 
     async def search(self, collection: str, query: RetrievalQuery) -> list[dict]:
         results = []
         for p in self.points.get(collection, []):
-            results.append({
-                "id": p["id"],
-                "score": p.get("score", 0.5),
-                "payload": {
-                    "document_id": p["document_id"],
-                    "content": p["content"],
-                    "chunk_index": p["chunk_index"],
-                    "title": "Test Doc",
-                    "source": "test.txt",
-                },
-            })
+            results.append(
+                {
+                    "id": p["id"],
+                    "score": p.get("score", 0.5),
+                    "payload": {
+                        "document_id": p["document_id"],
+                        "content": p["content"],
+                        "chunk_index": p["chunk_index"],
+                        "title": "Test Doc",
+                        "source": "test.txt",
+                    },
+                }
+            )
         results.sort(key=lambda r: r["score"], reverse=True)
         return results[: query.top_k]
 
@@ -154,14 +157,21 @@ class TestKnowledgeLifecycleIntegration:
         reg = KnowledgeRegistry()
         store = _MemStore()
         embed = MockEmbeddingProvider()
-        engine = KnowledgeEngine(reg, store, embed, default_chunking=ChunkingConfig(
-            strategy=ChunkingStrategy.SEMANTIC,
-            chunk_size=30,
-        ))
+        engine = KnowledgeEngine(
+            reg,
+            store,
+            embed,
+            default_chunking=ChunkingConfig(
+                strategy=ChunkingStrategy.SEMANTIC,
+                chunk_size=30,
+            ),
+        )
 
         await engine.create_collection("chunk-test")
         text = "Paragraph one.\n\nParagraph two.\n\nParagraph three.\n\nParagraph four."
-        result = await engine.ingest("d1", text.encode(), DocumentFormat.TXT, collection="chunk-test")
+        result = await engine.ingest(
+            "d1", text.encode(), DocumentFormat.TXT, collection="chunk-test"
+        )
         assert result.chunk_count >= 2
 
     @pytest.mark.asyncio
@@ -169,12 +179,19 @@ class TestKnowledgeLifecycleIntegration:
         reg = KnowledgeRegistry()
         store = _MemStore()
         embed = MockEmbeddingProvider(dimensions=768)
-        engine = KnowledgeEngine(reg, store, embed, default_embedding=EmbeddingConfig(
-            dimensions=768,
-            model="test-model",
-        ))
+        engine = KnowledgeEngine(
+            reg,
+            store,
+            embed,
+            default_embedding=EmbeddingConfig(
+                dimensions=768,
+                model="test-model",
+            ),
+        )
 
-        col = await engine.create_collection("embed-test", embedding_config=EmbeddingConfig(dimensions=768))
+        col = await engine.create_collection(
+            "embed-test", embedding_config=EmbeddingConfig(dimensions=768)
+        )
         assert col.embedding_config.dimensions == 768
 
     @pytest.mark.asyncio

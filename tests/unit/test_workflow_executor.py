@@ -126,9 +126,7 @@ class TestWorkflowEngineExecute:
         assert result.completed_count >= 1
 
     async def test_tool_step_execution(self, engine: WorkflowEngine) -> None:
-        steps = (
-            WorkflowStep(id="s1", name="Tool Call", tool_name="echo", input={"msg": "hi"}),
-        )
+        steps = (WorkflowStep(id="s1", name="Tool Call", tool_name="echo", input={"msg": "hi"}),)
         definition = WorkflowDefinition(id="wf_4", name="Tool", steps=steps)
         result = await engine.execute(definition)
         assert result.status is WorkflowStatus.COMPLETED
@@ -153,9 +151,7 @@ class TestWorkflowEngineExecute:
         assert result.status in (WorkflowStatus.CANCELLED, WorkflowStatus.COMPLETED)
 
     async def test_pause_and_resume(self, engine: WorkflowEngine) -> None:
-        steps = (
-            WorkflowStep(id="s1", name="Pausable", agent_id="agent_a", prompt="pause test"),
-        )
+        steps = (WorkflowStep(id="s1", name="Pausable", agent_id="agent_a", prompt="pause test"),)
         definition = WorkflowDefinition(id="wf_p", name="Pause", steps=steps)
         engine._pause_flags.add("test_run")
         result = await engine.execute(definition)
@@ -180,14 +176,20 @@ class TestWorkflowEngineExecute:
                 if call_count < 3:
                     raise RuntimeError("transient error")
                 return RunRecord(
-                    id=run_id, agent_id="agent_r", goal=Goal(text="retry"),
-                    status=RunStatus.COMPLETED, result="success on retry",
+                    id=run_id,
+                    agent_id="agent_r",
+                    goal=Goal(text="retry"),
+                    status=RunStatus.COMPLETED,
+                    result="success on retry",
                 )
 
         engine = WorkflowEngine(agent_runtime=_FailingRuntime())
         steps = (
             WorkflowStep(
-                id="s1", name="Retry Step", agent_id="agent_r", prompt="retry",
+                id="s1",
+                name="Retry Step",
+                agent_id="agent_r",
+                prompt="retry",
                 retry_policy=RetryPolicy(max_attempts=3, delay_seconds=0.01),
             ),
         )
@@ -200,7 +202,10 @@ class TestWorkflowEngineExecute:
         class _AlwaysFailRuntime:
             async def create_run(self, agent_spec: object, goal: Goal) -> RunRecord:
                 return RunRecord(
-                    id="run_f", agent_id="agent_f", goal=goal, status=RunStatus.PENDING,
+                    id="run_f",
+                    agent_id="agent_f",
+                    goal=goal,
+                    status=RunStatus.PENDING,
                 )
 
             async def start_run(self, run_id: str) -> RunRecord:
@@ -209,7 +214,10 @@ class TestWorkflowEngineExecute:
         engine = WorkflowEngine(agent_runtime=_AlwaysFailRuntime())
         steps = (
             WorkflowStep(
-                id="s1", name="Fail Step", agent_id="agent_f", prompt="fail",
+                id="s1",
+                name="Fail Step",
+                agent_id="agent_f",
+                prompt="fail",
                 retry_policy=RetryPolicy(max_attempts=2, delay_seconds=0.01),
             ),
         )
@@ -222,20 +230,30 @@ class TestWorkflowEngineExecute:
         class _SlowRuntime:
             async def create_run(self, agent_spec: object, goal: Goal) -> RunRecord:
                 return RunRecord(
-                    id="run_s", agent_id="agent_s", goal=goal, status=RunStatus.PENDING,
+                    id="run_s",
+                    agent_id="agent_s",
+                    goal=goal,
+                    status=RunStatus.PENDING,
                 )
 
             async def start_run(self, run_id: str) -> RunRecord:
                 await asyncio.sleep(10)
                 return RunRecord(
-                    id=run_id, agent_id="agent_s", goal=Goal(text="slow"),
-                    status=RunStatus.COMPLETED, result="too late",
+                    id=run_id,
+                    agent_id="agent_s",
+                    goal=Goal(text="slow"),
+                    status=RunStatus.COMPLETED,
+                    result="too late",
                 )
 
         engine = WorkflowEngine(agent_runtime=_SlowRuntime())
         steps = (
             WorkflowStep(
-                id="s1", name="Slow Step", agent_id="agent_s", prompt="slow", timeout_seconds=0.01,
+                id="s1",
+                name="Slow Step",
+                agent_id="agent_s",
+                prompt="slow",
+                timeout_seconds=0.01,
             ),
         )
         definition = WorkflowDefinition(id="wf_t", name="Timeout", steps=steps)
@@ -244,9 +262,7 @@ class TestWorkflowEngineExecute:
         assert result.timed_out_count == 1
 
     async def test_context_passing(self, engine: WorkflowEngine) -> None:
-        steps = (
-            WorkflowStep(id="s1", name="Ctx Step", agent_id="agent_a", prompt="context"),
-        )
+        steps = (WorkflowStep(id="s1", name="Ctx Step", agent_id="agent_a", prompt="context"),)
         definition = WorkflowDefinition(id="wf_ctx", name="Ctx", steps=steps)
         ctx = WorkflowContext()
         ctx2 = ctx.set("initial", "value")
@@ -311,7 +327,8 @@ class TestWorkflowEngineRunManagement:
 
     async def test_resume_non_paused(self, engine: WorkflowEngine) -> None:
         definition = WorkflowDefinition(
-            id="wf_np", name="NP",
+            id="wf_np",
+            name="NP",
             steps=(WorkflowStep(id="s1", name="S1", agent_id="agent_a", prompt="x"),),
         )
         await engine.execute(definition)
@@ -339,11 +356,13 @@ class TestWorkflowEngineParallel:
             WorkflowEdge(source_id="s1", target_id="s3"),
             WorkflowEdge(source_id="s2", target_id="s3"),
         )
-        groups = (
-            ParallelGroup(id="g1", step_ids=("s1", "s2")),
-        )
+        groups = (ParallelGroup(id="g1", step_ids=("s1", "s2")),)
         definition = WorkflowDefinition(
-            id="wf_par", name="Parallel", steps=steps, edges=edges, parallel_groups=groups,
+            id="wf_par",
+            name="Parallel",
+            steps=steps,
+            edges=edges,
+            parallel_groups=groups,
         )
         result = await engine.execute(definition)
         assert result.status is WorkflowStatus.COMPLETED
@@ -353,26 +372,31 @@ class TestWorkflowEngineParallel:
 class _SlowAgentRuntime:
     async def create_run(self, agent_spec: object, goal: object) -> RunRecord:
         return RunRecord(
-            id="run_slow", agent_id="agent_slow", goal=Goal(text=""),
+            id="run_slow",
+            agent_id="agent_slow",
+            goal=Goal(text=""),
             status=RunStatus.PENDING,
         )
 
     async def start_run(self, run_id: str) -> RunRecord:
         await asyncio.sleep(10)
         return RunRecord(
-            id=run_id, agent_id="agent_slow", goal=Goal(text=""),
-            status=RunStatus.COMPLETED, result="done",
+            id=run_id,
+            agent_id="agent_slow",
+            goal=Goal(text=""),
+            status=RunStatus.COMPLETED,
+            result="done",
         )
 
 
 class TestWorkflowEngineTimeout:
     async def test_workflow_level_timeout(self) -> None:
         engine = WorkflowEngine(agent_runtime=_SlowAgentRuntime())
-        steps = (
-            WorkflowStep(id="s1", name="Slow", agent_id="agent_a", prompt="slow"),
-        )
+        steps = (WorkflowStep(id="s1", name="Slow", agent_id="agent_a", prompt="slow"),)
         definition = WorkflowDefinition(
-            id="wf_to", name="TO", steps=steps,
+            id="wf_to",
+            name="TO",
+            steps=steps,
             timeout_config=TimeoutConfig(workflow_timeout_seconds=0.05),
         )
         result = await engine.execute(definition)
@@ -385,9 +409,7 @@ class TestWorkflowEngineStateMachine:
             agent_runtime=_MockAgentRuntime(),
             tool_registry=_MockToolRegistry(),
         )
-        steps = (
-            WorkflowStep(id="s1", name="Step 1", agent_id="agent_a", prompt="A"),
-        )
+        steps = (WorkflowStep(id="s1", name="Step 1", agent_id="agent_a", prompt="A"),)
         definition = WorkflowDefinition(id="wf_sm", name="SM", steps=steps)
         result = await engine.execute(definition)
         assert result.status is WorkflowStatus.COMPLETED
@@ -401,9 +423,7 @@ class TestWorkflowEngineStateMachine:
             agent_runtime=_MockAgentRuntime(),
             tool_registry=_MockToolRegistry(),
         )
-        steps = (
-            WorkflowStep(id="s1", name="Cancel Me", agent_id="agent_a", prompt="cancel"),
-        )
+        steps = (WorkflowStep(id="s1", name="Cancel Me", agent_id="agent_a", prompt="cancel"),)
         definition = WorkflowDefinition(id="wf_sc", name="SC", steps=steps)
         task = asyncio.create_task(engine.execute(definition))
         await asyncio.sleep(0.02)
@@ -426,7 +446,9 @@ class TestWorkflowEngineParentChild:
             WorkflowStep(id="c1", name="Child Step", agent_id="agent_a", prompt="child"),
         )
         child = WorkflowDefinition(
-            id="wf_child", name="Child", steps=child_steps,
+            id="wf_child",
+            name="Child",
+            steps=child_steps,
             parent_child_config=ParentChildConfig(propagate_failure=False),
         )
         parent_steps = (
@@ -445,8 +467,11 @@ class TestWorkflowEngineApproval:
         engine = WorkflowEngine(approval_handler=ah)
         steps = (
             WorkflowStep(
-                id="s1", name="Approval Needed", agent_id="agent_a",
-                prompt="needs approval", requires_approval=True,
+                id="s1",
+                name="Approval Needed",
+                agent_id="agent_a",
+                prompt="needs approval",
+                requires_approval=True,
                 approval_prompt="Approve this step?",
             ),
         )

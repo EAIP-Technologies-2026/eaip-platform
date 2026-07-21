@@ -6,7 +6,6 @@ from eaip.policy.models import (
     ConditionOp,
     Policy,
     PolicyCondition,
-    PolicyDecision,
     PolicyEffect,
     PolicyRule,
 )
@@ -201,7 +200,9 @@ class TestPolicyEngine:
 
     def test_abac_condition_matches(self) -> None:
         engine = PolicyEngine()
-        cond = PolicyCondition(attribute="email", operator=ConditionOp.MATCHES, value=r".+@example\.com")
+        cond = PolicyCondition(
+            attribute="email", operator=ConditionOp.MATCHES, value=r".+@example\.com"
+        )
         rule = _rule(effect=PolicyEffect.ALLOW, conditions=(cond,))
         policies = [_policy(rules=(rule,))]
         ctx = _ctx(attrs={"email": "user@example.com"})
@@ -229,7 +230,9 @@ class TestPolicyEngine:
 
     def test_decision_contains_context_snapshot(self) -> None:
         engine = PolicyEngine()
-        ctx = _ctx(sid="user-x", roles=("admin",), action="deploy", resource="app", attrs={"env": "prod"})
+        ctx = _ctx(
+            sid="user-x", roles=("admin",), action="deploy", resource="app", attrs={"env": "prod"}
+        )
         decision = engine.evaluate(ctx, [])
         snap = decision.context_snapshot
         assert snap["subject_id"] == "user-x"

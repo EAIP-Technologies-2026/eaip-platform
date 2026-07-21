@@ -91,7 +91,10 @@ class TestWorkflowStepApprovalRequired:
 
     def test_with_payload(self) -> None:
         e = WorkflowStepApprovalRequired(
-            run_id="r1", step_id="s1", payload={"reason": "review"}, resume_token="tok_1",
+            run_id="r1",
+            step_id="s1",
+            payload={"reason": "review"},
+            resume_token="tok_1",
         )
         assert e.payload == {"reason": "review"}
         assert e.resume_token == "tok_1"

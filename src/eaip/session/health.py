@@ -6,7 +6,6 @@ from typing import Any
 
 from eaip.health.checks import HealthReport, HealthStatus
 from eaip.logging.context import get_logger
-
 from eaip.session.manager import SessionManager
 
 

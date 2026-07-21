@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from eaip.collaboration.exceptions import CollaborationError
-from eaip.collaboration.models import SharedState
 from eaip.collaboration.state import SharedStateManager
 
 

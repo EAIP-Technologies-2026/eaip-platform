@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from datetime import datetime
 from typing import Any
 
@@ -165,15 +164,18 @@ class ExecutionTracker:
             return {"event_count": 0, "agents": 0, "duration_seconds": 0.0}
 
         agents = {e.agent_id for e in session_events if e.agent_id}
-        errors = [e for e in session_events if "fail" in e.event_type.lower() or "error" in e.event_type.lower()]
+        errors = [
+            e
+            for e in session_events
+            if "fail" in e.event_type.lower() or "error" in e.event_type.lower()
+        ]
 
         return {
             "event_count": len(session_events),
             "agents": len(agents),
             "error_count": len(errors),
             "duration_seconds": max(
-                (e.timestamp - session_events[0].timestamp).total_seconds()
-                for e in session_events
+                (e.timestamp - session_events[0].timestamp).total_seconds() for e in session_events
             ),
         }
 

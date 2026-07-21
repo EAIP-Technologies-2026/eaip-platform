@@ -101,7 +101,7 @@ class TestSessionEvents:
         event = SessionCreated(session_id="s1", session_type="user")
         try:
             event.session_id = "s2"
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 

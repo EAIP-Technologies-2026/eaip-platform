@@ -8,7 +8,6 @@ from eaip.knowledge.embedding import MockEmbeddingProvider
 from eaip.knowledge.models import (
     DocumentChunk,
     RetrievalQuery,
-    RetrievedChunk,
 )
 from eaip.knowledge.retrieval_engine import RetrievalEngine
 
@@ -57,20 +56,22 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_search_with_results(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {
-                "id": "chunk1",
-                "score": 0.95,
-                "payload": {
-                    "document_id": "doc1",
-                    "content": "Test content",
-                    "chunk_index": 0,
-                    "source": "test.txt",
-                    "title": "Test Doc",
-                    "collection": "default",
+        store.set_results(
+            [
+                {
+                    "id": "chunk1",
+                    "score": 0.95,
+                    "payload": {
+                        "document_id": "doc1",
+                        "content": "Test content",
+                        "chunk_index": 0,
+                        "source": "test.txt",
+                        "title": "Test Doc",
+                        "collection": "default",
+                    },
                 },
-            },
-        ])
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 
@@ -82,9 +83,15 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_search_semantic(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "Semantic hit", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "Semantic hit", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 
@@ -103,9 +110,15 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_search_multi(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "A", "chunk_index": 0}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "A", "chunk_index": 0},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 
@@ -115,10 +128,20 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_search_with_reranking(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.7, "payload": {"document_id": "d1", "content": "Lower", "chunk_index": 0}},
-            {"id": "c2", "score": 0.9, "payload": {"document_id": "d2", "content": "Higher", "chunk_index": 1}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.7,
+                    "payload": {"document_id": "d1", "content": "Lower", "chunk_index": 0},
+                },
+                {
+                    "id": "c2",
+                    "score": 0.9,
+                    "payload": {"document_id": "d2", "content": "Higher", "chunk_index": 1},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 
@@ -129,10 +152,20 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_search_with_score_threshold(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.3, "payload": {"document_id": "d1", "content": "Low", "chunk_index": 0}},
-            {"id": "c2", "score": 0.8, "payload": {"document_id": "d2", "content": "High", "chunk_index": 1}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.3,
+                    "payload": {"document_id": "d1", "content": "Low", "chunk_index": 0},
+                },
+                {
+                    "id": "c2",
+                    "score": 0.8,
+                    "payload": {"document_id": "d2", "content": "High", "chunk_index": 1},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding, default_score_threshold=0.5)
 
@@ -142,10 +175,20 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_context_assembly(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": "c1", "score": 0.9, "payload": {"document_id": "d1", "content": "First", "chunk_index": 0}},
-            {"id": "c2", "score": 0.8, "payload": {"document_id": "d2", "content": "Second", "chunk_index": 1}},
-        ])
+        store.set_results(
+            [
+                {
+                    "id": "c1",
+                    "score": 0.9,
+                    "payload": {"document_id": "d1", "content": "First", "chunk_index": 0},
+                },
+                {
+                    "id": "c2",
+                    "score": 0.8,
+                    "payload": {"document_id": "d2", "content": "Second", "chunk_index": 1},
+                },
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 
@@ -170,10 +213,16 @@ class TestRetrievalEngine:
     @pytest.mark.asyncio
     async def test_custom_top_k(self) -> None:
         store = _MockVectorStore()
-        store.set_results([
-            {"id": f"c{i}", "score": 1.0 - i * 0.1, "payload": {"document_id": "d1", "content": f"Chunk {i}", "chunk_index": i}}
-            for i in range(20)
-        ])
+        store.set_results(
+            [
+                {
+                    "id": f"c{i}",
+                    "score": 1.0 - i * 0.1,
+                    "payload": {"document_id": "d1", "content": f"Chunk {i}", "chunk_index": i},
+                }
+                for i in range(20)
+            ]
+        )
         embedding = MockEmbeddingProvider()
         engine = RetrievalEngine(store, embedding)
 

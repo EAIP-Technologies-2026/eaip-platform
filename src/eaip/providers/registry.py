@@ -17,9 +17,7 @@ class ProviderRegistry:
             name="providers", value_type=ProviderInstance
         )
 
-    def register(
-        self, instance: ProviderInstance, *, replace: bool = False
-    ) -> None:
+    def register(self, instance: ProviderInstance, *, replace: bool = False) -> None:
         """Register a provider instance.
 
         Args:

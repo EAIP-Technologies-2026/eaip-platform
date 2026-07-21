@@ -51,7 +51,8 @@ class TestLongRunningJob:
 
         handler = _FailingHandler()
         job = LongRunningJob(
-            job_id="job_2", handler=handler,
+            job_id="job_2",
+            handler=handler,
             retry_config=RetryConfig(max_retries=2, delay_seconds=0.01),
         )
         run = JobRun(id="run_2", job_id="job_2")

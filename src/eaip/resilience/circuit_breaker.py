@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from eaip.logging.context import get_logger
 
@@ -73,7 +72,7 @@ class CircuitBreaker:
             result = await coro
             self._on_success()
             return result
-        except Exception as exc:
+        except Exception:
             self._on_failure()
             if fallback is not None:
                 return fallback() if callable(fallback) else fallback
@@ -90,7 +89,10 @@ class CircuitBreaker:
     def _on_failure(self) -> None:
         self._failure_count += 1
         self._last_failure_time = time.monotonic()
-        if self._state is CircuitState.HALF_OPEN or self._failure_count >= self._config.failure_threshold:
+        if (
+            self._state is CircuitState.HALF_OPEN
+            or self._failure_count >= self._config.failure_threshold
+        ):
             self._transition(CircuitState.OPEN)
 
     def _transition(self, new_state: CircuitState) -> None:
@@ -102,7 +104,9 @@ class CircuitBreaker:
             self._success_count = 0
         self._log.info(
             "circuit.transition",
-            name=self._name, from_state=old_state, to_state=new_state,
+            name=self._name,
+            from_state=old_state,
+            to_state=new_state,
         )
 
     def reset(self) -> None:

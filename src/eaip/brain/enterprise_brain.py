@@ -155,9 +155,7 @@ class EnterpriseBrain:
         Returns:
             A list of BrainSource items from knowledge.
         """
-        return await self._query_knowledge(
-            BrainQuery(query=query, collection_names=collections)
-        )
+        return await self._query_knowledge(BrainQuery(query=query, collection_names=collections))
 
     async def query_memory(self, query: str, scope: Any = None) -> list[BrainSource]:
         """Query the Memory Engine.

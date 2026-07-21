@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 
+from eaip.events.bus import EventBus
 from eaip.gateway.events import (
     ApiRequestProcessed,
     EndpointRegistered,
@@ -25,11 +27,12 @@ class ApiRouter:
         response = await router.dispatch(request)
     """
 
-    def __init__(self, pipeline: MiddlewarePipeline | None = None) -> None:
+    def __init__(self, pipeline: MiddlewarePipeline | None = None, event_bus: EventBus | None = None) -> None:
         """Initialize the router with an empty endpoint map."""
         self._endpoints: dict[tuple[str, HttpMethod], Endpoint] = {}
         self._pipeline = pipeline or MiddlewarePipeline()
         self._log = get_logger("eaip.gateway.router")
+        self._event_bus = event_bus
 
     @property
     def pipeline(self) -> MiddlewarePipeline:
@@ -49,7 +52,10 @@ class ApiRouter:
             path=endpoint.path,
             method=endpoint.method.value,
         )
-        EndpointRegistered(path=endpoint.path, method=endpoint.method.value)
+        if self._event_bus is not None:
+            asyncio.ensure_future(
+                self._event_bus.publish(EndpointRegistered(path=endpoint.path, method=endpoint.method.value))
+            )
 
     def unregister_endpoint(self, path: str, method: HttpMethod) -> None:
         """Remove a previously registered endpoint.
@@ -66,7 +72,10 @@ class ApiRouter:
                 path=path,
                 method=method.value,
             )
-            EndpointUnregistered(path=path, method=method.value)
+            if self._event_bus is not None:
+                asyncio.ensure_future(
+                    self._event_bus.publish(EndpointUnregistered(path=path, method=method.value))
+                )
 
     def get_endpoint(self, path: str, method: HttpMethod) -> Endpoint | None:
         """Look up a registered endpoint by path and method.
@@ -126,13 +135,16 @@ class ApiRouter:
             duration_ms=duration_ms,
         )
 
-        ApiRequestProcessed(
-            request_id=request.id,
-            path=request.path,
-            method=request.method.value,
-            status_code=response.status_code,
-            duration_ms=duration_ms,
-        )
+        if self._event_bus is not None:
+            await self._event_bus.publish(
+                ApiRequestProcessed(
+                    request_id=request.id,
+                    path=request.path,
+                    method=request.method.value,
+                    status_code=response.status_code,
+                    duration_ms=duration_ms,
+                )
+            )
 
         return response
 

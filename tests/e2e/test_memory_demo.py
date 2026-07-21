@@ -132,7 +132,8 @@ class TestMemoryE2E:
 
         # 8. Update memory with version tracking
         updated = await engine.update_memory(
-            long_term.memory_id, scope,
+            long_term.memory_id,
+            scope,
             content="Updated: EAIP uses a multi-tier memory architecture with vector search",
             tags=("architecture", "persistent", "updated"),
         )

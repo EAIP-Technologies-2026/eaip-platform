@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.capabilities.capability import Capability, CapabilityDependency
+from eaip.capabilities.capability import Capability
 from eaip.capabilities.graph import CapabilityGraph
 from eaip.capabilities.resolution import CapabilityResolver
 

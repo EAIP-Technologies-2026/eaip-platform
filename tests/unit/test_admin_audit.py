@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -17,7 +17,7 @@ def logger() -> AuditLogger:
 
 @pytest.fixture
 def sample_entries() -> list[AuditEntry]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return [
         AuditEntry(
             id="e1",
@@ -50,35 +50,45 @@ def sample_entries() -> list[AuditEntry]:
 
 
 class TestAuditLogger:
-    async def test_log_and_query_all(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_log_and_query_all(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
         results = logger.query()
         assert len(results) == 3
 
-    async def test_query_filter_by_actor(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_query_filter_by_actor(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
         results = logger.query(actor="alice")
         assert len(results) == 2
         assert all(r.actor_id == "alice" for r in results)
 
-    async def test_query_filter_by_action(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_query_filter_by_action(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
         results = logger.query(action="delete")
         assert len(results) == 1
         assert results[0].id == "e2"
 
-    async def test_query_filter_by_resource_type(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_query_filter_by_resource_type(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
         results = logger.query(resource_type="config")
         assert len(results) == 1
         assert results[0].id == "e2"
 
-    async def test_query_filter_by_time_range(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
-        now = datetime.now(timezone.utc)
+    async def test_query_filter_by_time_range(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
+        now = datetime.now(UTC)
         for e in sample_entries:
             logger.log(e)
         start = now - timedelta(hours=2, minutes=30)
@@ -86,14 +96,18 @@ class TestAuditLogger:
         results = logger.query(start=start, end=end)
         assert len(results) == 2
 
-    async def test_query_returns_empty_when_no_match(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_query_returns_empty_when_no_match(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
         results = logger.query(actor="nobody")
         assert results == []
 
-    async def test_export_time_range(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
-        now = datetime.now(timezone.utc)
+    async def test_export_time_range(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
+        now = datetime.now(UTC)
         for e in sample_entries:
             logger.log(e)
         start = now - timedelta(hours=4)
@@ -102,10 +116,12 @@ class TestAuditLogger:
         assert len(results) == 1
         assert results[0].id == "e1"
 
-    async def test_export_chronological_order(self, logger: AuditLogger, sample_entries: list[AuditEntry]) -> None:
+    async def test_export_chronological_order(
+        self, logger: AuditLogger, sample_entries: list[AuditEntry]
+    ) -> None:
         for e in sample_entries:
             logger.log(e)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         results = logger.export(now - timedelta(days=1), now + timedelta(days=1))
         timestamps = [r.timestamp for r in results]
         assert timestamps == sorted(timestamps)

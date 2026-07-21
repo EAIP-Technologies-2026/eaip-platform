@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -189,6 +189,7 @@ class TestCompositeSearchProvider:
     async def test_aggregates_from_multiple_providers(self) -> None:
         class ProviderA:
             name = "a"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 return SearchResult(
                     items=(SearchResultItem(id="a1", collection="a", content="aa", score=0.9),),
@@ -197,6 +198,7 @@ class TestCompositeSearchProvider:
 
         class ProviderB:
             name = "b"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 return SearchResult(
                     items=(SearchResultItem(id="b1", collection="b", content="bb", score=0.8),),
@@ -212,6 +214,7 @@ class TestCompositeSearchProvider:
     async def test_deduplication(self) -> None:
         class DupProvider:
             name = "dup"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 item = SearchResultItem(id="same", collection="c", content="content", score=0.9)
                 return SearchResult(items=(item,), total_count=1)
@@ -224,11 +227,13 @@ class TestCompositeSearchProvider:
     async def test_provider_failure_skipped(self) -> None:
         class FailingProvider:
             name = "fail"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 raise RuntimeError("fail")
 
         class GoodProvider:
             name = "good"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 return SearchResult(
                     items=(SearchResultItem(id="g1", collection="c", content="good", score=0.9),),
@@ -243,6 +248,7 @@ class TestCompositeSearchProvider:
     def test_add_remove_provider(self) -> None:
         class P:
             name = "p"
+
             async def search(self, q: SearchQuery) -> SearchResult:
                 return SearchResult()
 

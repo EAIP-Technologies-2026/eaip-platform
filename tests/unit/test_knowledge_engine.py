@@ -7,7 +7,11 @@ import pytest
 from eaip.knowledge.embedding import MockEmbeddingProvider
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.knowledge.exceptions import CollectionNotFoundError, KnowledgeError
-from eaip.knowledge.models import DocumentChunk, DocumentFormat, KnowledgeCollection, KnowledgeDocument, RetrievalQuery
+from eaip.knowledge.models import (
+    DocumentChunk,
+    DocumentFormat,
+    RetrievalQuery,
+)
 from eaip.knowledge.registry import KnowledgeRegistry
 
 
@@ -26,7 +30,9 @@ class _MockVectorStore:
 
     async def delete_points(self, collection: str, point_ids: list[str]) -> None:
         if collection in self.points:
-            self.points[collection] = [p for p in self.points[collection] if p.chunk_id not in point_ids]
+            self.points[collection] = [
+                p for p in self.points[collection] if p.chunk_id not in point_ids
+            ]
 
     async def search(self, collection: str, query: RetrievalQuery) -> list[dict[str, object]]:
         return []
@@ -125,7 +131,9 @@ class TestKnowledgeEngine:
         ep = MockEmbeddingProvider()
         engine = KnowledgeEngine(reg, vs, ep)
 
-        result = await engine.ingest("doc1", b"Hello world content", DocumentFormat.TXT, title="Test")
+        result = await engine.ingest(
+            "doc1", b"Hello world content", DocumentFormat.TXT, title="Test"
+        )
         assert result.document.document_id == "doc1"
         assert reg.has_document("doc1", "default")
         assert "default" in vs.collections

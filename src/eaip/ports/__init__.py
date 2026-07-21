@@ -7,8 +7,25 @@ adapter is *how* a particular implementation satisfies it (e.g.
 
 from __future__ import annotations
 
+from eaip.ports.cache import CacheProvider
 from eaip.ports.clock import ClockPort
 from eaip.ports.id_generator import IdGeneratorPort
+from eaip.ports.logger import LoggerPort
+from eaip.ports.metrics import Counter, Gauge, Histogram, MetricsProvider, Timer
 from eaip.ports.secret_provider import SecretProviderPort
+from eaip.ports.tracing import Span, TracingProvider
 
-__all__ = ["ClockPort", "IdGeneratorPort", "SecretProviderPort"]
+__all__ = [
+    "CacheProvider",
+    "ClockPort",
+    "Counter",
+    "Gauge",
+    "Histogram",
+    "IdGeneratorPort",
+    "LoggerPort",
+    "MetricsProvider",
+    "SecretProviderPort",
+    "Span",
+    "Timer",
+    "TracingProvider",
+]

@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import math
 import statistics
 from datetime import datetime, timedelta
 from typing import Any
 
-from eaip.analytics.exceptions import MetricNotFoundError
-from eaip.analytics.models import AggregationType, TimeSeriesPoint, TrendAnalysis, TrendDirection
+from eaip.analytics.models import AggregationType, TrendAnalysis, TrendDirection
 from eaip.analytics.service import AnalyticsService
 from eaip.logging.context import get_logger
-from eaip.shared.time import utc_now
 
 
 class TrendAnalyzer:
@@ -21,13 +18,22 @@ class TrendAnalyzer:
         self._analytics = analytics_service or AnalyticsService()
         self._log = get_logger("eaip.analytics.trends")
 
-    async def analyze_trend(self, metric_id: str, time_range: tuple[datetime, datetime]) -> TrendAnalysis:
+    async def analyze_trend(
+        self, metric_id: str, time_range: tuple[datetime, datetime]
+    ) -> TrendAnalysis:
         """Analyze the trend direction for a metric over a time range."""
-        result = await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+        result = await self._analytics.query_time_series(
+            metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG
+        )
         points = result.points
 
         if len(points) < 2:
-            return TrendAnalysis(metric_id=metric_id, direction=TrendDirection.STABLE, change_percent=0.0, confidence=0.0)
+            return TrendAnalysis(
+                metric_id=metric_id,
+                direction=TrendDirection.STABLE,
+                change_percent=0.0,
+                confidence=0.0,
+            )
 
         values = [p.value for p in points]
         first_val = values[0]
@@ -64,7 +70,9 @@ class TrendAnalyzer:
         self, metric_id: str, time_range: tuple[datetime, datetime], sensitivity: float = 2.0
     ) -> list[dict[str, Any]]:
         """Detect anomalies in a metric's time series using standard deviation."""
-        result = await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+        result = await self._analytics.query_time_series(
+            metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG
+        )
         points = result.points
 
         if len(points) < 3:
@@ -78,13 +86,15 @@ class TrendAnalyzer:
         threshold = sensitivity * std_dev
         for p in points:
             if std_dev > 0 and abs(p.value - mean_val) > threshold:
-                anomalies.append({
-                    "timestamp": p.timestamp,
-                    "value": p.value,
-                    "expected": round(mean_val, 6),
-                    "deviation": round(abs(p.value - mean_val), 6),
-                    "severity": "high" if abs(p.value - mean_val) > 3 * std_dev else "medium",
-                })
+                anomalies.append(
+                    {
+                        "timestamp": p.timestamp,
+                        "value": p.value,
+                        "expected": round(mean_val, 6),
+                        "deviation": round(abs(p.value - mean_val), 6),
+                        "severity": "high" if abs(p.value - mean_val) > 3 * std_dev else "medium",
+                    }
+                )
 
         return anomalies
 
@@ -92,7 +102,9 @@ class TrendAnalyzer:
         self, metric_id: str, time_range: tuple[datetime, datetime], horizon: int = 5
     ) -> list[dict[str, Any]]:
         """Generate a simple forecast based on linear regression."""
-        result = await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+        result = await self._analytics.query_time_series(
+            metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG
+        )
         points = result.points
 
         if len(points) < 2:
@@ -113,12 +125,14 @@ class TrendAnalyzer:
         for i in range(1, horizon + 1):
             pred_ts = last_ts + timedelta(seconds=result.interval_seconds * i)
             pred_val = intercept + slope * (n - 1 + i)
-            forecasts.append({
-                "timestamp": pred_ts,
-                "forecast_value": round(pred_val, 6),
-                "confidence_upper": round(pred_val * 1.1, 6),
-                "confidence_lower": round(pred_val * 0.9, 6),
-            })
+            forecasts.append(
+                {
+                    "timestamp": pred_ts,
+                    "forecast_value": round(pred_val, 6),
+                    "confidence_upper": round(pred_val * 1.1, 6),
+                    "confidence_lower": round(pred_val * 0.9, 6),
+                }
+            )
 
         return forecasts
 
@@ -129,8 +143,12 @@ class TrendAnalyzer:
         period2: tuple[datetime, datetime],
     ) -> dict[str, Any]:
         """Compare two time periods for a metric."""
-        r1 = await self._analytics.query_time_series(metric_id, period1[0], period1[1], aggregation=AggregationType.AVG)
-        r2 = await self._analytics.query_time_series(metric_id, period2[0], period2[1], aggregation=AggregationType.AVG)
+        r1 = await self._analytics.query_time_series(
+            metric_id, period1[0], period1[1], aggregation=AggregationType.AVG
+        )
+        r2 = await self._analytics.query_time_series(
+            metric_id, period2[0], period2[1], aggregation=AggregationType.AVG
+        )
 
         v1 = statistics.mean([p.value for p in r1.points]) if r1.points else 0.0
         v2 = statistics.mean([p.value for p in r2.points]) if r2.points else 0.0
@@ -152,7 +170,9 @@ class TrendAnalyzer:
         self, metric_id: str, time_range: tuple[datetime, datetime]
     ) -> dict[str, Any]:
         """Detect seasonality patterns using autocorrelation at lag intervals."""
-        result = await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+        result = await self._analytics.query_time_series(
+            metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG
+        )
         points = result.points
 
         if len(points) < 4:
@@ -167,12 +187,20 @@ class TrendAnalyzer:
         for lag in range(1, min(n // 2, 12) + 1):
             if lag >= n:
                 break
-            numerator = sum((values[i] - mean_val) * (values[i + lag] - mean_val) for i in range(n - lag))
+            numerator = sum(
+                (values[i] - mean_val) * (values[i + lag] - mean_val) for i in range(n - lag)
+            )
             denominator = sum((v - mean_val) ** 2 for v in values)
             if denominator != 0:
                 acf = numerator / denominator
                 if abs(acf) > 0.5:
-                    patterns.append({"lag": lag, "correlation": round(acf, 4), "interval_seconds": result.interval_seconds * lag})
+                    patterns.append(
+                        {
+                            "lag": lag,
+                            "correlation": round(acf, 4),
+                            "interval_seconds": result.interval_seconds * lag,
+                        }
+                    )
 
         return {
             "metric_id": metric_id,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
@@ -33,7 +33,9 @@ class TestEntityModel:
 
     def test_entity_with_all_fields(self) -> None:
         e = Entity(
-            id="e2", type="org", name="ACME",
+            id="e2",
+            type="org",
+            name="ACME",
             description="A company",
             properties={"founded": 1999},
             source="import",
@@ -84,8 +86,13 @@ class TestRelationshipModel:
 
     def test_relationship_with_all_fields(self) -> None:
         r = Relationship(
-            id="r2", type="works_at", source_entity_id="e1", target_entity_id="e2",
-            properties={"since": 2020}, weight=0.9, bidirectional=True,
+            id="r2",
+            type="works_at",
+            source_entity_id="e1",
+            target_entity_id="e2",
+            properties={"since": 2020},
+            weight=0.9,
+            bidirectional=True,
             metadata={"verified": True},
         )
         assert r.weight == 0.9
@@ -94,9 +101,13 @@ class TestRelationshipModel:
 
     def test_relationship_weight_bounds(self) -> None:
         with pytest.raises(ValidationError):
-            Relationship(id="r3", type="t", source_entity_id="e1", target_entity_id="e2", weight=1.1)
+            Relationship(
+                id="r3", type="t", source_entity_id="e1", target_entity_id="e2", weight=1.1
+            )
         with pytest.raises(ValidationError):
-            Relationship(id="r4", type="t", source_entity_id="e1", target_entity_id="e2", weight=-0.1)
+            Relationship(
+                id="r4", type="t", source_entity_id="e1", target_entity_id="e2", weight=-0.1
+            )
 
     def test_relationship_is_frozen(self) -> None:
         r = Relationship(id="r5", type="t", source_entity_id="e1", target_entity_id="e2")

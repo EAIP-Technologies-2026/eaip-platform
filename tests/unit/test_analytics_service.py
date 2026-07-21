@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,14 +14,19 @@ from eaip.analytics.service import AnalyticsService
 class TestAnalyticsService:
     @pytest.fixture
     def service(self) -> AnalyticsService:
-        svc = AnalyticsService()
-        return svc
+        return AnalyticsService()
 
     @pytest.fixture
     async def seeded_service(self) -> AnalyticsService:
         svc = AnalyticsService()
         m1 = MetricDefinition(id="m1", name="Requests", type=MetricType.COUNTER, unit="count")
-        m2 = MetricDefinition(id="m2", name="Latency", type=MetricType.TIMER, unit="ms", aggregation=AggregationType.AVG)
+        m2 = MetricDefinition(
+            id="m2",
+            name="Latency",
+            type=MetricType.TIMER,
+            unit="ms",
+            aggregation=AggregationType.AVG,
+        )
         await svc.register_metric(m1)
         await svc.register_metric(m2)
         return svc
@@ -79,7 +84,9 @@ class TestAnalyticsService:
             with pytest.raises(MetricNotFoundError):
                 await service.record_metric("unknown", 1.0)
 
-        async def test_disabled_metric_records_with_warning(self, seeded_service: AnalyticsService) -> None:
+        async def test_disabled_metric_records_with_warning(
+            self, seeded_service: AnalyticsService
+        ) -> None:
             m = await seeded_service.get_metric("m1")
             disabled = MetricDefinition(id="m1", name=m.name, enabled=False)
             await seeded_service.register_metric(disabled)
@@ -88,35 +95,39 @@ class TestAnalyticsService:
 
     class TestQueryTimeSeries:
         async def test_returns_empty_when_no_points(self, seeded_service: AnalyticsService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             result = await seeded_service.query_time_series("m1", now, now + timedelta(hours=1))
             assert len(result.points) == 0
 
         async def test_returns_aggregated_points(self, seeded_service: AnalyticsService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             await seeded_service.record_metric("m1", 10.0)
             await seeded_service.record_metric("m1", 20.0)
             start = now - timedelta(minutes=5)
             end = now + timedelta(minutes=5)
-            result = await seeded_service.query_time_series("m1", start, end, interval=3600.0, aggregation=AggregationType.SUM)
+            result = await seeded_service.query_time_series(
+                "m1", start, end, interval=3600.0, aggregation=AggregationType.SUM
+            )
             assert len(result.points) >= 1
             assert result.points[0].value >= 30.0
 
         async def test_raises_on_missing_metric(self, service: AnalyticsService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             with pytest.raises(MetricNotFoundError):
                 await service.query_time_series("unknown", now, now)
 
     class TestGenerateReport:
         async def test_generates_empty_report(self, service: AnalyticsService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             report = await service.generate_report([], (now, now))
             assert report.results == {}
 
-        async def test_generates_report_with_metrics(self, seeded_service: AnalyticsService) -> None:
+        async def test_generates_report_with_metrics(
+            self, seeded_service: AnalyticsService
+        ) -> None:
             await seeded_service.record_metric("m1", 100.0)
             await seeded_service.record_metric("m2", 200.0)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             start = now - timedelta(hours=1)
             report = await seeded_service.generate_report(["m1", "m2"], (start, now))
             assert len(report.metric_ids) == 2
@@ -124,7 +135,7 @@ class TestAnalyticsService:
             assert "m2" in report.results
 
         async def test_skips_missing_metrics(self, seeded_service: AnalyticsService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             report = await seeded_service.generate_report(["m1", "nonexistent"], (now, now))
             assert "m1" in report.results
             assert "nonexistent" not in report.results

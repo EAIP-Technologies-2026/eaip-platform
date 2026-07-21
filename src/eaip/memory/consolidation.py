@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from eaip.logging.context import get_logger
 from eaip.memory.exceptions import MemoryConsolidationError
@@ -152,7 +152,8 @@ class ConditionalConsolidationStrategy:
             True if consolidation should proceed.
         """
         if self._condition:
-            return self._condition(memories, config)
+            result = self._condition(memories, config)
+            return bool(result)
         return len(memories) >= config.min_memories_for_consolidation
 
     async def consolidate(
@@ -170,7 +171,7 @@ class ConditionalConsolidationStrategy:
             A ConsolidationReport with results.
         """
         if self._action:
-            return self._action(memories, config)
+            return cast(ConsolidationReport, self._action(memories, config))
         return ConsolidationReport(
             source_count=len(memories),
             consolidated_count=0,
@@ -221,9 +222,7 @@ class MemoryConsolidationService:
             return ConsolidationReport()
 
         try:
-            should = await self._strategy.should_consolidate(
-                episodic_memories, self._config
-            )
+            should = await self._strategy.should_consolidate(episodic_memories, self._config)
             if not should:
                 return ConsolidationReport(source_count=len(episodic_memories))
 
@@ -272,7 +271,7 @@ class MemoryConsolidationService:
         unique: list[MemoryItem] = []
         duplicates: list[MemoryItem] = []
         for m in memories:
-            content_hash = hash(m.content)
+            content_hash = str(hash(m.content))
             if content_hash in seen:
                 duplicates.append(m)
             else:
@@ -285,6 +284,7 @@ class MemoryConsolidationService:
 
 __all__ = [
     "ConditionalConsolidationStrategy",
+    "ConsolidationReport",
     "ConsolidationStrategy",
     "MemoryConsolidationService",
     "NeverConsolidateStrategy",

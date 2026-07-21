@@ -38,6 +38,9 @@ class _MockCapabilityRegistry:
     def register(self, cap: _MockCapability) -> None:
         self._caps[cap.name] = cap
 
+    def all(self) -> list[_MockCapability]:
+        return list(self._caps.values())
+
     def list(self) -> list[_MockCapability]:
         return list(self._caps.values())
 

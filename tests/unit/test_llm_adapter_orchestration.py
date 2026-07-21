@@ -167,9 +167,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="call_1", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="call_1", name="get_time", arguments={}),),
             )
         )
 
@@ -216,9 +214,7 @@ class TestToolCallOrchestrator:
         tool_registry: ToolRegistry,
         request_with_tools: LLMRequest,
     ) -> None:
-        orchestrator = ToolCallOrchestrator(
-            mock_provider, tool_registry, max_rounds=3
-        )
+        orchestrator = ToolCallOrchestrator(mock_provider, tool_registry, max_rounds=3)
         context = RunContext(max_tool_rounds=2)
 
         mock_provider.add_response(
@@ -227,9 +223,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="call_1", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="call_1", name="get_time", arguments={}),),
             )
         )
         mock_provider.add_response(
@@ -238,9 +232,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="call_2", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="call_2", name="get_time", arguments={}),),
             )
         )
 
@@ -266,9 +258,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="call_1", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="call_1", name="get_time", arguments={}),),
             )
         )
 
@@ -291,9 +281,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="call_1", name="nonexistent_tool", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="call_1", name="nonexistent_tool", arguments={}),),
             )
         )
 
@@ -331,9 +319,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="c1", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="c1", name="get_time", arguments={}),),
             )
         )
         mock_provider.add_response(
@@ -342,9 +328,7 @@ class TestToolCallOrchestrator:
                 provider="mock",
                 content="",
                 finish_reason="tool_calls",
-                tool_calls=(
-                    ToolCall(id="c2", name="get_time", arguments={}),
-                ),
+                tool_calls=(ToolCall(id="c2", name="get_time", arguments={}),),
             )
         )
 

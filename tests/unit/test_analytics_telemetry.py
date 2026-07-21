@@ -67,7 +67,9 @@ class TestTelemetryCollector:
 
     class TestRecordMetricPoint:
         async def test_records_point(self, seeded_collector: TelemetryCollector) -> None:
-            point = await seeded_collector.record_metric_point("agents.active", 5.0, {"env": "prod"})
+            point = await seeded_collector.record_metric_point(
+                "agents.active", 5.0, {"env": "prod"}
+            )
             assert point.metric_id == "agents.active"
             assert point.value == 5.0
             assert point.tags == {"env": "prod"}

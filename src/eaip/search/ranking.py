@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from datetime import UTC
 
 from eaip.logging.context import get_logger
 from eaip.search.models import SearchQuery, SearchResultItem
@@ -95,16 +95,18 @@ class RankingService:
             meta["score_popularity"] = round(popularity, 4)
             meta["score_composite"] = round(composite, 4)
 
-            reranked.append(SearchResultItem(
-                id=item.id,
-                collection=item.collection,
-                content=item.content,
-                score=composite,
-                title=item.title,
-                source=item.source,
-                metadata=meta,
-                highlights=item.highlights,
-            ))
+            reranked.append(
+                SearchResultItem(
+                    id=item.id,
+                    collection=item.collection,
+                    content=item.content,
+                    score=composite,
+                    title=item.title,
+                    source=item.source,
+                    metadata=meta,
+                    highlights=item.highlights,
+                )
+            )
 
         reranked.sort(key=lambda i: i.score, reverse=True)
         return reranked
@@ -131,7 +133,9 @@ class RankingService:
         if score_range < 1e-10:
             for idx, item in enumerate(items):
                 items = self._replace_item(
-                    items, idx, 1.0 - (idx / max(len(items) - 1, 1)),
+                    items,
+                    idx,
+                    1.0 - (idx / max(len(items) - 1, 1)),
                 )
         else:
             for idx, item in enumerate(items):
@@ -143,7 +147,7 @@ class RankingService:
     @staticmethod
     def _compute_recency_score(item: SearchResultItem) -> float:
         meta = item.metadata
-        from datetime import datetime, timezone  # noqa: PLC0415
+        from datetime import datetime  # noqa: PLC0415
 
         created_str = meta.get("created_at") or meta.get("timestamp") or ""
         if not created_str:
@@ -154,7 +158,7 @@ class RankingService:
             else:
                 created_dt = datetime.fromisoformat(str(created_str))
                 if created_dt.tzinfo is None:
-                    created_dt = created_dt.replace(tzinfo=timezone.utc)
+                    created_dt = created_dt.replace(tzinfo=UTC)
                 created_ts = created_dt.timestamp()
             now = time.time()
             age_hours = (now - created_ts) / 3600

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.goals.exceptions import KpiNotFoundError
-from eaip.goals.models import KpiDefinition, KpiDirection, MeasurementType
+from eaip.goals.models import KpiDefinition, KpiDirection
 from eaip.goals.tracker import GoalTracker
 
 
@@ -85,7 +85,9 @@ class TestGoalTracker:
         assert status["on_track"] is True
         assert status["progress"] == 1.0
 
-    async def test_check_kpi_status_lower_is_better(self, tracker: GoalTracker, setup_kpis: None) -> None:
+    async def test_check_kpi_status_lower_is_better(
+        self, tracker: GoalTracker, setup_kpis: None
+    ) -> None:
         await tracker.record_kpi("k2", 50.0)
         status = await tracker.check_kpi_status("k2")
         assert status["on_track"] is True

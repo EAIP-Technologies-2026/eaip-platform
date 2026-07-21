@@ -10,7 +10,6 @@ from eaip.knowledge.chunker import (
     SemanticChunker,
     create_chunker,
 )
-from eaip.knowledge.exceptions import ChunkingError
 from eaip.knowledge.models import ChunkingConfig, ChunkingStrategy
 
 

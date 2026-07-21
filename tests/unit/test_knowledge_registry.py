@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from eaip.knowledge.models import DocumentChunk, DocumentFormat, KnowledgeCollection, KnowledgeDocument
+from eaip.knowledge.models import (
+    DocumentChunk,
+    DocumentFormat,
+    KnowledgeCollection,
+    KnowledgeDocument,
+)
 from eaip.knowledge.registry import KnowledgeRegistry
 
 

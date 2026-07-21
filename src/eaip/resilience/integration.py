@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from eaip.capabilities.capability import Capability, CapabilityStatus
 from eaip.logging.context import get_logger
-from eaip.resilience.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from eaip.resilience.bulkhead import Bulkhead, BulkheadConfig
+from eaip.resilience.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from eaip.resilience.error_budget import ErrorBudget, ErrorBudgetConfig
 from eaip.resilience.health import ResilienceHealthCheck
 
@@ -42,8 +42,10 @@ class ResilienceRuntimeModule:
     ) -> CircuitBreaker:
         if name not in self._circuit_breakers:
             cb = CircuitBreaker(
-                name, config,
-                event_bus=self._event_bus, meter=self._meter,
+                name,
+                config,
+                event_bus=self._event_bus,
+                meter=self._meter,
             )
             self._circuit_breakers[name] = cb
             self._health_check.register_circuit_breaker(cb)
@@ -85,12 +87,14 @@ class ResilienceRuntimeModule:
         self._log.info("resilience.module.start")
 
         kernel.platform.health.register(self._health_check)
-        kernel.platform.capabilities.register(Capability(
-            name="resilience:framework",
-            title="Resilience Framework",
-            status=CapabilityStatus.ENABLED,
-            tags=("resilience", "circuit-breaker", "bulkhead"),
-        ))
+        kernel.platform.capabilities.register(
+            Capability(
+                name="resilience:framework",
+                title="Resilience Framework",
+                status=CapabilityStatus.ENABLED,
+                tags=("resilience", "circuit-breaker", "bulkhead"),
+            )
+        )
 
         self._startup_duration = time.monotonic() - t0
         self._log.info(

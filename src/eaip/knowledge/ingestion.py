@@ -12,7 +12,13 @@ from typing import Any
 
 from eaip.knowledge.base import Chunker, DocumentParser, EmbeddingProvider, VectorStore
 from eaip.knowledge.chunker import create_chunker
-from eaip.knowledge.events import DocumentIngested
+from eaip.knowledge.events import (
+    ChunkingCompleted,
+    DocumentIngested,
+    EmbeddingCreated,
+    KnowledgeIndexed,
+    KnowledgeUploaded,
+)
 from eaip.knowledge.exceptions import (
     DocumentParseError,
     UnsupportedFormatError,
@@ -30,6 +36,12 @@ from eaip.logging.context import get_logger
 
 def _hash_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:16]
+
+
+def _publish(publisher: Callable[[object], Any] | None, event: object) -> None:
+    """Publish an event if a publisher is configured."""
+    if publisher is not None:
+        publisher(event)
 
 
 class TextParser:
@@ -283,12 +295,19 @@ class IngestionPipeline:
                 raise DocumentParseError("Document produced no text content")
 
             content_hash = _hash_bytes(content) if self._config.generate_hash else ""
-
             chunk_metadata: dict[str, Any] = {
                 "title": title,
                 "source": source,
                 **(metadata or {}),
             }
+            size_bytes = len(content)
+
+            _publish(self._event_publisher, KnowledgeUploaded(
+                document_id=document_id,
+                collection=self._config.collection,
+                size_bytes=size_bytes,
+                format=fmt_name,
+            ))
 
             chunks = await self._chunker.chunk(
                 text,
@@ -296,10 +315,19 @@ class IngestionPipeline:
                 collection=self._config.collection,
                 **{k: str(v) for k, v in chunk_metadata.items()},
             )
+            chunk_duration = (time.monotonic() - t0) * 1000
+
+            _publish(self._event_publisher, ChunkingCompleted(
+                document_id=document_id,
+                chunk_count=len(chunks),
+                duration_ms=chunk_duration,
+            ))
 
             if self._config.embedding.provider or self._config.embedding.model:
+                embed_t0 = time.monotonic()
                 texts = [c.content for c in chunks]
                 embeddings = await self._embedding_provider.embed(texts)
+                embed_duration = (time.monotonic() - embed_t0) * 1000
                 chunks = [
                     DocumentChunk(
                         chunk_id=c.chunk_id,
@@ -314,13 +342,17 @@ class IngestionPipeline:
                     )
                     for i, c in enumerate(chunks)
                 ]
+                _publish(self._event_publisher, EmbeddingCreated(
+                    document_id=document_id,
+                    chunk_count=len(embeddings),
+                    dimensions=len(embeddings[0]) if embeddings else 0,
+                    duration_ms=embed_duration,
+                ))
 
             await self._vector_store.upsert_points(self._config.collection, chunks)
 
             fmt = (
-                doc_format
-                if isinstance(doc_format, DocumentFormat)
-                else DocumentFormat(doc_format)
+                doc_format if isinstance(doc_format, DocumentFormat) else DocumentFormat(doc_format)
             )
             document = KnowledgeDocument(
                 document_id=document_id,
@@ -336,14 +368,19 @@ class IngestionPipeline:
 
             duration_ms = (time.monotonic() - t0) * 1000
 
-            if self._event_publisher is not None:
-                event = DocumentIngested(
-                    document_id=document_id,
-                    collection=self._config.collection,
-                    chunk_count=len(chunks),
-                    duration_ms=duration_ms,
-                )
-                self._event_publisher(event)
+            _publish(self._event_publisher, KnowledgeIndexed(
+                document_id=document_id,
+                collection=self._config.collection,
+                chunk_count=len(chunks),
+                duration_ms=duration_ms,
+            ))
+
+            _publish(self._event_publisher, DocumentIngested(
+                document_id=document_id,
+                collection=self._config.collection,
+                chunk_count=len(chunks),
+                duration_ms=duration_ms,
+            ))
 
             self._log.info(
                 "ingestion.complete",

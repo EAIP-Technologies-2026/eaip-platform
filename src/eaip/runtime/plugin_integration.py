@@ -60,7 +60,7 @@ class PluginHealthCheck(HealthCheck):
             details={
                 "installed": installed,
                 "activated": activated,
-                    "plugin_names": self._lifecycle.loader.activated,
+                "plugin_names": self._lifecycle.loader.activated,
             },
         )
 
@@ -131,7 +131,7 @@ class PluginRuntimeModule:
         self._log.info(
             "plugin.module.complete",
             installed=self._lifecycle.loader.count(),
-                activated=self._lifecycle.loader.activated_count,
+            activated=self._lifecycle.loader.activated_count,
             duration_s=round(self._startup_duration, 3),
         )
 

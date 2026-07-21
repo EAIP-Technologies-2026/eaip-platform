@@ -43,9 +43,7 @@ class BrainRegistry:
             ValueError: If the department is already registered.
         """
         if department_id in self._departments:
-            raise ValueError(
-                f"Department '{department_id}' is already registered in BrainRegistry"
-            )
+            raise ValueError(f"Department '{department_id}' is already registered in BrainRegistry")
         self._departments[department_id] = brain
         self._log.info("registry.department.registered", department_id=department_id)
 
@@ -86,9 +84,7 @@ class BrainRegistry:
         """
         return tuple(self._departments.keys())
 
-    async def query_all(
-        self, query: str, top_k: int = 10
-    ) -> dict[str, BrainResult]:
+    async def query_all(self, query: str, top_k: int = 10) -> dict[str, BrainResult]:
         """Query all registered department brains in parallel.
 
         Args:

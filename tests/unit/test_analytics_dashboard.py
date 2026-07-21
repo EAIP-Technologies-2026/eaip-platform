@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -83,31 +83,35 @@ class TestDashboardService:
 
     class TestRenderWidget:
         async def test_renders_widget(self, service: DashboardService) -> None:
-            w = DashboardWidget(id="w1", type=WidgetType.TIMESERIES, metric_ids=("m1",), title="Test")
+            w = DashboardWidget(
+                id="w1", type=WidgetType.TIMESERIES, metric_ids=("m1",), title="Test"
+            )
             d = DashboardDefinition(id="d1", name="Main", widgets=(w,))
             await service.create_dashboard(d)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             result = await service.render_widget("w1", (now - timedelta(hours=1), now))
             assert result["widget_id"] == "w1"
             assert result["type"] == "timeseries"
 
         async def test_raises_on_missing_widget(self, service: DashboardService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             with pytest.raises(DashboardNotFoundError):
                 await service.render_widget("unknown", (now, now))
 
     class TestRenderDashboard:
         async def test_renders_full_dashboard(self, service: DashboardService) -> None:
-            w1 = DashboardWidget(id="w1", type=WidgetType.TIMESERIES, metric_ids=("m1",), title="Chart")
+            w1 = DashboardWidget(
+                id="w1", type=WidgetType.TIMESERIES, metric_ids=("m1",), title="Chart"
+            )
             d = DashboardDefinition(id="d1", name="Main", widgets=(w1,))
             await service.create_dashboard(d)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             result = await service.render_dashboard("d1", (now - timedelta(hours=1), now))
             assert result["dashboard_id"] == "d1"
             assert len(result["widgets"]) == 1
 
         async def test_raises_on_missing_dashboard(self, service: DashboardService) -> None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             with pytest.raises(DashboardNotFoundError):
                 await service.render_dashboard("unknown", (now, now))
 

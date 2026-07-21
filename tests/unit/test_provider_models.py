@@ -27,9 +27,10 @@ class TestModelCapability:
     def test_frozen(self) -> None:
         mc = ModelCapability(model_id="a", provider="b")
         import pydantic
+
         try:
             mc.model_id = "c"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 
@@ -43,9 +44,10 @@ class TestChatMessage:
     def test_frozen(self) -> None:
         m = ChatMessage(role="user", content="hi")
         import pydantic
+
         try:
             m.content = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 
@@ -60,7 +62,9 @@ class TestChatRequest:
 
     def test_with_options(self) -> None:
         msg = ChatMessage(role="user", content="hello")
-        req = ChatRequest(model="gpt4", messages=(msg,), temperature=0.1, max_tokens=100, stream=True)
+        req = ChatRequest(
+            model="gpt4", messages=(msg,), temperature=0.1, max_tokens=100, stream=True
+        )
         assert req.temperature == 0.1
         assert req.max_tokens == 100
         assert req.stream is True
@@ -76,16 +80,19 @@ class TestChatResponse:
     def test_frozen(self) -> None:
         r = ChatResponse(model="a", provider="b", content="c")
         import pydantic
+
         try:
             r.content = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 
 
 class TestProviderInstance:
     def test_minimal(self) -> None:
-        inst = ProviderInstance(name="ollama", provider_type="ollama", endpoint="http://localhost:11434")
+        inst = ProviderInstance(
+            name="ollama", provider_type="ollama", endpoint="http://localhost:11434"
+        )
         assert inst.name == "ollama"
         assert inst.status is ProviderStatus.UNAVAILABLE
         assert inst.priority == 0
@@ -93,9 +100,12 @@ class TestProviderInstance:
     def test_full(self) -> None:
         mc = ModelCapability(model_id="llama3", provider="ollama")
         inst = ProviderInstance(
-            name="ollama", provider_type="ollama",
-            endpoint="http://localhost:11434", default_model="llama3",
-            models=(mc,), priority=10,
+            name="ollama",
+            provider_type="ollama",
+            endpoint="http://localhost:11434",
+            default_model="llama3",
+            models=(mc,),
+            priority=10,
         )
         assert len(inst.models) == 1
         assert inst.priority == 10
@@ -103,8 +113,9 @@ class TestProviderInstance:
     def test_frozen(self) -> None:
         inst = ProviderInstance(name="a", provider_type="b", endpoint="c")
         import pydantic
+
         try:
             inst.name = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass

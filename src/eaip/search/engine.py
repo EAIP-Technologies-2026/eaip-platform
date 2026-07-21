@@ -118,9 +118,7 @@ class EnterpriseSearchEngine:
                 result = await provider.search(query)
                 for item in result.items:
                     dedup_key = item.id or item.content[:100]
-                    if dedup_key not in all_items:
-                        all_items[dedup_key] = item
-                    elif item.score > all_items[dedup_key].score:
+                    if dedup_key not in all_items or item.score > all_items[dedup_key].score:
                         all_items[dedup_key] = item
             except Exception as exc:
                 self._log.warning(
@@ -147,12 +145,14 @@ class EnterpriseSearchEngine:
             query=query.query,
         )
 
-        self._publish_event(SearchExecuted(
-            query=query.query,
-            provider_name="enterprise_engine",
-            result_count=result.total_count,
-            duration_ms=duration,
-        ))
+        self._publish_event(
+            SearchExecuted(
+                query=query.query,
+                provider_name="enterprise_engine",
+                result_count=result.total_count,
+                duration_ms=duration,
+            )
+        )
 
         return result
 

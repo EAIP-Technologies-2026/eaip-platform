@@ -6,7 +6,6 @@ import asyncio
 import time
 import uuid
 from contextlib import suppress
-from datetime import datetime
 from typing import Any
 
 from eaip.jobs.events import (
@@ -24,7 +23,7 @@ from eaip.shared.time import utc_now
 class LongRunningJob:
     """Represents a long-running job with progress tracking and checkpointing."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         job_id: str,
         handler: JobHandler,
@@ -48,17 +47,24 @@ class LongRunningJob:
         run_id = run.id or uuid.uuid4().hex
         started_at = time.monotonic()
 
-        run = JobRun(**{
-            **run.model_dump(),
-            "id": run_id, "status": JobStatus.RUNNING,
-            "started_at": utc_now(),
-        })
+        run = JobRun(
+            **{
+                **run.model_dump(),
+                "id": run_id,
+                "status": JobStatus.RUNNING,
+                "started_at": utc_now(),
+            }
+        )
         self._runs[run_id] = run
 
-        await self._publish(JobStarted(
-            run_id=run_id, job_id=self._job_id,
-            job_name=run.job_name, attempt=run.attempt,
-        ))
+        await self._publish(
+            JobStarted(
+                run_id=run_id,
+                job_id=self._job_id,
+                job_name=run.job_name,
+                attempt=run.attempt,
+            )
+        )
         self._record_metric("job.started", {"job_id": self._job_id})
 
         max_attempts = (self._retry_config.max_retries + 1) if self._retry_config else 1
@@ -87,56 +93,80 @@ class LongRunningJob:
             except TimeoutError:
                 last_error = f"job timed out after {self._timeout}s"
                 run = JobRun(**{**run.model_dump(), "attempt": attempt, "error": last_error})
-                await self._publish(JobFailed(
-                    run_id=run_id, job_id=self._job_id,
-                    job_name=run.job_name, attempt=attempt,
-                    error=last_error, will_retry=attempt < max_attempts - 1,
-                ))
+                await self._publish(
+                    JobFailed(
+                        run_id=run_id,
+                        job_id=self._job_id,
+                        job_name=run.job_name,
+                        attempt=attempt,
+                        error=last_error,
+                        will_retry=attempt < max_attempts - 1,
+                    )
+                )
                 continue
             except Exception as exc:
                 last_error = str(exc)
                 run = JobRun(**{**run.model_dump(), "attempt": attempt, "error": last_error})
                 will_retry = attempt < max_attempts - 1
-                await self._publish(JobFailed(
-                    run_id=run_id, job_id=self._job_id,
-                    job_name=run.job_name, attempt=attempt,
-                    error=last_error, will_retry=will_retry,
-                ))
+                await self._publish(
+                    JobFailed(
+                        run_id=run_id,
+                        job_id=self._job_id,
+                        job_name=run.job_name,
+                        attempt=attempt,
+                        error=last_error,
+                        will_retry=will_retry,
+                    )
+                )
                 if not will_retry:
                     break
                 continue
 
             elapsed = (time.monotonic() - started_at) * 1000
-            run = JobRun(**{
-                **run.model_dump(),
-                "status": JobStatus.COMPLETED,
-                "result": result,
-                "duration_ms": elapsed,
-                "completed_at": utc_now(),
-            })
+            run = JobRun(
+                **{
+                    **run.model_dump(),
+                    "status": JobStatus.COMPLETED,
+                    "result": result,
+                    "duration_ms": elapsed,
+                    "completed_at": utc_now(),
+                }
+            )
             self._runs[run_id] = run
-            await self._publish(JobCompleted(
-                run_id=run_id, job_id=self._job_id,
-                job_name=run.job_name, attempt=attempt,
-                duration_ms=elapsed, result=result,
-            ))
+            await self._publish(
+                JobCompleted(
+                    run_id=run_id,
+                    job_id=self._job_id,
+                    job_name=run.job_name,
+                    attempt=attempt,
+                    duration_ms=elapsed,
+                    result=result,
+                )
+            )
             self._record_metric("job.completed", {"job_id": self._job_id})
             return run
 
         elapsed = (time.monotonic() - started_at) * 1000
-        run = JobRun(**{
-            **run.model_dump(),
-            "status": JobStatus.FAILED,
-            "error": last_error or "unknown error",
-            "duration_ms": elapsed,
-            "completed_at": utc_now(),
-        })
+        run = JobRun(
+            **{
+                **run.model_dump(),
+                "status": JobStatus.FAILED,
+                "error": last_error or "unknown error",
+                "duration_ms": elapsed,
+                "completed_at": utc_now(),
+            }
+        )
         self._runs[run_id] = run
-        await self._publish(JobFailed(
-            run_id=run_id, job_id=self._job_id,
-            job_name=run.job_name, attempt=max_attempts - 1,
-            error=last_error or "unknown error", will_retry=False,
-        ))
+        await self._publish(
+            JobFailed(
+                run_id=run_id,
+                job_id=self._job_id,
+                job_name=run.job_name,
+                attempt=max_attempts - 1,
+                error=last_error or "unknown error",
+                will_retry=False,
+            )
+        )
         self._record_metric("job.failed", {"job_id": self._job_id})
         return run
 
@@ -144,15 +174,23 @@ class LongRunningJob:
         run = self._runs.get(run_id)
         if run is None:
             return
-        run = JobRun(**{
-            **run.model_dump(),
-            "progress": progress, "progress_message": message,
-        })
+        run = JobRun(
+            **{
+                **run.model_dump(),
+                "progress": progress,
+                "progress_message": message,
+            }
+        )
         self._runs[run_id] = run
-        await self._publish(JobProgressEvent(
-            run_id=run_id, job_id=self._job_id,
-            job_name=run.job_name, progress=progress, message=message,
-        ))
+        await self._publish(
+            JobProgressEvent(
+                run_id=run_id,
+                job_id=self._job_id,
+                job_name=run.job_name,
+                progress=progress,
+                message=message,
+            )
+        )
 
     async def save_checkpoint(self, run_id: str, data: dict[str, Any]) -> None:
         run = self._runs.get(run_id)

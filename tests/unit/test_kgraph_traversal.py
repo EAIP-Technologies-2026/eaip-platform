@@ -13,14 +13,26 @@ class TestGraphTraversal:
         g = KnowledgeGraph()
         await g.add_entity(Entity(id="e1", type="person", name="Alice", properties={"city": "NYC"}))
         await g.add_entity(Entity(id="e2", type="person", name="Bob", properties={"city": "NYC"}))
-        await g.add_entity(Entity(id="e3", type="person", name="Charlie", properties={"city": "LA"}))
+        await g.add_entity(
+            Entity(id="e3", type="person", name="Charlie", properties={"city": "LA"})
+        )
         await g.add_entity(Entity(id="e4", type="org", name="ACME"))
         await g.add_entity(Entity(id="e5", type="org", name="Beta"))
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
-        await g.add_relationship(Relationship(id="r2", type="knows", source_entity_id="e2", target_entity_id="e3"))
-        await g.add_relationship(Relationship(id="r3", type="works_at", source_entity_id="e1", target_entity_id="e4"))
-        await g.add_relationship(Relationship(id="r4", type="works_at", source_entity_id="e2", target_entity_id="e5"))
-        await g.add_relationship(Relationship(id="r5", type="knows", source_entity_id="e3", target_entity_id="e1"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
+        await g.add_relationship(
+            Relationship(id="r2", type="knows", source_entity_id="e2", target_entity_id="e3")
+        )
+        await g.add_relationship(
+            Relationship(id="r3", type="works_at", source_entity_id="e1", target_entity_id="e4")
+        )
+        await g.add_relationship(
+            Relationship(id="r4", type="works_at", source_entity_id="e2", target_entity_id="e5")
+        )
+        await g.add_relationship(
+            Relationship(id="r5", type="knows", source_entity_id="e3", target_entity_id="e1")
+        )
         return g
 
     # ── BFS ─────────────────────────────────────────────────
@@ -44,6 +56,7 @@ class TestGraphTraversal:
     async def test_bfs_with_predicate(self, graph: KnowledgeGraph) -> None:
         def pred(e: Entity, r: Relationship | None) -> bool:
             return e.type == "org"
+
         result = await graph.traversal_service.bfs("e1", max_depth=2, predicate=pred)
         assert len(result["entity_ids"]) == 2  # e1 + orgs
 
@@ -140,7 +153,9 @@ class TestGraphTraversal:
         g = KnowledgeGraph()
         await g.add_entity(Entity(id="e1", type="person", name="Alice"))
         await g.add_entity(Entity(id="e2", type="person", name="Bob"))
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
         cycles = await g.traversal_service.detect_cycles("e1", max_depth=5)
         assert cycles == []
 

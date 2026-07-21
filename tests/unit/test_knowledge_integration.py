@@ -5,14 +5,6 @@ from __future__ import annotations
 import asyncio
 
 from eaip.knowledge.integration import KnowledgeRuntimeModule
-from eaip.knowledge.models import (
-    ChunkingConfig,
-    DocumentChunk,
-    DocumentFormat,
-    KnowledgeCollection,
-    KnowledgeDocument,
-    RetrievalQuery,
-)
 
 
 class _MockHealth:
@@ -83,7 +75,7 @@ class TestKnowledgeRuntimeModule:
         module = KnowledgeRuntimeModule()
         try:
             _ = module.engine
-            assert False
+            raise AssertionError()
         except RuntimeError:
             pass
 

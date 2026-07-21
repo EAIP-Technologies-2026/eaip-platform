@@ -19,6 +19,7 @@ class WorkflowStatus(StrEnum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     TIMED_OUT = "timed_out"
+    ARCHIVED = "archived"
 
 
 class WorkflowStepStatus(StrEnum):
@@ -267,9 +268,19 @@ class WorkflowContext(BaseModel):
 
 
 __all__ = [
-    "DurableExecutionConfig", "EdgeCondition", "ParallelGroup",
-    "ParentChildConfig", "RetryPolicy", "TimeoutConfig",
-    "WorkflowContext", "WorkflowDefinition", "WorkflowEdge",
-    "WorkflowResult", "WorkflowRun", "WorkflowStatus",
-    "WorkflowStep", "WorkflowStepRecord", "WorkflowStepStatus",
+    "DurableExecutionConfig",
+    "EdgeCondition",
+    "ParallelGroup",
+    "ParentChildConfig",
+    "RetryPolicy",
+    "TimeoutConfig",
+    "WorkflowContext",
+    "WorkflowDefinition",
+    "WorkflowEdge",
+    "WorkflowResult",
+    "WorkflowRun",
+    "WorkflowStatus",
+    "WorkflowStep",
+    "WorkflowStepRecord",
+    "WorkflowStepStatus",
 ]

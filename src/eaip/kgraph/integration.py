@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from eaip.capabilities.capability import Capability, CapabilityStatus
 from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
 from eaip.kgraph.graph import KnowledgeGraph
-from eaip.kgraph.health import GraphHealthCheck
 from eaip.kgraph.index import GraphIndex
 from eaip.kgraph.semantic import SemanticRelationshipService
 from eaip.logging.context import get_logger
@@ -116,7 +115,7 @@ class GraphRuntimeModule:
             name="kgraph:engine",
             title="Knowledge Graph Engine",
             description="Enterprise knowledge graph with entity/relationship models, "
-                        "traversal, queries, indexing, and semantic inference",
+            "traversal, queries, indexing, and semantic inference",
             status=CapabilityStatus.ENABLED,
         )
 

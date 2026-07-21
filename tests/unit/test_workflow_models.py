@@ -37,7 +37,7 @@ class TestWorkflowStatus:
         assert WorkflowStatus.TIMED_OUT == "timed_out"
 
     def test_valid_members(self) -> None:
-        assert len(WorkflowStatus) == 7
+        assert len(WorkflowStatus) == 8
 
 
 class TestWorkflowStepStatus:
@@ -137,7 +137,8 @@ class TestWorkflowStep:
 
     def test_with_approval(self) -> None:
         s = WorkflowStep(
-            id="s1", name="Approval Step",
+            id="s1",
+            name="Approval Step",
             requires_approval=True,
             approval_prompt="Please approve",
         )
@@ -180,7 +181,8 @@ class TestWorkflowDefinition:
 
     def test_with_new_configs(self) -> None:
         d = WorkflowDefinition(
-            id="wf_cfg", name="With Configs",
+            id="wf_cfg",
+            name="With Configs",
             timeout_config=TimeoutConfig(workflow_timeout_seconds=30.0),
             durable_config=DurableExecutionConfig(enabled=True),
             parent_child_config=ParentChildConfig(propagate_failure=False),
@@ -226,7 +228,8 @@ class TestWorkflowStepRecord:
 
     def test_with_approval_token(self) -> None:
         r = WorkflowStepRecord(
-            step_id="s1", name="Approval",
+            step_id="s1",
+            name="Approval",
             status=WorkflowStepStatus.WAITING_APPROVAL,
             approval_token="tok_123",
         )
@@ -266,7 +269,9 @@ class TestWorkflowRun:
     def test_with_child_runs(self) -> None:
         d = WorkflowDefinition(id="wf_1", name="WF")
         r = WorkflowRun(
-            id="r1", workflow_id="wf_1", definition=d,
+            id="r1",
+            workflow_id="wf_1",
+            definition=d,
             child_run_ids=("child1", "child2"),
             state_machine_state="running",
         )
@@ -305,7 +310,8 @@ class TestWorkflowResult:
 
     def test_timed_out(self) -> None:
         res = WorkflowResult(
-            run_id="r1", workflow_id="wf_1",
+            run_id="r1",
+            workflow_id="wf_1",
             status=WorkflowStatus.TIMED_OUT,
             timed_out_count=2,
         )

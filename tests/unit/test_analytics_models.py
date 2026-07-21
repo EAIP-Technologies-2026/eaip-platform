@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -111,7 +111,7 @@ class TestMetricDefinition:
 
 class TestMetricPoint:
     def test_defaults(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         p = MetricPoint(metric_id="m1", timestamp=now, value=42.0)
         assert p.metric_id == "m1"
         assert p.timestamp == now
@@ -121,17 +121,21 @@ class TestMetricPoint:
         assert p.labels == {}
 
     def test_with_all_fields(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         p = MetricPoint(
-            metric_id="m1", timestamp=now, value=99.5,
-            tags={"env": "prod"}, source="test", labels={"host": "h1"},
+            metric_id="m1",
+            timestamp=now,
+            value=99.5,
+            tags={"env": "prod"},
+            source="test",
+            labels={"host": "h1"},
         )
         assert p.tags == {"env": "prod"}
         assert p.source == "test"
         assert p.labels == {"host": "h1"}
 
     def test_frozen(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         p = MetricPoint(metric_id="m1", timestamp=now, value=1.0)
         with pytest.raises(ValueError):
             p.value = 2.0  # type: ignore[misc]
@@ -139,21 +143,21 @@ class TestMetricPoint:
 
 class TestTimeSeriesPoint:
     def test_defaults(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         p = TimeSeriesPoint(timestamp=now, value=10.0)
         assert p.timestamp == now
         assert p.value == 10.0
         assert p.label == ""
 
     def test_with_label(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         p = TimeSeriesPoint(timestamp=now, value=10.0, label="avg")
         assert p.label == "avg"
 
 
 class TestTimeSeriesResult:
     def test_defaults(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         r = TimeSeriesResult(metric_id="m1", start_time=now, end_time=now)
         assert r.metric_id == "m1"
         assert r.points == ()
@@ -161,11 +165,18 @@ class TestTimeSeriesResult:
         assert r.interval_seconds == 60.0
 
     def test_with_points(self) -> None:
-        now = datetime.now(timezone.utc)
-        points = (TimeSeriesPoint(timestamp=now, value=1.0), TimeSeriesPoint(timestamp=now, value=2.0))
+        now = datetime.now(UTC)
+        points = (
+            TimeSeriesPoint(timestamp=now, value=1.0),
+            TimeSeriesPoint(timestamp=now, value=2.0),
+        )
         r = TimeSeriesResult(
-            metric_id="m1", points=points, aggregation=AggregationType.AVG,
-            start_time=now, end_time=now, interval_seconds=30.0,
+            metric_id="m1",
+            points=points,
+            aggregation=AggregationType.AVG,
+            start_time=now,
+            end_time=now,
+            interval_seconds=30.0,
         )
         assert len(r.points) == 2
         assert r.aggregation is AggregationType.AVG
@@ -174,7 +185,7 @@ class TestTimeSeriesResult:
 
 class TestAnalyticsReport:
     def test_defaults(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         r = AnalyticsReport(id="r1", name="Report1", time_range=(now, now))
         assert r.id == "r1"
         assert r.description == ""
@@ -183,11 +194,14 @@ class TestAnalyticsReport:
         assert r.results == {}
 
     def test_with_results(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         tr = TimeSeriesResult(metric_id="m1", start_time=now, end_time=now)
         r = AnalyticsReport(
-            id="r2", name="Full Report", metric_ids=("m1",),
-            time_range=(now, now), results={"m1": tr},
+            id="r2",
+            name="Full Report",
+            metric_ids=("m1",),
+            time_range=(now, now),
+            results={"m1": tr},
             metadata={"author": "test"},
         )
         assert len(r.metric_ids) == 1
@@ -195,7 +209,7 @@ class TestAnalyticsReport:
         assert r.metadata == {"author": "test"}
 
     def test_frozen(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         r = AnalyticsReport(id="r1", name="R", time_range=(now, now))
         with pytest.raises(ValueError):
             r.name = "Changed"  # type: ignore[misc]
@@ -215,11 +229,14 @@ class TestTrendAnalysis:
 
     def test_custom(self) -> None:
         t = TrendAnalysis(
-            metric_id="m1", direction=TrendDirection.UP,
-            change_percent=15.5, confidence=0.85,
+            metric_id="m1",
+            direction=TrendDirection.UP,
+            change_percent=15.5,
+            confidence=0.85,
             period_comparison={"prev": 100.0, "current": 115.5},
             forecast_values=(120.0, 130.0),
-            seasonality_detected=True, anomaly_count=2,
+            seasonality_detected=True,
+            anomaly_count=2,
         )
         assert t.direction is TrendDirection.UP
         assert t.change_percent == 15.5
@@ -240,8 +257,13 @@ class TestDashboardWidget:
 
     def test_custom(self) -> None:
         w = DashboardWidget(
-            id="w2", type=WidgetType.GAUGE, metric_ids=("m1",),
-            title="CPU", width=2, height=2, config={"min": 0, "max": 100},
+            id="w2",
+            type=WidgetType.GAUGE,
+            metric_ids=("m1",),
+            title="CPU",
+            width=2,
+            height=2,
+            config={"min": 0, "max": 100},
         )
         assert w.type is WidgetType.GAUGE
         assert w.metric_ids == ("m1",)
@@ -284,8 +306,10 @@ class TestAnalyticsConfig:
 
     def test_custom(self) -> None:
         c = AnalyticsConfig(
-            retention_days=30, aggregation_interval_seconds=300.0,
-            max_data_points=5000, enable_trend_detection=False,
+            retention_days=30,
+            aggregation_interval_seconds=300.0,
+            max_data_points=5000,
+            enable_trend_detection=False,
         )
         assert c.retention_days == 30
         assert c.aggregation_interval_seconds == 300.0

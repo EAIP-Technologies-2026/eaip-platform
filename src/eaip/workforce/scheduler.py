@@ -7,8 +7,6 @@ from typing import Any
 from eaip.jobs.scheduler import JobScheduler
 from eaip.logging.context import get_logger
 from eaip.workforce.events import WorkerScheduled
-from eaip.workforce.exceptions import WorkerNotFoundError
-from eaip.workforce.models import WorkerDefinition
 from eaip.workforce.worker import WorkerRegistry
 
 
@@ -115,10 +113,7 @@ class WorkforceScheduler:
         Returns:
             A list of schedule dictionaries with worker_id and schedule_id keys.
         """
-        return [
-            {"worker_id": wid, "schedule_id": sid}
-            for wid, sid in self._schedules.items()
-        ]
+        return [{"worker_id": wid, "schedule_id": sid} for wid, sid in self._schedules.items()]
 
     def _publish(self, event: Any) -> None:
         if self._event_bus is not None:

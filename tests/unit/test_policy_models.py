@@ -24,7 +24,9 @@ class TestConditionOp:
 
 class TestPolicyCondition:
     def test_create_eq_condition(self) -> None:
-        c = PolicyCondition(attribute="user.department", operator=ConditionOp.EQ, value="engineering")
+        c = PolicyCondition(
+            attribute="user.department", operator=ConditionOp.EQ, value="engineering"
+        )
         assert c.attribute == "user.department"
         assert c.operator is ConditionOp.EQ
         assert c.value == "engineering"
@@ -37,9 +39,10 @@ class TestPolicyCondition:
     def test_condition_is_frozen(self) -> None:
         c = PolicyCondition(attribute="a", operator=ConditionOp.EQ, value=1)
         import pydantic
+
         try:
             c.attribute = "b"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except pydantic.ValidationError:
             pass
 
@@ -75,9 +78,10 @@ class TestPolicyRule:
     def test_rule_is_frozen(self) -> None:
         r = PolicyRule(id="r1", name="r", effect=PolicyEffect.ALLOW)
         import pydantic
+
         try:
             r.name = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 
@@ -98,9 +102,10 @@ class TestPolicy:
     def test_policy_is_frozen(self) -> None:
         p = Policy(id="p1", name="p")
         import pydantic
+
         try:
             p.name = "changed"
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass
 
@@ -124,8 +129,9 @@ class TestPolicyDecision:
     def test_decision_is_frozen(self) -> None:
         d = PolicyDecision(effect=PolicyEffect.ALLOW)
         import pydantic
+
         try:
             d.effect = PolicyEffect.DENY
-            assert False
+            raise AssertionError()
         except pydantic.ValidationError:
             pass

@@ -4,7 +4,6 @@ import pytest
 
 from eaip.search.federation import SearchFederation
 from eaip.search.models import SearchQuery, SearchResult, SearchResultItem
-from eaip.search.providers import SearchProvider
 
 
 class _MockSource:
@@ -51,11 +50,15 @@ class TestSearchFederation:
         fed = SearchFederation()
         fed.register_source(
             "source_a",
-            _MockSource("a", items=[SearchResultItem(id="a1", collection="a", content="aa", score=0.9)]),
+            _MockSource(
+                "a", items=[SearchResultItem(id="a1", collection="a", content="aa", score=0.9)]
+            ),
         )
         fed.register_source(
             "source_b",
-            _MockSource("b", items=[SearchResultItem(id="b1", collection="b", content="bb", score=0.8)]),
+            _MockSource(
+                "b", items=[SearchResultItem(id="b1", collection="b", content="bb", score=0.8)]
+            ),
         )
         result = await fed.federated_search(SearchQuery(query="test"))
         assert len(result.items) == 2
@@ -63,8 +66,14 @@ class TestSearchFederation:
     @pytest.mark.asyncio
     async def test_federated_search_filtered_sources(self) -> None:
         fed = SearchFederation()
-        fed.register_source("alpha", _MockSource("alpha", items=[SearchResultItem(id="a1", collection="a", content="aa")]))
-        fed.register_source("beta", _MockSource("beta", items=[SearchResultItem(id="b1", collection="b", content="bb")]))
+        fed.register_source(
+            "alpha",
+            _MockSource("alpha", items=[SearchResultItem(id="a1", collection="a", content="aa")]),
+        )
+        fed.register_source(
+            "beta",
+            _MockSource("beta", items=[SearchResultItem(id="b1", collection="b", content="bb")]),
+        )
         result = await fed.federated_search(SearchQuery(query="test"), sources=("alpha",))
         assert len(result.items) == 1
         assert result.items[0].id == "a1"
@@ -72,7 +81,10 @@ class TestSearchFederation:
     @pytest.mark.asyncio
     async def test_enterprise_search_all(self) -> None:
         fed = SearchFederation()
-        fed.register_source("brain", _MockSource("brain", items=[SearchResultItem(id="e1", collection="e", content="ent")]))
+        fed.register_source(
+            "brain",
+            _MockSource("brain", items=[SearchResultItem(id="e1", collection="e", content="ent")]),
+        )
         result = await fed.enterprise_search(SearchQuery(query="test"))
         assert len(result.items) >= 1
 
@@ -81,11 +93,17 @@ class TestSearchFederation:
         fed = SearchFederation()
         fed.register_source(
             "dept_engineering",
-            _MockSource("dept_engineering", items=[SearchResultItem(id="d1", collection="dept", content="data")]),
+            _MockSource(
+                "dept_engineering",
+                items=[SearchResultItem(id="d1", collection="dept", content="data")],
+            ),
         )
         fed.register_source(
             "enterprise_brain",
-            _MockSource("enterprise_brain", items=[SearchResultItem(id="e1", collection="ent", content="global")]),
+            _MockSource(
+                "enterprise_brain",
+                items=[SearchResultItem(id="e1", collection="ent", content="global")],
+            ),
         )
         result = await fed.department_search(SearchQuery(query="test"), department_id="engineering")
         assert len(result.items) == 1
@@ -102,6 +120,7 @@ class TestSearchFederation:
     async def test_source_failure_skipped(self) -> None:
         class FailingSource:
             name = "fail"
+
             async def search(self, query: SearchQuery) -> SearchResult:
                 raise RuntimeError("fail")
 
@@ -109,7 +128,9 @@ class TestSearchFederation:
         fed.register_source("failing", FailingSource())
         fed.register_source(
             "good",
-            _MockSource("good", items=[SearchResultItem(id="ok", collection="c", content="ok", score=0.9)]),
+            _MockSource(
+                "good", items=[SearchResultItem(id="ok", collection="c", content="ok", score=0.9)]
+            ),
         )
         result = await fed.federated_search(SearchQuery(query="test"))
         assert len(result.items) == 1

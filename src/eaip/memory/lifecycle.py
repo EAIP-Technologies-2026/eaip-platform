@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from eaip.logging.context import get_logger
 from eaip.memory.exceptions import MemoryStoreError
@@ -153,7 +153,7 @@ class CompositeRetentionPolicy:
             try:
                 result = await policy.evaluate(item)
                 if result is not None:
-                    return result
+                    return cast(str, result)
             except Exception:
                 self._log.warning("policy.evaluate_failed", policy=type(policy).__name__)
         return None

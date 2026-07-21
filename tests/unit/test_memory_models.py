@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from eaip.memory.models import (
     ConsolidationConfig,
@@ -70,14 +70,14 @@ class TestMemoryScope:
         scope = MemoryScope(tenant_id="t1")
         try:
             scope.tenant_id = "t2"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except (TypeError, AttributeError, ValueError):
             pass
 
     def test_extra_forbidden(self) -> None:
         try:
             MemoryScope(tenant_id="t1", unknown="x")
-            assert False, "should reject extra fields"
+            raise AssertionError("should reject extra fields")
         except (ValueError, TypeError):
             pass
 
@@ -97,7 +97,9 @@ class TestScopedMemoryId:
 class TestMemoryItem:
     def test_defaults(self) -> None:
         scope = MemoryScope(tenant_id="t1")
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="hello")
+        item = MemoryItem(
+            memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="hello"
+        )
         assert item.memory_id == "m1"
         assert item.memory_type is MemoryType.WORKING
         assert item.content == "hello"
@@ -116,22 +118,33 @@ class TestMemoryItem:
     def test_importance_range_rejected(self) -> None:
         scope = MemoryScope(tenant_id="t1")
         try:
-            MemoryItem(memory_id="m1", memory_type=MemoryType.SESSION, scope=scope, content="x", importance=1.5)
-            assert False, "should raise"
+            MemoryItem(
+                memory_id="m1",
+                memory_type=MemoryType.SESSION,
+                scope=scope,
+                content="x",
+                importance=1.5,
+            )
+            raise AssertionError("should raise")
         except (ValueError, TypeError):
             pass
 
     def test_content_summary_default(self) -> None:
         scope = MemoryScope(tenant_id="t1")
-        item = MemoryItem(memory_id="m1", memory_type=MemoryType.LONG_TERM, scope=scope, content="long content")
+        item = MemoryItem(
+            memory_id="m1", memory_type=MemoryType.LONG_TERM, scope=scope, content="long content"
+        )
         assert item.content_summary == ""
 
     def test_expires_at(self) -> None:
         scope = MemoryScope(tenant_id="t1")
-        dt = datetime(2026, 12, 31, tzinfo=timezone.utc)
+        dt = datetime(2026, 12, 31, tzinfo=UTC)
         item = MemoryItem(
-            memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope,
-            content="episodic", expires_at=dt,
+            memory_id="m1",
+            memory_type=MemoryType.EPISODIC,
+            scope=scope,
+            content="episodic",
+            expires_at=dt,
         )
         assert item.expires_at == dt
 
@@ -140,7 +153,7 @@ class TestMemoryItem:
         item = MemoryItem(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, content="x")
         try:
             item.content = "y"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except (TypeError, AttributeError, ValueError):
             pass
 
@@ -171,8 +184,10 @@ class TestMemoryQuery:
 
     def test_with_filters(self) -> None:
         q = MemoryQuery(
-            query="search", memory_types=(MemoryType.WORKING,),
-            tags=("important",), top_k=5,
+            query="search",
+            memory_types=(MemoryType.WORKING,),
+            tags=("important",),
+            top_k=5,
         )
         assert q.memory_types == (MemoryType.WORKING,)
         assert q.tags == ("important",)

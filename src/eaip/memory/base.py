@@ -220,9 +220,7 @@ class MemoryIndexer(Protocol):
 class MemoryRetriever(Protocol):
     """Protocol for retrieving memories by various strategies."""
 
-    async def retrieve_by_id(
-        self, scoped_id: ScopedMemoryId
-    ) -> MemoryItem | None:
+    async def retrieve_by_id(self, scoped_id: ScopedMemoryId) -> MemoryItem | None:
         """Retrieve a memory by its scoped identifier.
 
         Args:
@@ -378,9 +376,7 @@ class MemoryProvider(Protocol):
         """Count items by scope."""
         ...
 
-    async def retrieve_by_id(
-        self, scoped_id: ScopedMemoryId
-    ) -> MemoryItem | None:
+    async def retrieve_by_id(self, scoped_id: ScopedMemoryId) -> MemoryItem | None:
         """Retrieve by ID."""
         ...
 
@@ -415,7 +411,7 @@ class MemoryProvider(Protocol):
         ...
 
 
-MemoryHook = Callable[[MemoryItem], None]
+MemoryHook = Callable[[MemoryScope], None]
 """Type alias for memory lifecycle hooks.
 
 Used by the plugin extensibility system to allow plugins to hook into

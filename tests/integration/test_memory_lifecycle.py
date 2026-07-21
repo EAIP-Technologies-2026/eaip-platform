@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 
 from eaip.memory.engine import MemoryEngine
-from eaip.memory.events import MemoryCreated, MemoryDeleted, MemoryRetrieved, MemoryUpdated
 from eaip.memory.models import (
     ConsolidationConfig,
     MemoryConfig,
-    MemoryItem,
     MemoryQuery,
     MemoryScope,
     MemoryType,
@@ -48,7 +48,8 @@ class TestMemoryIntegration:
 
         # Update
         updated = await engine.update_memory(
-            item.memory_id, scope,
+            item.memory_id,
+            scope,
             content="Updated memory content",
             tags=("memory", "eaip", "updated"),
         )
@@ -81,7 +82,7 @@ class TestMemoryIntegration:
         ]
         mem_ids: list[str] = []
 
-        for i, mt in enumerate(types):
+        for _i, mt in enumerate(types):
             item = await engine.create_memory(f"memory type {mt.value}", mt, scope)
             mem_ids.append(item.memory_id)
 
@@ -99,15 +100,21 @@ class TestMemoryIntegration:
 
         for i in range(3):
             await engine.create_memory(
-                f"working memory {i}", MemoryType.WORKING, scope1,
+                f"working memory {i}",
+                MemoryType.WORKING,
+                scope1,
                 tags=("important",),
             )
         await engine.create_memory(
-            "session memory", MemoryType.SESSION, scope1,
+            "session memory",
+            MemoryType.SESSION,
+            scope1,
             tags=("temporary",),
         )
         await engine.create_memory(
-            "other tenant memory", MemoryType.WORKING, scope2,
+            "other tenant memory",
+            MemoryType.WORKING,
+            scope2,
         )
 
         # Filter by type
@@ -134,7 +141,9 @@ class TestMemoryIntegration:
 
         # Populate via engine for convenience
         engine = MemoryEngine(store)
-        await engine.create_memory("findable content", MemoryType.WORKING, scope, tags=("searchable",))
+        await engine.create_memory(
+            "findable content", MemoryType.WORKING, scope, tags=("searchable",)
+        )
 
         # Search via retrieval service
         query = MemoryQuery(query="findable")
@@ -187,7 +196,9 @@ class TestMemoryIntegration:
         config = MemoryConfig(default_importance=0.9, max_working_memories=10)
         retention = RetentionConfig(working_ttl_seconds=7200)
         consolidation = ConsolidationConfig(min_memories_for_consolidation=3)
-        engine = MemoryEngine(store, config=config, retention=retention, consolidation=consolidation)
+        engine = MemoryEngine(
+            store, config=config, retention=retention, consolidation=consolidation
+        )
 
         scope = MemoryScope(tenant_id="t1")
         item = await engine.create_memory("custom config", MemoryType.WORKING, scope)
@@ -196,7 +207,7 @@ class TestMemoryIntegration:
     @pytest.mark.asyncio
     async def test_memory_expiration_and_archiving(self) -> None:
         """Test expiration cycle with multiple memories."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         store = InMemoryStore()
         config = RetentionConfig(
@@ -207,13 +218,15 @@ class TestMemoryIntegration:
         engine = MemoryEngine(store, retention=config)
         scope = MemoryScope(tenant_id="t1")
 
-        item = await engine.create_memory("expiring", MemoryType.WORKING, scope)
-        item2 = await engine.create_memory("permanent", MemoryType.WORKING, scope)
+        await engine.create_memory("expiring", MemoryType.WORKING, scope)
+        await engine.create_memory("permanent", MemoryType.WORKING, scope)
 
-        from eaip.shared.time import utc_now
-        past = datetime(2020, 1, 1, tzinfo=timezone.utc)
-        expired_item = await engine.create_memory(
-            "already expired", MemoryType.WORKING, scope, expires_at=past,
+        past = datetime(2020, 1, 1, tzinfo=UTC)
+        await engine.create_memory(
+            "already expired",
+            MemoryType.WORKING,
+            scope,
+            expires_at=past,
         )
 
         # Run expiration cycle

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any, ClassVar
 
 from eaip.events.event import DomainEvent
-from eaip.shared.time import utc_now
 
 
 class WorkerRegistered(DomainEvent):

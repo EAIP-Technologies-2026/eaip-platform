@@ -96,8 +96,12 @@ class TestContentIndexer:
     @pytest.mark.asyncio
     async def test_index_multiple_items(self, scope: MemoryScope) -> None:
         indexer = ContentIndexer()
-        item1 = MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="hello world")
-        item2 = MemoryItem(memory_id="b", memory_type=MemoryType.WORKING, scope=scope, content="hello there")
+        item1 = MemoryItem(
+            memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="hello world"
+        )
+        item2 = MemoryItem(
+            memory_id="b", memory_type=MemoryType.WORKING, scope=scope, content="hello there"
+        )
         await indexer.index(item1)
         await indexer.index(item2)
 
@@ -112,12 +116,26 @@ class TestContentIndexer:
     @pytest.mark.asyncio
     async def test_search_with_filters(self, scope: MemoryScope) -> None:
         indexer = ContentIndexer()
-        item1 = MemoryItem(memory_id="a", memory_type=MemoryType.WORKING, scope=scope, content="important data", importance=0.9)
-        item2 = MemoryItem(memory_id="b", memory_type=MemoryType.SESSION, scope=scope, content="important data", importance=0.3)
+        item1 = MemoryItem(
+            memory_id="a",
+            memory_type=MemoryType.WORKING,
+            scope=scope,
+            content="important data",
+            importance=0.9,
+        )
+        item2 = MemoryItem(
+            memory_id="b",
+            memory_type=MemoryType.SESSION,
+            scope=scope,
+            content="important data",
+            importance=0.3,
+        )
         await indexer.index(item1)
         await indexer.index(item2)
 
-        query = MemoryQuery(query="important", memory_types=(MemoryType.WORKING,), importance_min=0.5)
+        query = MemoryQuery(
+            query="important", memory_types=(MemoryType.WORKING,), importance_min=0.5
+        )
         results = await indexer.search(query)
         assert len(results) == 1
         assert results[0].memory.memory_id == "a"
@@ -197,7 +215,9 @@ class TestMetadataIndexer:
 
 class TestCompositeIndexer:
     @pytest.mark.asyncio
-    async def test_index_and_search_across_sub_indexers(self, scope: MemoryScope, item: MemoryItem) -> None:
+    async def test_index_and_search_across_sub_indexers(
+        self, scope: MemoryScope, item: MemoryItem
+    ) -> None:
         content = ContentIndexer()
         tag = TagIndexer()
         composite = CompositeIndexer([content, tag])

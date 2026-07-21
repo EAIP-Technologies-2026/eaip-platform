@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import math
-import statistics
-from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from eaip.analytics.exceptions import AnalyticsQueryError, MetricNotFoundError
-from eaip.analytics.models import AggregationType, MetricPoint, MetricType, TimeSeriesPoint, TimeSeriesResult
+from eaip.analytics.models import (
+    AggregationType,
+    TimeSeriesPoint,
+    TimeSeriesResult,
+)
 from eaip.analytics.service import AnalyticsService
 from eaip.logging.context import get_logger
 
@@ -29,18 +31,22 @@ class AggregationEngine:
         interval: float = 60.0,
     ) -> TimeSeriesResult:
         """Aggregate a metric's time series using the specified aggregation function."""
-        return await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], interval, aggregation)
+        return await self._analytics.query_time_series(
+            metric_id, time_range[0], time_range[1], interval, aggregation
+        )
 
     async def rollup(self, metric_ids: list[str], aggregation: AggregationType) -> dict[str, float]:
         """Roll up multiple metrics into a single summary value per metric."""
-        now = datetime.now(timezone.utc)
-        start = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        now = datetime.now(UTC)
+        start = datetime(1970, 1, 1, tzinfo=UTC)
         end = now
 
         results: dict[str, float] = {}
         for mid in metric_ids:
             try:
-                result = await self._analytics.query_time_series(mid, start, end, interval=86400.0, aggregation=aggregation)
+                result = await self._analytics.query_time_series(
+                    mid, start, end, interval=86400.0, aggregation=aggregation
+                )
                 if result.points:
                     results[mid] = result.points[-1].value
                 else:
@@ -63,7 +69,9 @@ class AggregationEngine:
         series_data: dict[str, list[TimeSeriesPoint]] = {}
         for alias, mid in source_metrics.items():
             try:
-                result = await self._analytics.query_time_series(mid, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+                result = await self._analytics.query_time_series(
+                    mid, time_range[0], time_range[1], aggregation=AggregationType.AVG
+                )
                 series_data[alias] = list(result.points)
             except MetricNotFoundError:
                 series_data[alias] = []
@@ -74,7 +82,7 @@ class AggregationEngine:
 
         derived: list[dict[str, Any]] = []
         for i in range(min_len):
-            ts = list(series_data.values())[0][i].timestamp
+            ts = next(iter(series_data.values()))[i].timestamp
             vals = {alias: series_data[alias][i].value for alias in source_metrics}
 
             if expression == "sum":
@@ -93,12 +101,14 @@ class AggregationEngine:
             else:
                 result_val = 0.0
 
-            derived.append({
-                "timestamp": ts,
-                "value": round(result_val, 6),
-                "expression": expression,
-                "inputs": vals,
-            })
+            derived.append(
+                {
+                    "timestamp": ts,
+                    "value": round(result_val, 6),
+                    "expression": expression,
+                    "inputs": vals,
+                }
+            )
 
         return derived
 
@@ -113,7 +123,9 @@ class AggregationEngine:
             raise AnalyticsQueryError("percentile must be between 0 and 100")
 
         try:
-            result = await self._analytics.query_time_series(metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG)
+            result = await self._analytics.query_time_series(
+                metric_id, time_range[0], time_range[1], aggregation=AggregationType.AVG
+            )
         except MetricNotFoundError:
             return {"metric_id": metric_id, "percentile": percentile, "value": 0.0, "count": 0}
         points = result.points

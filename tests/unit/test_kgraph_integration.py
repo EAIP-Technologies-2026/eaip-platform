@@ -77,7 +77,7 @@ class TestGraphRuntimeModule:
         module = GraphRuntimeModule()
         try:
             _ = module.graph
-            assert False
+            raise AssertionError()
         except RuntimeError:
             pass
 
@@ -107,5 +107,6 @@ class TestGraphRuntimeModule:
 
     def test_create_graph_module(self) -> None:
         from eaip.kgraph.integration import create_graph_module
+
         module = create_graph_module()
         assert module.name == "kgraph"

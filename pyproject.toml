@@ -66,6 +66,11 @@ dependencies = [
     "opentelemetry-api>=1.27.0,<2",
     "opentelemetry-sdk>=1.27.0,<2",
     "opentelemetry-exporter-otlp-proto-http>=1.27.0,<2",
+    "fastapi>=0.115.0,<1",
+    "python-multipart>=0.0.12,<1",
+    "uvicorn[standard]>=0.32.0,<1",
+    "psutil>=6.0.0,<8",
+    "cryptography>=49.0.0",
 ]
 
 [project.optional-dependencies]
@@ -89,6 +94,9 @@ knowledge = [
     "qdrant-client>=1.9.0,<2",
     "pypdf>=4.0.0,<6",
     "python-docx>=1.1.0,<2",
+]
+automation = [
+    "croniter>=6.0.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -171,8 +179,10 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "D", "ANN", "PLR2004", "ARG"]
+"src/**/tests/**" = ["S", "D", "ANN", "PLR2004", "ARG"]
 "docs/**"  = ["D", "ANN"]
 "**/__init__.py" = ["F401", "D104"]
+"src/eaip/dr/**" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

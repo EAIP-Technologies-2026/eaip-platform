@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from eaip.goals.exceptions import KpiNotFoundError
-from eaip.goals.models import KpiDirection, KpiDefinition
+from eaip.goals.models import KpiDefinition, KpiDirection
 from eaip.logging.context import get_logger
 from eaip.shared.time import utc_now
 
@@ -15,7 +15,7 @@ from eaip.shared.time import utc_now
 class _KpiRecord:
     """A single recorded KPI measurement."""
 
-    __slots__ = ("value", "timestamp")
+    __slots__ = ("timestamp", "value")
 
     def __init__(self, value: float, timestamp: datetime | None = None) -> None:
         self.value = value
@@ -34,7 +34,9 @@ class GoalTracker:
         """Register a KPI definition for tracking."""
         self._kpis[kpi.id] = kpi
 
-    async def record_kpi(self, kpi_id: str, value: float, timestamp: datetime | None = None) -> float:
+    async def record_kpi(
+        self, kpi_id: str, value: float, timestamp: datetime | None = None
+    ) -> float:
         """Record a KPI measurement and return the previous value."""
         if kpi_id not in self._kpis:
             raise KpiNotFoundError(kpi_id)
@@ -63,10 +65,7 @@ class GoalTracker:
             raise KpiNotFoundError(kpi_id)
 
         records = self._history.get(kpi_id, [])
-        return [
-            {"value": r.value, "timestamp": r.timestamp}
-            for r in records[-limit:]
-        ]
+        return [{"value": r.value, "timestamp": r.timestamp} for r in records[-limit:]]
 
     async def calculate_kpi_trend(self, kpi_id: str) -> str:
         """Calculate the trend direction for a KPI."""

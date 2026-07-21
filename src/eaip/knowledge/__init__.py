@@ -49,14 +49,6 @@ from eaip.knowledge.events import (
     KnowledgeQuery,
     RetrievalExecuted,
 )
-from eaip.knowledge.federation import KnowledgeFederation
-from eaip.knowledge.policies import (
-    AccessLevel,
-    CollectionAccessPolicy,
-    PolicyResolver,
-    RetrievalPolicy,
-    RetrievalPolicyEnforcer,
-)
 from eaip.knowledge.exceptions import (
     ChunkingError,
     CollectionNotFoundError,
@@ -68,6 +60,7 @@ from eaip.knowledge.exceptions import (
     RetrievalError,
     UnsupportedFormatError,
 )
+from eaip.knowledge.federation import KnowledgeFederation
 from eaip.knowledge.health import KnowledgeHealthCheck
 from eaip.knowledge.ingestion import (
     DOCXParser,
@@ -96,6 +89,13 @@ from eaip.knowledge.models import (
     RetrievalResult,
     RetrievedChunk,
     SourceAttribution,
+)
+from eaip.knowledge.policies import (
+    AccessLevel,
+    CollectionAccessPolicy,
+    PolicyResolver,
+    RetrievalPolicy,
+    RetrievalPolicyEnforcer,
 )
 from eaip.knowledge.qdrant_store import QdrantStore
 from eaip.knowledge.registry import KnowledgeRegistry

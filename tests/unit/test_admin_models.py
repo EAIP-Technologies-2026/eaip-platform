@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 
-from eaip.admin.models import AdminAction, AdminCapability, AuditEntry, AuditOutcome, RuntimeSnapshot
+from eaip.admin.models import (
+    AdminAction,
+    AdminCapability,
+    AuditEntry,
+    AuditOutcome,
+    RuntimeSnapshot,
+)
 
 
 class TestAdminAction:
@@ -29,11 +35,11 @@ class TestAdminAction:
             target="runtime",
             performed_by="admin",
         )
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             action.action_id = "changed"  # type: ignore[misc]
 
     def test_extra_forbidden(self) -> None:
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             AdminAction(  # type: ignore[call-arg]
                 action_id="a",
                 action_type="t",
@@ -78,11 +84,11 @@ class TestAuditEntry:
             resource_id="cfg-1",
             outcome=AuditOutcome.FAILURE,
         )
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             entry.id = "changed"  # type: ignore[misc]
 
     def test_extra_forbidden(self) -> None:
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             AuditEntry(  # type: ignore[call-arg]
                 id="e1",
                 actor_id="u1",
@@ -131,7 +137,7 @@ class TestRuntimeSnapshot:
 
     def test_frozen(self) -> None:
         snap = RuntimeSnapshot()
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             snap.health_status = "healthy"  # type: ignore[misc]
 
 
@@ -156,5 +162,5 @@ class TestAdminCapability:
 
     def test_frozen(self) -> None:
         cap = AdminCapability(id="c1", name="test")
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(ValueError):
             cap.name = "other"  # type: ignore[misc]

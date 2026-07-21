@@ -1,0 +1,113 @@
+"""Semantic Indexing package.
+
+Index management, document indexing, semantic search, query execution,
+rebuild and optimisation.
+
+EP-0213 of the EAIP Platform.
+"""
+
+from __future__ import annotations
+
+from eaip.semantic_indexing.events import (
+    IndexConfigUpdated,
+    IndexDocumentAdded,
+    IndexDocumentRemoved,
+    IndexDocumentUpdated,
+    IndexMappingChanged,
+    IndexMetricsCollected,
+    IndexQueryExecuted,
+    IndexRebuildCompleted,
+    IndexRebuildFailed,
+    IndexRebuildStarted,
+    SemanticIndexActivated,
+    SemanticIndexCreated,
+    SemanticIndexDeactivated,
+    SemanticIndexDeleted,
+    SemanticIndexOptimized,
+    SemanticIndexRebuilt,
+    SemanticIndexUpdated,
+)
+from eaip.semantic_indexing.exceptions import (
+    IndexConfigError,
+    IndexDocumentError,
+    IndexMappingError,
+    IndexNotFoundError,
+    IndexOptimizationError,
+    IndexQueryError,
+    IndexRebuildError,
+    SemanticIndexingError,
+)
+from eaip.semantic_indexing.health import SemanticIndexingHealthCheck
+from eaip.semantic_indexing.integration import SemanticIndexingRuntimeModule
+from eaip.semantic_indexing.models import (
+    AnalyzerConfig,
+    FieldType,
+    IndexConfig,
+    IndexDocument,
+    IndexedField,
+    IndexEntry,
+    IndexField,
+    IndexingPipelineConfig,
+    IndexMapping,
+    IndexMetrics,
+    IndexQuery,
+    IndexQueryResult,
+    IndexRebuildPlan,
+    IndexStats,
+    IndexStatus,
+    SemanticIndex,
+    StopWordsList,
+    SynonymMap,
+    TokenizerConfig,
+)
+from eaip.semantic_indexing.service import SemanticIndexingService
+
+__all__ = [
+    "AnalyzerConfig",
+    "FieldType",
+    "IndexConfig",
+    "IndexConfigError",
+    "IndexConfigUpdated",
+    "IndexDocument",
+    "IndexDocumentAdded",
+    "IndexDocumentError",
+    "IndexDocumentRemoved",
+    "IndexDocumentUpdated",
+    "IndexEntry",
+    "IndexField",
+    "IndexMapping",
+    "IndexMappingChanged",
+    "IndexMappingError",
+    "IndexMetrics",
+    "IndexMetricsCollected",
+    "IndexNotFoundError",
+    "IndexOptimizationError",
+    "IndexQuery",
+    "IndexQueryError",
+    "IndexQueryExecuted",
+    "IndexQueryResult",
+    "IndexRebuildCompleted",
+    "IndexRebuildError",
+    "IndexRebuildFailed",
+    "IndexRebuildPlan",
+    "IndexRebuildStarted",
+    "IndexStats",
+    "IndexStatus",
+    "IndexedField",
+    "IndexingPipelineConfig",
+    "SemanticIndex",
+    "SemanticIndexActivated",
+    "SemanticIndexCreated",
+    "SemanticIndexDeactivated",
+    "SemanticIndexDeleted",
+    "SemanticIndexOptimized",
+    "SemanticIndexRebuilt",
+    "SemanticIndexUpdated",
+    "SemanticIndexingError",
+    "SemanticIndexingHealthCheck",
+    "SemanticIndexingRuntimeModule",
+    "SemanticIndexingService",
+    "StopWordsList",
+    "SynonymMap",
+    "TokenizerConfig",
+]

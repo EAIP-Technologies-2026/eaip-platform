@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eaip.exceptions.domain import LifecycleError
+from eaip.infrastructure.infrastructure import PlatformInfrastructure
 from eaip.lifecycle.phases import LifecyclePhase
 from eaip.logging.context import get_logger
 
@@ -23,15 +24,18 @@ class ApplicationLifecycle:
         self,
         platform: Platform,
         kernel: RuntimeKernel | None = None,
+        infrastructure: PlatformInfrastructure | None = None,
     ) -> None:
         """Wrap a *platform* and optional *kernel*.
 
         Args:
             platform: The EAIP Platform instance.
             kernel: Optional RuntimeKernel for runtime orchestration.
+            infrastructure: Optional PlatformInfrastructure for DB/cache/tasks.
         """
         self._platform = platform
         self._kernel = kernel
+        self._infrastructure = infrastructure
         self._phase: LifecyclePhase = LifecyclePhase.CREATED
         self._log = get_logger("eaip.app.lifecycle")
 
@@ -80,8 +84,9 @@ class ApplicationLifecycle:
         self._log.info("app.starting")
 
         try:
+            if self._infrastructure is not None:
+                await self._infrastructure.start()
             if self._kernel is not None:
-                # Kernel boot also starts the platform internally.
                 await self._kernel.boot()
             else:
                 await self._platform.start()
@@ -116,6 +121,8 @@ class ApplicationLifecycle:
                 await self._kernel.shutdown()
             else:
                 await self._platform.stop()
+            if self._infrastructure is not None:
+                await self._infrastructure.stop()
         except BaseException as exc:
             self._log.error("app.stop_failed", error=repr(exc))
 

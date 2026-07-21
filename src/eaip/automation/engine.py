@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import time
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -16,7 +15,6 @@ from eaip.automation.events import (
     RuleRegistered,
     RuleTriggered,
     RuleUnregistered,
-    RuleUpdated,
 )
 from eaip.automation.exceptions import (
     ActionExecutionError,
@@ -94,7 +92,9 @@ class AutomationEngine:
         return rule
 
     async def list_rules(
-        self, trigger_type: TriggerType | None = None, enabled: bool | None = None,
+        self,
+        trigger_type: TriggerType | None = None,
+        enabled: bool | None = None,
     ) -> list[AutomationRule]:
         result = list(self._rules.values())
         if trigger_type is not None:
@@ -109,18 +109,26 @@ class AutomationEngine:
             if not rule.enabled:
                 continue
             if rule.trigger_type == TriggerType.EVENT:
-                if event.type in rule.event_pattern.get("types", [event.type]) if rule.event_pattern else False:
+                if (
+                    event.type in rule.event_pattern.get("types", [event.type])
+                    if rule.event_pattern
+                    else False
+                ):
                     continue
-                if rule.event_pattern and event.type not in rule.event_pattern.get("types", [event.type]):
+                if rule.event_pattern and event.type not in rule.event_pattern.get(
+                    "types", [event.type]
+                ):
                     continue
-            elif rule.trigger_type != TriggerType.MANUAL and rule.trigger_type != TriggerType.WEBHOOK:
+            elif rule.trigger_type not in (TriggerType.MANUAL, TriggerType.WEBHOOK):
                 continue
             execution = await self.execute_rule(rule.id, event)
             triggered.append(execution)
         return triggered
 
     async def execute_rule(
-        self, rule_id: str, trigger_event: TriggerEvent | None = None,
+        self,
+        rule_id: str,
+        trigger_event: TriggerEvent | None = None,
     ) -> AutomationExecution:
         rule = await self.get_rule(rule_id)
         if not rule.enabled:
@@ -246,7 +254,9 @@ class AutomationEngine:
         return result[:limit]
 
     async def evaluate_conditions(
-        self, rule: AutomationRule, event: TriggerEvent | None,
+        self,
+        rule: AutomationRule,
+        event: TriggerEvent | None,
     ) -> bool:
         if not rule.conditions:
             return True
@@ -262,11 +272,12 @@ class AutomationEngine:
                 ),
             )
 
-        combined = self._combine_conditions(rule.conditions, event)
-        return combined
+        return self._combine_conditions(rule.conditions, event)
 
     def _evaluate_single_condition(
-        self, condition: RuleCondition, event: TriggerEvent | None,
+        self,
+        condition: RuleCondition,
+        event: TriggerEvent | None,
     ) -> bool:
         if event is None:
             return False
@@ -283,22 +294,27 @@ class AutomationEngine:
         try:
             if condition.operator == ConditionOperator.EQ:
                 return bool(field_value == condition.value)
-            elif condition.operator == ConditionOperator.NEQ:
+            if condition.operator == ConditionOperator.NEQ:
                 return bool(field_value != condition.value)
-            elif condition.operator == ConditionOperator.GT:
+            if condition.operator == ConditionOperator.GT:
                 return bool(field_value > condition.value)
-            elif condition.operator == ConditionOperator.GTE:
+            if condition.operator == ConditionOperator.GTE:
                 return bool(field_value >= condition.value)
-            elif condition.operator == ConditionOperator.LT:
+            if condition.operator == ConditionOperator.LT:
                 return bool(field_value < condition.value)
-            elif condition.operator == ConditionOperator.LTE:
+            if condition.operator == ConditionOperator.LTE:
                 return bool(field_value <= condition.value)
-            elif condition.operator == ConditionOperator.IN:
+            if condition.operator == ConditionOperator.IN:
                 return field_value in (condition.value or [])
-            elif condition.operator == ConditionOperator.CONTAINS:
-                return condition.value in field_value if isinstance(field_value, (str, list, tuple)) else False
-            elif condition.operator == ConditionOperator.MATCHES:
+            if condition.operator == ConditionOperator.CONTAINS:
+                return (
+                    condition.value in field_value
+                    if isinstance(field_value, (str, list, tuple))
+                    else False
+                )
+            if condition.operator == ConditionOperator.MATCHES:
                 import re
+
                 return bool(re.match(str(condition.value), str(field_value)))
         except (TypeError, ValueError) as exc:
             raise ConditionEvaluationError(
@@ -317,7 +333,9 @@ class AutomationEngine:
         return current
 
     def _combine_conditions(
-        self, conditions: tuple[RuleCondition, ...], event: TriggerEvent | None,
+        self,
+        conditions: tuple[RuleCondition, ...],
+        event: TriggerEvent | None,
     ) -> bool:
         if not conditions:
             return True
@@ -332,7 +350,9 @@ class AutomationEngine:
         return result
 
     async def execute_actions(
-        self, rule: AutomationRule, event: TriggerEvent | None,
+        self,
+        rule: AutomationRule,
+        event: TriggerEvent | None,
     ) -> dict[str, Any]:
         if not rule.actions:
             return {"result": "", "actions_executed": 0, "actions_failed": 0}
@@ -359,7 +379,9 @@ class AutomationEngine:
         }
 
     async def evaluate_and_execute(
-        self, rule: AutomationRule, event: TriggerEvent | None,
+        self,
+        rule: AutomationRule,
+        event: TriggerEvent | None,
     ) -> dict[str, Any]:
         conditions_met = await self.evaluate_conditions(rule, event)
         if not conditions_met:

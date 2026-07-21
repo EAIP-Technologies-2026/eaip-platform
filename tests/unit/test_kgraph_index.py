@@ -17,7 +17,9 @@ class TestGraphIndex:
     @pytest.mark.asyncio
     async def test_index_entity(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
         g, idx = graph_and_index
-        e = Entity(id="e1", type="person", name="Alice", source="manual", properties={"city": "NYC"})
+        e = Entity(
+            id="e1", type="person", name="Alice", source="manual", properties={"city": "NYC"}
+        )
         await g.add_entity(e)
         await idx.index_entity(e)
         results = await idx.search_entities("Alice")
@@ -25,7 +27,9 @@ class TestGraphIndex:
         assert results[0].id == "e1"
 
     @pytest.mark.asyncio
-    async def test_index_entity_by_type(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_index_entity_by_type(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
         e = Entity(id="e1", type="person", name="Alice")
         await g.add_entity(e)
@@ -34,16 +38,22 @@ class TestGraphIndex:
         assert len(results) >= 1
 
     @pytest.mark.asyncio
-    async def test_index_entity_by_property(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_index_entity_by_property(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
-        e = Entity(id="e1", type="person", name="Alice", properties={"city": "NYC", "role": "engineer"})
+        e = Entity(
+            id="e1", type="person", name="Alice", properties={"city": "NYC", "role": "engineer"}
+        )
         await g.add_entity(e)
         await idx.index_entity(e)
         results = await idx.search_entities("nyc")
         assert len(results) == 1
 
     @pytest.mark.asyncio
-    async def test_index_entity_filtered_by_type(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_index_entity_filtered_by_type(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
         await g.add_entity(Entity(id="e1", type="person", name="Alice"))
         await g.add_entity(Entity(id="e2", type="org", name="Alice Corp"))
@@ -54,13 +64,17 @@ class TestGraphIndex:
         assert results[0].id == "e1"
 
     @pytest.mark.asyncio
-    async def test_search_no_results(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_search_no_results(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         _, idx = graph_and_index
         results = await idx.search_entities("nonexistent")
         assert results == []
 
     @pytest.mark.asyncio
-    async def test_index_relationship(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_index_relationship(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
         await g.add_entity(Entity(id="e1", type="person", name="Alice"))
         await g.add_entity(Entity(id="e2", type="person", name="Bob"))
@@ -71,7 +85,9 @@ class TestGraphIndex:
         assert len(results) == 1
 
     @pytest.mark.asyncio
-    async def test_search_relationships_all(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_search_relationships_all(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
         await g.add_entity(Entity(id="e1", type="person", name="Alice"))
         await g.add_entity(Entity(id="e2", type="person", name="Bob"))
@@ -90,7 +106,9 @@ class TestGraphIndex:
         g, idx = graph_and_index
         await g.add_entity(Entity(id="e1", type="person", name="Alice"))
         await g.add_entity(Entity(id="e2", type="person", name="Bob"))
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
         await idx.rebuild_index()
         results = await idx.search_entities("Alice")
         assert len(results) == 1
@@ -108,7 +126,9 @@ class TestGraphIndex:
         assert results == []
 
     @pytest.mark.asyncio
-    async def test_inspect_indices(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_inspect_indices(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         g, idx = graph_and_index
         e = Entity(id="e1", type="person", name="Alice")
         await g.add_entity(e)
@@ -117,6 +137,8 @@ class TestGraphIndex:
         assert len(indices) >= 1
 
     @pytest.mark.asyncio
-    async def test_relationship_type_index_empty(self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]) -> None:
+    async def test_relationship_type_index_empty(
+        self, graph_and_index: tuple[KnowledgeGraph, GraphIndex]
+    ) -> None:
         _, idx = graph_and_index
         assert idx.relationship_type_index == {}

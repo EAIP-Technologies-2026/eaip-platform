@@ -57,7 +57,7 @@ class TestPolicyAuthorizationDemo:
 
         try:
             auth.authorize(guest_ctx)
-            assert False, "Guest should be denied"
+            raise AssertionError("Guest should be denied")
         except PolicyViolationError as exc:
             assert "Denied" in str(exc)
 
@@ -74,7 +74,7 @@ class TestPolicyAuthorizationDemo:
         engine = PolicyEngine()
         registry = PolicyRegistry()
 
-        from eaip.policy.models import PolicyCondition, ConditionOp
+        from eaip.policy.models import ConditionOp, PolicyCondition
 
         require_mfa = PolicyRule(
             id="require-mfa",
@@ -110,7 +110,7 @@ class TestPolicyAuthorizationDemo:
         )
         try:
             auth.authorize(prod_no_mfa)
-            assert False, "Should be denied: prod without MFA"
+            raise AssertionError("Should be denied: prod without MFA")
         except PolicyViolationError:
             pass
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
 from eaip.context.builder import ContextBuilder
 from eaip.context.models import AssembledContext, ContextBuilderConfig, ContextDocument
 
@@ -78,10 +76,7 @@ class TestContextBuilder:
     async def test_max_documents(self) -> None:
         config = ContextBuilderConfig(max_documents=2)
         builder = ContextBuilder(config)
-        docs = [
-            ContextDocument(content=f"doc{i}", relevance_score=1.0 - i * 0.1)
-            for i in range(5)
-        ]
+        docs = [ContextDocument(content=f"doc{i}", relevance_score=1.0 - i * 0.1) for i in range(5)]
         result = await builder.assemble(extra_documents=docs)
         assert result.document_count <= 2
 

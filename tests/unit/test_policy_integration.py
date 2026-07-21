@@ -5,7 +5,7 @@ import asyncio
 from eaip.health.checks import HealthStatus
 from eaip.policy.engine import PolicyEngine
 from eaip.policy.integration import PolicyRuntimeModule
-from eaip.policy.models import Policy, PolicyDecision, PolicyEffect, PolicyRule
+from eaip.policy.models import Policy
 from eaip.policy.registry import PolicyRegistry
 
 
@@ -66,7 +66,7 @@ class TestPolicyRuntimeModule:
         module = PolicyRuntimeModule()
         try:
             _ = module.authorization
-            assert False, "expected RuntimeError"
+            raise AssertionError("expected RuntimeError")
         except RuntimeError:
             pass
 

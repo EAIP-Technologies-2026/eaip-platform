@@ -54,7 +54,9 @@ class TestKpiEvaluated:
         assert e.status == ""
 
     def test_with_values(self) -> None:
-        e = KpiEvaluated(kpi_id="k1", current_value=85.0, target_value=100.0, status="met", progress=0.85)
+        e = KpiEvaluated(
+            kpi_id="k1", current_value=85.0, target_value=100.0, status="met", progress=0.85
+        )
         assert e.kpi_id == "k1"
         assert e.status == "met"
         assert e.progress == 0.85
@@ -67,7 +69,9 @@ class TestAnomalyDetected:
         assert e.severity == ""
 
     def test_with_values(self) -> None:
-        e = AnomalyDetected(metric_id="m1", value=100.0, expected_value=50.0, deviation=50.0, severity="high")
+        e = AnomalyDetected(
+            metric_id="m1", value=100.0, expected_value=50.0, deviation=50.0, severity="high"
+        )
         assert e.metric_id == "m1"
         assert e.severity == "high"
         assert e.deviation == 50.0
@@ -104,7 +108,9 @@ class TestTrendComputed:
         assert e.direction == ""
 
     def test_with_values(self) -> None:
-        e = TrendComputed(metric_id="m1", direction="up", change_percent=15.5, confidence=0.85, anomaly_count=2)
+        e = TrendComputed(
+            metric_id="m1", direction="up", change_percent=15.5, confidence=0.85, anomaly_count=2
+        )
         assert e.direction == "up"
         assert e.change_percent == 15.5
         assert e.anomaly_count == 2
@@ -112,6 +118,14 @@ class TestTrendComputed:
 
 class TestEventTypes:
     def test_all_have_unique_event_types(self) -> None:
-        events = [MetricRecorded, ReportGenerated, KpiEvaluated, AnomalyDetected, DashboardCreated, DashboardUpdated, TrendComputed]
+        events = [
+            MetricRecorded,
+            ReportGenerated,
+            KpiEvaluated,
+            AnomalyDetected,
+            DashboardCreated,
+            DashboardUpdated,
+            TrendComputed,
+        ]
         types = [e.event_type for e in events]
         assert len(types) == len(set(types))

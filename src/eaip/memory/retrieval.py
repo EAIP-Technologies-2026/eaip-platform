@@ -80,9 +80,7 @@ class MemoryRetrievalService:
         Returns:
             A list of memory items.
         """
-        all_items = await self._store.list_by_scope(
-            scope, status="active", limit=limit * 10
-        )
+        all_items = await self._store.list_by_scope(scope, status="active", limit=limit * 10)
         matched: list[MemoryItem] = []
         for item in all_items:
             if any(t in item.tags for t in tags):
@@ -153,8 +151,7 @@ class MemoryRetrievalService:
             results = await self._store.search(query)
             total = len(results)
             result_items = tuple(
-                MemorySearchResult(memory=r.memory, score=r.score)
-                for r in results
+                MemorySearchResult(memory=r.memory, score=r.score) for r in results
             )
             duration = (time.monotonic() - t0) * 1000
             self._log.debug(

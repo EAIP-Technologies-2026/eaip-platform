@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
+from datetime import UTC
 
 from eaip.automation.events import (
     ActionExecuted,
@@ -63,15 +63,19 @@ class TestRuleUpdated:
 class TestRuleTriggered:
     def test_event_type(self) -> None:
         event = RuleTriggered(
-            rule_id="r1", rule_name="R1",
-            trigger_type="manual", trigger_event={},
+            rule_id="r1",
+            rule_name="R1",
+            trigger_type="manual",
+            trigger_event={},
         )
         assert event.event_type == "automation.rule.triggered"
 
     def test_fields(self) -> None:
         event = RuleTriggered(
-            rule_id="r1", rule_name="R1",
-            trigger_type="event", trigger_event={"order_id": "123"},
+            rule_id="r1",
+            rule_name="R1",
+            trigger_type="event",
+            trigger_event={"order_id": "123"},
         )
         assert event.trigger_event["order_id"] == "123"
 
@@ -84,7 +88,9 @@ class TestRuleExecutionStarted:
 
     def test_execution_content(self) -> None:
         exec1 = AutomationExecution(
-            id="e1", rule_id="r1", rule_name="Test",
+            id="e1",
+            rule_id="r1",
+            rule_name="Test",
             trigger_type=TriggerType.EVENT,
         )
         event = RuleExecutionStarted(execution=exec1)
@@ -95,7 +101,9 @@ class TestRuleExecutionStarted:
 class TestRuleExecutionCompleted:
     def test_event_type(self) -> None:
         exec1 = AutomationExecution(
-            id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL,
+            id="e1",
+            rule_id="r1",
+            trigger_type=TriggerType.MANUAL,
             status=AutomationStatus.COMPLETED,
         )
         event = RuleExecutionCompleted(execution=exec1)
@@ -105,8 +113,11 @@ class TestRuleExecutionCompleted:
 class TestRuleExecutionFailed:
     def test_event_type(self) -> None:
         exec1 = AutomationExecution(
-            id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL,
-            status=AutomationStatus.FAILED, error="oops",
+            id="e1",
+            rule_id="r1",
+            trigger_type=TriggerType.MANUAL,
+            status=AutomationStatus.FAILED,
+            error="oops",
         )
         event = RuleExecutionFailed(execution=exec1, error="oops")
         assert event.event_type == "automation.rule.execution.failed"
@@ -117,8 +128,10 @@ class TestActionExecuted:
     def test_event_type(self) -> None:
         action = RuleAction(type=ActionType.WEBHOOK, target="https://hook.example.com")
         event = ActionExecuted(
-            execution_id="e1", action=action,
-            result="ok", duration_ms=100.0,
+            execution_id="e1",
+            action=action,
+            result="ok",
+            duration_ms=100.0,
         )
         assert event.event_type == "automation.action.executed"
         assert event.result == "ok"
@@ -127,8 +140,10 @@ class TestActionExecuted:
     def test_action_content(self) -> None:
         action = RuleAction(type=ActionType.NOTIFICATION, target="slack")
         event = ActionExecuted(
-            execution_id="e1", action=action,
-            result="sent", duration_ms=50.0,
+            execution_id="e1",
+            action=action,
+            result="sent",
+            duration_ms=50.0,
         )
         assert event.action.target == "slack"
 
@@ -137,8 +152,10 @@ class TestActionFailed:
     def test_event_type(self) -> None:
         action = RuleAction(type=ActionType.WEBHOOK, target="https://hook.example.com")
         event = ActionFailed(
-            execution_id="e1", action=action,
-            error="timeout", attempt=1,
+            execution_id="e1",
+            action=action,
+            error="timeout",
+            attempt=1,
         )
         assert event.event_type == "automation.action.failed"
         assert event.error == "timeout"
@@ -147,10 +164,13 @@ class TestActionFailed:
 
 class TestConditionEvaluated:
     def test_event_type(self) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
+
         event = ConditionEvaluated(
-            rule_id="r1", execution_id="e1",
-            result=True, evaluated_at=datetime.now(timezone.utc),
+            rule_id="r1",
+            execution_id="e1",
+            result=True,
+            evaluated_at=datetime.now(UTC),
         )
         assert event.event_type == "automation.condition.evaluated"
         assert event.result is True
@@ -171,7 +191,7 @@ class TestDomainEventBase:
         rule = AutomationRule(id="r1", name="R1", trigger_type=TriggerType.MANUAL)
         exec1 = AutomationExecution(id="e1", rule_id="r1", trigger_type=TriggerType.MANUAL)
         action = RuleAction(type=ActionType.WEBHOOK, target="https://hook.example.com")
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         events = [
             RuleRegistered(rule=rule),
@@ -183,7 +203,9 @@ class TestDomainEventBase:
             RuleExecutionFailed(execution=exec1, error="err"),
             ActionExecuted(execution_id="e1", action=action, result="ok", duration_ms=1.0),
             ActionFailed(execution_id="e1", action=action, error="err", attempt=1),
-            ConditionEvaluated(rule_id="r1", execution_id="e1", result=True, evaluated_at=datetime.now(timezone.utc)),
+            ConditionEvaluated(
+                rule_id="r1", execution_id="e1", result=True, evaluated_at=datetime.now(UTC)
+            ),
             ScheduleTriggered(rule_id="r1", cron_expression="* * * * *"),
         ]
         for event in events:

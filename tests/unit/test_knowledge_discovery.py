@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import copy
-
 from eaip.knowledge.discovery import KnowledgeDiscovery
-from eaip.knowledge.ingestion import TextParser, get_parser, register_parser
+from eaip.knowledge.ingestion import get_parser, register_parser
 from eaip.knowledge.models import DocumentFormat
 
 

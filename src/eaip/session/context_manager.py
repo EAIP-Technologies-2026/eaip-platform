@@ -2,21 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from eaip.context.builder import ContextBuilder
 from eaip.logging.context import get_logger
 from eaip.session.events import ContextAttributeSet, ContextPropagated
-from eaip.session.exceptions import ContextError
 from eaip.session.models import (
     ContextPropagationConfig,
     ContextScope,
-    ExecutionContext,
     Session,
     SessionContext,
 )
-from eaip.session.serialization import SessionSerializer
 from eaip.shared.time import utc_now
 
 
@@ -198,10 +194,7 @@ class EnterpriseContextManager:
         snapshot = source_session.context_snapshot
 
         if cfg.allowed_attributes:
-            snapshot = {
-                k: v for k, v in snapshot.items()
-                if k in cfg.allowed_attributes
-            }
+            snapshot = {k: v for k, v in snapshot.items() if k in cfg.allowed_attributes}
 
         depth = 0
         for tid in target_ids:

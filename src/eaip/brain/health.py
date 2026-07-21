@@ -40,9 +40,7 @@ class BrainHealthCheck:
             health = await self._brain.health()
             details.update(health)
             status = (
-                HealthStatus.HEALTHY
-                if health.get("status") == "healthy"
-                else HealthStatus.DEGRADED
+                HealthStatus.HEALTHY if health.get("status") == "healthy" else HealthStatus.DEGRADED
             )
         except Exception as exc:
             self._log.warning("health.check.failed", error=str(exc))

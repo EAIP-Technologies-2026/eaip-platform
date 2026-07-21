@@ -11,7 +11,7 @@ from eaip.brain.department_brain import DepartmentBrain, DepartmentBrainConfig
 from eaip.brain.enterprise_brain import EnterpriseBrain
 from eaip.brain.events import BrainSyncCompleted, DepartmentBrainQueryExecuted
 from eaip.brain.exceptions import BrainAccessDeniedError, BrainQueryError
-from eaip.brain.models import BrainQuery, BrainResult, BrainSource
+from eaip.brain.models import BrainQuery, BrainResult
 
 
 class TestDepartmentBrainInit:
@@ -118,6 +118,7 @@ class TestDepartmentBrainQuery:
         decision = MagicMock()
         decision.effect = MagicMock(value="deny")
         from eaip.policy.models import PolicyEffect
+
         decision.effect = PolicyEffect.DENY
         decision.explanation = "No access"
         policy_engine.evaluate.return_value = decision
@@ -138,9 +139,7 @@ class TestDepartmentBrainQuery:
         enterprise = EnterpriseBrain(knowledge_engine=mock_engine)
         brain = DepartmentBrain(department_id="eng", enterprise=enterprise)
         with pytest.raises(BrainQueryError):
-            await brain.query(
-                BrainQuery(query="test", include_memory=False, include_context=False)
-            )
+            await brain.query(BrainQuery(query="test", include_memory=False, include_context=False))
 
 
 class TestDepartmentBrainSync:

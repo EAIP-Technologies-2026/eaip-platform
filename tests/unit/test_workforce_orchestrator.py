@@ -20,13 +20,19 @@ class TestWorkforceOrchestrator:
     def registry(self) -> WorkerRegistry:
         reg = WorkerRegistry()
         reg.register_worker(
-            WorkerDefinition(id="w1", name="Worker 1", worker_type=WorkerType.AGENT, max_concurrent_runs=2),
+            WorkerDefinition(
+                id="w1", name="Worker 1", worker_type=WorkerType.AGENT, max_concurrent_runs=2
+            ),
         )
         reg.register_worker(
-            WorkerDefinition(id="w2", name="Worker 2", worker_type=WorkerType.AGENT, max_concurrent_runs=1),
+            WorkerDefinition(
+                id="w2", name="Worker 2", worker_type=WorkerType.AGENT, max_concurrent_runs=1
+            ),
         )
         reg.register_worker(
-            WorkerDefinition(id="w3", name="Workflow 1", worker_type=WorkerType.WORKFLOW, max_concurrent_runs=3),
+            WorkerDefinition(
+                id="w3", name="Workflow 1", worker_type=WorkerType.WORKFLOW, max_concurrent_runs=3
+            ),
         )
         return reg
 
@@ -62,17 +68,23 @@ class TestWorkforceOrchestrator:
         assert a.task_description == "Best task"
 
     async def test_assign_best_worker_by_type(self, orchestrator: WorkforceOrchestrator) -> None:
-        a = await orchestrator.assign_best_worker("Workflow task", required_type=WorkerType.WORKFLOW)
+        a = await orchestrator.assign_best_worker(
+            "Workflow task", required_type=WorkerType.WORKFLOW
+        )
         assert a.worker_id == "w3"
 
-    async def test_assign_best_worker_no_candidates(self, orchestrator: WorkforceOrchestrator) -> None:
+    async def test_assign_best_worker_no_candidates(
+        self, orchestrator: WorkforceOrchestrator
+    ) -> None:
         with pytest.raises(WorkerNotFoundError):
             await orchestrator.assign_best_worker("task", required_type=WorkerType.JOB)
 
     async def test_assign_best_worker_all_busy(self, registry: WorkerRegistry) -> None:
         # Register a worker with max_concurrent=0 to test the all-busy path
         registry.register_worker(
-            WorkerDefinition(id="w_busy", name="Always Busy", worker_type=WorkerType.JOB, max_concurrent_runs=0),
+            WorkerDefinition(
+                id="w_busy", name="Always Busy", worker_type=WorkerType.JOB, max_concurrent_runs=0
+            ),
         )
         orch = WorkforceOrchestrator(registry=registry)
         with pytest.raises(WorkerBusyError):

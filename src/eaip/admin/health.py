@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+from eaip.health.checks import HealthReport, HealthStatus
 
 
 class AdminHealthCheck:

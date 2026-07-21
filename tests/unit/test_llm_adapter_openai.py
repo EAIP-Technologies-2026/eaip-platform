@@ -53,9 +53,7 @@ class _UnhealthyProvider:
     name = "openai"
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
-        return ChatResponse(
-            model="gpt-4o", provider="openai", content="", finish_reason="stop"
-        )
+        return ChatResponse(model="gpt-4o", provider="openai", content="", finish_reason="stop")
 
     async def chat_stream(self, _request: ChatRequest) -> AsyncIterator[str]:
         return

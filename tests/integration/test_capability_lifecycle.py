@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pytest
 
-from eaip.capabilities.capability import Capability, CapabilityDependency, CapabilityStatus
+from eaip.capabilities.capability import Capability, CapabilityDependency
 from eaip.capabilities.discovery import CapabilityDiscovery
 from eaip.capabilities.graph import CapabilityGraph
 from eaip.capabilities.health import CapabilityHealthCheck
@@ -38,17 +37,21 @@ async def test_full_capability_lifecycle() -> None:
     registry = CapabilityRegistry()
     discovery = CapabilityDiscovery()
 
-    p1 = _Plugin(PluginManifest(
-        name="metrics-plugin",
-        version="1.0.0",
-        tags=("metrics.collect", "metrics.query"),
-    ))
-    p2 = _Plugin(PluginManifest(
-        name="data-plugin",
-        version="2.0.0",
-        tags=("data.ingest",),
-        provides_capabilities=(),
-    ))
+    p1 = _Plugin(
+        PluginManifest(
+            name="metrics-plugin",
+            version="1.0.0",
+            tags=("metrics.collect", "metrics.query"),
+        )
+    )
+    p2 = _Plugin(
+        PluginManifest(
+            name="data-plugin",
+            version="2.0.0",
+            tags=("data.ingest",),
+            provides_capabilities=(),
+        )
+    )
 
     discovery.discover_from_plugins([p1, p2], registry)
 

@@ -6,7 +6,6 @@ import asyncio
 
 from eaip.session.lifecycle import SessionLifecycleManager
 from eaip.session.manager import SessionManager
-from eaip.session.models import SessionStatus
 
 
 class TestSessionLifecycleManager:
@@ -53,18 +52,22 @@ class TestSessionLifecycleManager:
 
     def test_merge_sessions(self) -> None:
         mgr = SessionManager()
-        s1 = asyncio.run(mgr.create_session(
-            "user",
-            user_id="u1",
-            metadata={"role": "admin"},
-            tags=("a",),
-        ))
-        s2 = asyncio.run(mgr.create_session(
-            "user",
-            user_id="u1",
-            metadata={"team": "alpha"},
-            tags=("b",),
-        ))
+        s1 = asyncio.run(
+            mgr.create_session(
+                "user",
+                user_id="u1",
+                metadata={"role": "admin"},
+                tags=("a",),
+            )
+        )
+        s2 = asyncio.run(
+            mgr.create_session(
+                "user",
+                user_id="u1",
+                metadata={"team": "alpha"},
+                tags=("b",),
+            )
+        )
         lcm = SessionLifecycleManager(mgr)
         merged = asyncio.run(lcm.merge_sessions(s1.id, s2.id))
         assert merged.metadata["role"] == "admin"

@@ -171,7 +171,7 @@ class TestPagination:
     def test_page_ge_one(self) -> None:
         try:
             Pagination(page=0)
-            assert False, "page must be >= 1"
+            raise AssertionError("page must be >= 1")
         except Exception:
             pass
 

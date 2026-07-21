@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
 from typing import Any
 
 from eaip.kgraph.events import (
@@ -69,54 +70,72 @@ class KnowledgeGraph:
         self._entities[entity.id] = entity
         self._type_index[entity.type].add(entity.id)
         self._log.debug("entity.added", id=entity.id, type=entity.type)
-        await self._emit(EntityAdded(entity_id=entity.id, entity_type=entity.type, entity_name=entity.name))
+        await self._emit(
+            EntityAdded(entity_id=entity.id, entity_type=entity.type, entity_name=entity.name)
+        )
         return entity
 
     async def get_entity(self, entity_id: str) -> Entity:
         entity = self._entities.get(entity_id)
         if entity is None:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
         return entity
 
     async def update_entity(self, entity_id: str, updates: dict[str, Any]) -> Entity:
         if entity_id not in self._entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
         current = self._entities[entity_id]
         allowed = {"name", "description", "properties", "confidence", "source", "metadata", "tags"}
         invalid = set(updates) - allowed
         if invalid:
-            raise EntityValidationError(f"Invalid fields: {invalid}", context={"fields": list(invalid)})
+            raise EntityValidationError(
+                f"Invalid fields: {invalid}", context={"fields": list(invalid)}
+            )
         merged_props = {**current.properties, **updates.get("properties", {})}
         merged_meta = {**current.metadata, **updates.get("metadata", {})}
-        updated = current.model_copy(update={
-            "name": updates.get("name", current.name),
-            "description": updates.get("description", current.description),
-            "properties": merged_props,
-            "confidence": updates.get("confidence", current.confidence),
-            "source": updates.get("source", current.source),
-            "metadata": merged_meta,
-            "tags": updates.get("tags", current.tags),
-            "updated_at": time.time(),
-        })
+        updated = current.model_copy(
+            update={
+                "name": updates.get("name", current.name),
+                "description": updates.get("description", current.description),
+                "properties": merged_props,
+                "confidence": updates.get("confidence", current.confidence),
+                "source": updates.get("source", current.source),
+                "metadata": merged_meta,
+                "tags": updates.get("tags", current.tags),
+                "updated_at": time.time(),
+            }
+        )
         self._entities[entity_id] = updated
 
         if "type" in updates or "updated_at" in updates:
             pass
 
         self._log.debug("entity.updated", id=entity_id)
-        await self._emit(EntityUpdated(entity_id=entity_id, entity_type=current.type, changes=updates))
+        await self._emit(
+            EntityUpdated(entity_id=entity_id, entity_type=current.type, changes=updates)
+        )
         return updated
 
     async def delete_entity(self, entity_id: str, cascade: bool = False) -> None:
         if entity_id not in self._entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
         entity = self._entities[entity_id]
         if cascade:
-            to_remove = list(self._adjacency[entity_id]["out"].keys()) + list(self._adjacency[entity_id]["in"].keys())
+            to_remove = list(self._adjacency[entity_id]["out"].keys()) + list(
+                self._adjacency[entity_id]["in"].keys()
+            )
             for rel_id in to_remove:
                 await self.delete_relationship(rel_id)
         else:
-            rels = list(self._adjacency[entity_id]["out"].values()) + list(self._adjacency[entity_id]["in"].values())
+            rels = list(self._adjacency[entity_id]["out"].values()) + list(
+                self._adjacency[entity_id]["in"].values()
+            )
             if rels:
                 raise EntityValidationError(
                     f"Entity {entity_id} has relationships; use cascade=True to delete",
@@ -126,7 +145,9 @@ class KnowledgeGraph:
         del self._entities[entity_id]
         self._adjacency.pop(entity_id, None)
         self._log.debug("entity.deleted", id=entity_id, cascade=cascade)
-        await self._emit(EntityDeleted(entity_id=entity_id, entity_type=entity.type, cascade=cascade))
+        await self._emit(
+            EntityDeleted(entity_id=entity_id, entity_type=entity.type, cascade=cascade)
+        )
 
     # ── relationship CRUD ────────────────────────────────────────
 
@@ -150,50 +171,64 @@ class KnowledgeGraph:
             self._adjacency[rel.target_entity_id]["out"][rel.id] = rel
             self._adjacency[rel.source_entity_id]["in"][rel.id] = rel
         self._log.debug("relationship.added", id=rel.id, type=rel.type)
-        await self._emit(RelationshipAdded(
-            relationship_id=rel.id,
-            relationship_type=rel.type,
-            source_entity_id=rel.source_entity_id,
-            target_entity_id=rel.target_entity_id,
-        ))
+        await self._emit(
+            RelationshipAdded(
+                relationship_id=rel.id,
+                relationship_type=rel.type,
+                source_entity_id=rel.source_entity_id,
+                target_entity_id=rel.target_entity_id,
+            )
+        )
         return rel
 
     async def get_relationship(self, rel_id: str) -> Relationship:
         rel = self._relationships.get(rel_id)
         if rel is None:
-            raise RelationshipNotFoundError(f"Relationship {rel_id} not found", context={"relationship_id": rel_id})
+            raise RelationshipNotFoundError(
+                f"Relationship {rel_id} not found", context={"relationship_id": rel_id}
+            )
         return rel
 
     async def update_relationship(self, rel_id: str, updates: dict[str, Any]) -> Relationship:
         if rel_id not in self._relationships:
-            raise RelationshipNotFoundError(f"Relationship {rel_id} not found", context={"relationship_id": rel_id})
+            raise RelationshipNotFoundError(
+                f"Relationship {rel_id} not found", context={"relationship_id": rel_id}
+            )
         current = self._relationships[rel_id]
         allowed = {"type", "properties", "weight", "bidirectional", "metadata"}
         invalid = set(updates) - allowed
         if invalid:
-            raise EntityValidationError(f"Invalid fields: {invalid}", context={"fields": list(invalid)})
+            raise EntityValidationError(
+                f"Invalid fields: {invalid}", context={"fields": list(invalid)}
+            )
         merged_props = {**current.properties, **updates.get("properties", {})}
         merged_meta = {**current.metadata, **updates.get("metadata", {})}
-        updated = current.model_copy(update={
-            "type": updates.get("type", current.type),
-            "properties": merged_props,
-            "weight": updates.get("weight", current.weight),
-            "bidirectional": updates.get("bidirectional", current.bidirectional),
-            "metadata": merged_meta,
-        })
+        updated = current.model_copy(
+            update={
+                "type": updates.get("type", current.type),
+                "properties": merged_props,
+                "weight": updates.get("weight", current.weight),
+                "bidirectional": updates.get("bidirectional", current.bidirectional),
+                "metadata": merged_meta,
+            }
+        )
         self._relationships[rel_id] = updated
         self._rebuild_adjacency_for_rel(rel_id, updated)
         self._log.debug("relationship.updated", id=rel_id)
-        await self._emit(RelationshipUpdated(
-            relationship_id=rel_id,
-            relationship_type=current.type,
-            changes=updates,
-        ))
+        await self._emit(
+            RelationshipUpdated(
+                relationship_id=rel_id,
+                relationship_type=current.type,
+                changes=updates,
+            )
+        )
         return updated
 
     async def delete_relationship(self, rel_id: str) -> None:
         if rel_id not in self._relationships:
-            raise RelationshipNotFoundError(f"Relationship {rel_id} not found", context={"relationship_id": rel_id})
+            raise RelationshipNotFoundError(
+                f"Relationship {rel_id} not found", context={"relationship_id": rel_id}
+            )
         rel = self._relationships.pop(rel_id)
         self._adjacency[rel.source_entity_id]["out"].pop(rel_id, None)
         self._adjacency[rel.target_entity_id]["in"].pop(rel_id, None)
@@ -224,20 +259,24 @@ class KnowledgeGraph:
             if not start_id:
                 raise GraphQueryError("start_entity_id required for BFS mode")
             result = await self._traversal.bfs(
-                start_id, query.max_depth,
+                start_id,
+                query.max_depth,
                 predicate=self._make_predicate(query),
             )
         elif mode is GraphQueryMode.DFS:
             if not start_id:
                 raise GraphQueryError("start_entity_id required for DFS mode")
             result = await self._traversal.dfs(
-                start_id, query.max_depth,
+                start_id,
+                query.max_depth,
                 predicate=self._make_predicate(query),
             )
         elif mode is GraphQueryMode.SHORTEST_PATH:
             target_id = query.filters.get("target_entity_id", "")
             if not start_id or not target_id:
-                raise GraphQueryError("start_entity_id and target_entity_id filter required for shortest_path mode")
+                raise GraphQueryError(
+                    "start_entity_id and target_entity_id filter required for shortest_path mode"
+                )
             result = await self._traversal.shortest_path(start_id, target_id, query.max_depth)
         elif mode is GraphQueryMode.SUBGRAPH:
             entity_ids = query.filters.get("entity_ids", [])
@@ -252,15 +291,11 @@ class KnowledgeGraph:
         paths: list[Path] = []
 
         for entity_id in result.get("entity_ids", []):
-            try:
+            with contextlib.suppress(EntityNotFoundError):
                 entities_set[entity_id] = await self.get_entity(entity_id)
-            except EntityNotFoundError:
-                pass
         for rel_id in result.get("relationship_ids", []):
-            try:
+            with contextlib.suppress(RelationshipNotFoundError):
                 rels_set[rel_id] = await self.get_relationship(rel_id)
-            except RelationshipNotFoundError:
-                pass
         for p_data in result.get("paths", []):
             paths.append(Path(**p_data))
 
@@ -273,11 +308,13 @@ class KnowledgeGraph:
             duration_ms=duration_ms,
         )
 
-        await self._emit(GraphQueryExecuted(
-            query_mode=mode.value,
-            result_count=graph_result.total_count,
-            duration_ms=duration_ms,
-        ))
+        await self._emit(
+            GraphQueryExecuted(
+                query_mode=mode.value,
+                result_count=graph_result.total_count,
+                duration_ms=duration_ms,
+            )
+        )
         return graph_result
 
     def _make_predicate(self, query: GraphQuery) -> Any:
@@ -295,23 +332,30 @@ class KnowledgeGraph:
                     if key in entity.properties and entity.properties[key] != value:
                         return False
             return True
+
         return predicate
 
     # ── traversal wrappers ───────────────────────────────────────
 
     async def traverse(self, entity_id: str, depth: int, direction: str = "out") -> dict[str, Any]:
         result = await self._traversal.bfs(entity_id, depth, direction=direction)
-        await self._emit(GraphTraversalExecuted(
-            start_entity_id=entity_id,
-            depth=depth,
-            direction=direction,
-            nodes_visited=len(result.get("entity_ids", [])),
-        ))
+        await self._emit(
+            GraphTraversalExecuted(
+                start_entity_id=entity_id,
+                depth=depth,
+                direction=direction,
+                nodes_visited=len(result.get("entity_ids", [])),
+            )
+        )
         return result
 
-    async def get_neighbors(self, entity_id: str, rel_types: tuple[str, ...] | None = None) -> list[Entity]:
+    async def get_neighbors(
+        self, entity_id: str, rel_types: tuple[str, ...] | None = None
+    ) -> list[Entity]:
         if entity_id not in self._entities:
-            raise EntityNotFoundError(f"Entity {entity_id} not found", context={"entity_id": entity_id})
+            raise EntityNotFoundError(
+                f"Entity {entity_id} not found", context={"entity_id": entity_id}
+            )
         neighbors: list[Entity] = []
         seen: set[str] = set()
         for rel in self._adjacency[entity_id]["out"].values():
@@ -322,14 +366,20 @@ class KnowledgeGraph:
                 neighbors.append(self._entities[rel.target_entity_id])
         return neighbors
 
-    async def get_shortest_path(self, source_id: str, target_id: str, max_depth: int = 10) -> Path | None:
+    async def get_shortest_path(
+        self, source_id: str, target_id: str, max_depth: int = 10
+    ) -> Path | None:
         result = await self._traversal.shortest_path(source_id, target_id, max_depth)
         if not result.get("paths"):
             return None
         return Path(**result["paths"][0])
 
     async def find_entities_by_type(self, entity_type: str) -> list[Entity]:
-        return [self._entities[eid] for eid in self._type_index.get(entity_type, set()) if eid in self._entities]
+        return [
+            self._entities[eid]
+            for eid in self._type_index.get(entity_type, set())
+            if eid in self._entities
+        ]
 
     async def find_entities_by_property(self, key: str, value: Any) -> list[Entity]:
         return [e for e in self._entities.values() if e.properties.get(key) == value]
@@ -373,7 +423,7 @@ class KnowledgeGraph:
     async def _emit(self, event: Any) -> None:
         for handler in self._event_handlers:
             try:
-                if hasattr(handler, "__call__"):
+                if callable(handler):
                     await handler(event)
             except Exception:
                 self._log.warning("event.handler.failed", event_type=type(event).__name__)

@@ -27,7 +27,9 @@ class TestMemoryEngineEvent:
 class TestMemoryCreated:
     def test_defaults(self) -> None:
         scope = MemoryScope(tenant_id="t1")
-        ev = MemoryCreated(memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, importance=0.5)
+        ev = MemoryCreated(
+            memory_id="m1", memory_type=MemoryType.WORKING, scope=scope, importance=0.5
+        )
         assert ev.event_type == "eaip.memory.memory.created"
         assert ev.memory_id == "m1"
         assert ev.memory_type is MemoryType.WORKING
@@ -35,7 +37,13 @@ class TestMemoryCreated:
 
     def test_with_tags(self) -> None:
         scope = MemoryScope(tenant_id="t1")
-        ev = MemoryCreated(memory_id="m1", memory_type=MemoryType.EPISODIC, scope=scope, importance=0.9, tags=("important",))
+        ev = MemoryCreated(
+            memory_id="m1",
+            memory_type=MemoryType.EPISODIC,
+            scope=scope,
+            importance=0.9,
+            tags=("important",),
+        )
         assert "important" in ev.tags
 
 
@@ -133,7 +141,9 @@ class TestMemorySearchExecuted:
         assert ev.filters == {}
 
     def test_with_filters(self) -> None:
-        ev = MemorySearchExecuted(query="q", filters={"tag": "important"}, result_count=1, duration_ms=0.1)
+        ev = MemorySearchExecuted(
+            query="q", filters={"tag": "important"}, result_count=1, duration_ms=0.1
+        )
         assert ev.filters["tag"] == "important"
 
 
@@ -153,4 +163,6 @@ class TestEventInheritance:
             MemoryUpdated,
         ]
         for ev in events:
-            assert issubclass(ev, MemoryEngineEvent), f"{ev.__name__} does not subclass MemoryEngineEvent"
+            assert issubclass(ev, MemoryEngineEvent), (
+                f"{ev.__name__} does not subclass MemoryEngineEvent"
+            )

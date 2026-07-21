@@ -30,8 +30,12 @@ class TestProviderHealthCheck:
 
     def test_all_healthy(self) -> None:
         registry = ProviderRegistry()
-        inst = ProviderInstance(name="test", provider_type="test", endpoint="http://test",
-                                 status=ProviderStatus.AVAILABLE)
+        inst = ProviderInstance(
+            name="test",
+            provider_type="test",
+            endpoint="http://test",
+            status=ProviderStatus.AVAILABLE,
+        )
         registry.register(inst)
 
         check = ProviderHealthCheck(registry)
@@ -73,8 +77,12 @@ class TestProviderHealthCheck:
 
     def test_updates_provider_status(self) -> None:
         registry = ProviderRegistry()
-        inst = ProviderInstance(name="test", provider_type="t", endpoint="http://test",
-                                 status=ProviderStatus.UNAVAILABLE)
+        inst = ProviderInstance(
+            name="test",
+            provider_type="t",
+            endpoint="http://test",
+            status=ProviderStatus.UNAVAILABLE,
+        )
         registry.register(inst)
 
         check = ProviderHealthCheck(registry)

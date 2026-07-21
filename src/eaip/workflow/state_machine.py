@@ -41,7 +41,9 @@ _WORKFLOW_TRANSITIONS: dict[WorkflowState, set[WorkflowState]] = {
     },
     WorkflowState.PAUSED: {WorkflowState.RUNNING, WorkflowState.CANCELLED},
     WorkflowState.WAITING_APPROVAL: {
-        WorkflowState.RUNNING, WorkflowState.FAILED, WorkflowState.CANCELLED,
+        WorkflowState.RUNNING,
+        WorkflowState.FAILED,
+        WorkflowState.CANCELLED,
     },
     WorkflowState.COMPLETED: set(),
     WorkflowState.FAILED: set(),

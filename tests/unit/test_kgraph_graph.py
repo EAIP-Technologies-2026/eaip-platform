@@ -29,9 +29,15 @@ class TestKnowledgeGraph:
         await g.add_entity(Entity(id="e2", type="person", name="Bob"))
         await g.add_entity(Entity(id="e3", type="person", name="Charlie"))
         await g.add_entity(Entity(id="e4", type="org", name="ACME"))
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
-        await g.add_relationship(Relationship(id="r2", type="knows", source_entity_id="e2", target_entity_id="e3"))
-        await g.add_relationship(Relationship(id="r3", type="works_at", source_entity_id="e1", target_entity_id="e4"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
+        await g.add_relationship(
+            Relationship(id="r2", type="knows", source_entity_id="e2", target_entity_id="e3")
+        )
+        await g.add_relationship(
+            Relationship(id="r3", type="works_at", source_entity_id="e1", target_entity_id="e4")
+        )
         return g
 
     # ── Entity CRUD ──────────────────────────────────────────
@@ -120,7 +126,9 @@ class TestKnowledgeGraph:
         e2 = Entity(id="e2", type="person", name="Bob")
         await g.add_entity(e1)
         await g.add_entity(e2)
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
         with pytest.raises(EntityValidationError):
             await g.delete_entity("e1", cascade=False)
 
@@ -131,7 +139,9 @@ class TestKnowledgeGraph:
         e2 = Entity(id="e2", type="person", name="Bob")
         await g.add_entity(e1)
         await g.add_entity(e2)
-        await g.add_relationship(Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2"))
+        await g.add_relationship(
+            Relationship(id="r1", type="knows", source_entity_id="e1", target_entity_id="e2")
+        )
         await g.delete_entity("e1", cascade=True)
         with pytest.raises(RelationshipNotFoundError):
             await g.get_relationship("r1")

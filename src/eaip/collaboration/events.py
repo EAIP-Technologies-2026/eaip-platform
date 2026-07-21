@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
-from eaip.collaboration.models import SessionStatus, TaskStatus
+from eaip.collaboration.models import SessionStatus
 from eaip.events.event import DomainEvent
 
 

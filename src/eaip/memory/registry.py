@@ -170,11 +170,7 @@ class MemoryRegistry:
         Returns:
             A list of matching relations.
         """
-        results = [
-            r
-            for r in self._relations
-            if memory_id in (r.source_id, r.target_id)
-        ]
+        results = [r for r in self._relations if memory_id in (r.source_id, r.target_id)]
         if relation_type:
             results = [r for r in results if r.relation_type == relation_type]
         return results

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -99,9 +99,7 @@ class TestAutomationRule:
             conditions=(
                 RuleCondition(field="status", operator=ConditionOperator.EQ, value="pending"),
             ),
-            actions=(
-                RuleAction(type=ActionType.WEBHOOK, target="https://hook.example.com"),
-            ),
+            actions=(RuleAction(type=ActionType.WEBHOOK, target="https://hook.example.com"),),
             enabled=True,
             priority=10,
             max_retries=5,
@@ -146,7 +144,7 @@ class TestAutomationExecution:
         assert e.retry_attempt == 0
 
     def test_completed(self) -> None:
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         e = AutomationExecution(
             id="exec_2",
             rule_id="rule_1",
@@ -179,7 +177,10 @@ class TestAutomationExecution:
     def test_all_statuses(self) -> None:
         for s in AutomationStatus:
             e = AutomationExecution(
-                id=f"exec_{s}", rule_id="r1", trigger_type=TriggerType.MANUAL, status=s,
+                id=f"exec_{s}",
+                rule_id="r1",
+                trigger_type=TriggerType.MANUAL,
+                status=s,
             )
             assert e.status == s
 
@@ -193,7 +194,9 @@ class TestTriggerEvent:
 
     def test_with_payload(self) -> None:
         e = TriggerEvent(
-            id="evt_2", type="order.updated", source="shopify",
+            id="evt_2",
+            type="order.updated",
+            source="shopify",
             payload={"order_id": "ord-123", "status": "paid"},
             correlation_id="corr-abc",
             metadata={"env": "prod"},
@@ -236,7 +239,7 @@ class TestAutomationConfig:
 
 class TestExecutionHistoryEntry:
     def test_minimal(self) -> None:
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         e = ExecutionHistoryEntry(
             execution_id="exec_1",
             rule_id="rule_1",
@@ -248,7 +251,7 @@ class TestExecutionHistoryEntry:
         assert e.duration_ms == 0.0
 
     def test_with_error(self) -> None:
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         e = ExecutionHistoryEntry(
             execution_id="exec_2",
             rule_id="rule_1",
@@ -263,10 +266,13 @@ class TestExecutionHistoryEntry:
         assert e.error_summary == "Timeout"
 
     def test_frozen(self) -> None:
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         e = ExecutionHistoryEntry(
-            execution_id="e1", rule_id="r1", status=AutomationStatus.PENDING,
-            started_at=started, trigger_type=TriggerType.MANUAL,
+            execution_id="e1",
+            rule_id="r1",
+            status=AutomationStatus.PENDING,
+            started_at=started,
+            trigger_type=TriggerType.MANUAL,
         )
         with pytest.raises(ValidationError):
             e.execution_id = "changed"

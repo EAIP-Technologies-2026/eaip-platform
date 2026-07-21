@@ -33,9 +33,7 @@ class TestAutomationEngine:
             id="rule_1",
             name="Test Rule",
             trigger_type=TriggerType.MANUAL,
-            actions=(
-                RuleAction(type=ActionType.NOTIFICATION, target="log"),
-            ),
+            actions=(RuleAction(type=ActionType.NOTIFICATION, target="log"),),
         )
 
     async def test_register_rule(self, engine, sample_rule) -> None:
@@ -81,7 +79,9 @@ class TestAutomationEngine:
 
     async def test_list_rules_by_trigger_type(self, engine) -> None:
         r1 = AutomationRule(id="r1", name="R1", trigger_type=TriggerType.MANUAL)
-        r2 = AutomationRule(id="r2", name="R2", trigger_type=TriggerType.EVENT, event_pattern={"types": ["t1"]})
+        r2 = AutomationRule(
+            id="r2", name="R2", trigger_type=TriggerType.EVENT, event_pattern={"types": ["t1"]}
+        )
         await engine.register_rule(r1)
         await engine.register_rule(r2)
         manual_rules = await engine.list_rules(trigger_type=TriggerType.MANUAL)
@@ -121,7 +121,9 @@ class TestAutomationEngine:
             await engine.execute_rule("disabled_rule")
 
     async def test_execute_rule_with_conditions_met(self, engine) -> None:
-        event = TriggerEvent(id="evt1", type="order.created", source="shopify", payload={"status": "pending"})
+        event = TriggerEvent(
+            id="evt1", type="order.created", source="shopify", payload={"status": "pending"}
+        )
         rule = AutomationRule(
             id="rule_cond",
             name="Condition Rule",
@@ -130,16 +132,16 @@ class TestAutomationEngine:
             conditions=(
                 RuleCondition(field="status", operator=ConditionOperator.EQ, value="pending"),
             ),
-            actions=(
-                RuleAction(type=ActionType.NOTIFICATION, target="log"),
-            ),
+            actions=(RuleAction(type=ActionType.NOTIFICATION, target="log"),),
         )
         await engine.register_rule(rule)
         execution = await engine.execute_rule("rule_cond", event)
         assert execution.status == AutomationStatus.COMPLETED
 
     async def test_execute_rule_with_conditions_not_met(self, engine) -> None:
-        event = TriggerEvent(id="evt1", type="order.created", source="shopify", payload={"status": "paid"})
+        event = TriggerEvent(
+            id="evt1", type="order.created", source="shopify", payload={"status": "paid"}
+        )
         rule = AutomationRule(
             id="rule_cond_fail",
             name="Condition Fail Rule",
@@ -148,9 +150,7 @@ class TestAutomationEngine:
             conditions=(
                 RuleCondition(field="status", operator=ConditionOperator.EQ, value="pending"),
             ),
-            actions=(
-                RuleAction(type=ActionType.NOTIFICATION, target="log"),
-            ),
+            actions=(RuleAction(type=ActionType.NOTIFICATION, target="log"),),
         )
         await engine.register_rule(rule)
         execution = await engine.execute_rule("rule_cond_fail", event)
@@ -228,11 +228,11 @@ class TestAutomationEngine:
     async def test_evaluate_conditions_with_event(self, engine) -> None:
         event = TriggerEvent(id="evt1", type="test", source="test", payload={"value": 10})
         rule = AutomationRule(
-            id="r1", name="R1", trigger_type=TriggerType.EVENT,
+            id="r1",
+            name="R1",
+            trigger_type=TriggerType.EVENT,
             event_pattern={"types": ["test"]},
-            conditions=(
-                RuleCondition(field="value", operator=ConditionOperator.GT, value=5),
-            ),
+            conditions=(RuleCondition(field="value", operator=ConditionOperator.GT, value=5),),
         )
         result = await engine.evaluate_conditions(rule, event)
         assert result is True
@@ -240,22 +240,22 @@ class TestAutomationEngine:
     async def test_evaluate_conditions_false(self, engine) -> None:
         event = TriggerEvent(id="evt1", type="test", source="test", payload={"value": 1})
         rule = AutomationRule(
-            id="r1", name="R1", trigger_type=TriggerType.EVENT,
+            id="r1",
+            name="R1",
+            trigger_type=TriggerType.EVENT,
             event_pattern={"types": ["test"]},
-            conditions=(
-                RuleCondition(field="value", operator=ConditionOperator.GT, value=5),
-            ),
+            conditions=(RuleCondition(field="value", operator=ConditionOperator.GT, value=5),),
         )
         result = await engine.evaluate_conditions(rule, event)
         assert result is False
 
     async def test_trigger_event_matching(self, engine) -> None:
         rule = AutomationRule(
-            id="r1", name="R1", trigger_type=TriggerType.EVENT,
+            id="r1",
+            name="R1",
+            trigger_type=TriggerType.EVENT,
             event_pattern={"types": ["order.created"]},
-            actions=(
-                RuleAction(type=ActionType.NOTIFICATION, target="log"),
-            ),
+            actions=(RuleAction(type=ActionType.NOTIFICATION, target="log"),),
         )
         await engine.register_rule(rule)
         event = TriggerEvent(id="evt1", type="order.created", source="shopify", payload={})

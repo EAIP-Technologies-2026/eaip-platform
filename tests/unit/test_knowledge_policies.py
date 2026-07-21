@@ -79,11 +79,13 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_check_access_allowed_by_role(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("hr",),
-            allowed_roles=("hr_manager",),
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("hr",),
+                allowed_roles=("hr_manager",),
+            )
+        )
 
         result = await enforcer.check_access("hr", roles=["hr_manager"])
         assert result is True
@@ -91,12 +93,14 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_check_access_denied(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("hr",),
-            allowed_roles=("hr_manager",),
-            access_level=AccessLevel.DENY,
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("hr",),
+                allowed_roles=("hr_manager",),
+                access_level=AccessLevel.DENY,
+            )
+        )
 
         result = await enforcer.check_access("hr", roles=["hr_manager"])
         assert result is False
@@ -104,10 +108,12 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_check_access_denied_by_default(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_collection_policy(CollectionAccessPolicy(
-            collection="secret",
-            required_roles=("admin",),
-        ))
+        enforcer.add_collection_policy(
+            CollectionAccessPolicy(
+                collection="secret",
+                required_roles=("admin",),
+            )
+        )
 
         result = await enforcer.check_access("secret", roles=["user"])
         assert result is False
@@ -121,21 +127,29 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_filter_results(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("restricted",),
-            allowed_roles=("admin",),
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("restricted",),
+                allowed_roles=("admin",),
+            )
+        )
 
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="restricted",
-                content="Secret", score=0.9,
+                chunk_id="c1",
+                document_id="d1",
+                collection="restricted",
+                content="Secret",
+                score=0.9,
                 attribution=SourceAttribution(document_id="d1", collection="restricted", score=0.9),
             ),
             RetrievedChunk(
-                chunk_id="c2", document_id="d2", collection="public",
-                content="Open", score=0.8,
+                chunk_id="c2",
+                document_id="d2",
+                collection="public",
+                content="Open",
+                score=0.8,
                 attribution=SourceAttribution(document_id="d2", collection="public", score=0.8),
             ),
         ]
@@ -147,16 +161,21 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_filter_results_admin(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("restricted",),
-            allowed_roles=("admin",),
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("restricted",),
+                allowed_roles=("admin",),
+            )
+        )
 
         chunks = [
             RetrievedChunk(
-                chunk_id="c1", document_id="d1", collection="restricted",
-                content="Secret", score=0.9,
+                chunk_id="c1",
+                document_id="d1",
+                collection="restricted",
+                content="Secret",
+                score=0.9,
                 attribution=SourceAttribution(document_id="d1", collection="restricted", score=0.9),
             ),
         ]
@@ -173,11 +192,13 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_subject_match(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("personal",),
-            allowed_subjects=("user123",),
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("personal",),
+                allowed_subjects=("user123",),
+            )
+        )
 
         result = await enforcer.check_access("personal", subject_id="user123")
         assert result is True
@@ -185,11 +206,13 @@ class TestRetrievalPolicyEnforcer:
     @pytest.mark.asyncio
     async def test_group_match(self) -> None:
         enforcer = RetrievalPolicyEnforcer()
-        enforcer.add_policy(RetrievalPolicy(
-            policy_id="p1",
-            collections=("team_space",),
-            allowed_groups=("engineering",),
-        ))
+        enforcer.add_policy(
+            RetrievalPolicy(
+                policy_id="p1",
+                collections=("team_space",),
+                allowed_groups=("engineering",),
+            )
+        )
 
         result = await enforcer.check_access("team_space", groups=["engineering"])
         assert result is True

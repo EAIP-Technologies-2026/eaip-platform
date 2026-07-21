@@ -64,8 +64,12 @@ class TestRankingService:
     async def test_rerank_with_query(self) -> None:
         svc = RankingService()
         items = [
-            SearchResultItem(id="1", collection="c", content="a", score=0.8, metadata={"access_count": 50}),
-            SearchResultItem(id="2", collection="c", content="b", score=0.6, metadata={"access_count": 10}),
+            SearchResultItem(
+                id="1", collection="c", content="a", score=0.8, metadata={"access_count": 50}
+            ),
+            SearchResultItem(
+                id="2", collection="c", content="b", score=0.6, metadata={"access_count": 10}
+            ),
         ]
         result = await svc.rerank_with_query(items, SearchQuery(query="test"))
         assert len(result) == 2

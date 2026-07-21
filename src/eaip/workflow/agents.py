@@ -95,12 +95,14 @@ class AgentOrchestrator:
         memory_keys: list[str] | None = None,
     ) -> str:
         handoff_id = uuid.uuid4().hex[:12]
-        self._handoffs[from_agent_id].append({
-            "handoff_id": handoff_id,
-            "to_agent_id": to_agent_id,
-            "context": context,
-            "timestamp": time.time(),
-        })
+        self._handoffs[from_agent_id].append(
+            {
+                "handoff_id": handoff_id,
+                "to_agent_id": to_agent_id,
+                "context": context,
+                "timestamp": time.time(),
+            }
+        )
 
         enriched_context = context
         if memory_keys and self._memory:
@@ -156,7 +158,10 @@ class AgentOrchestrator:
         return "\n".join(parts)
 
     async def _save_memory_output(
-        self, agent_id: str, output: str, memory_keys: list[str],
+        self,
+        agent_id: str,
+        output: str,
+        memory_keys: list[str],
     ) -> None:
         if not self._memory:
             return

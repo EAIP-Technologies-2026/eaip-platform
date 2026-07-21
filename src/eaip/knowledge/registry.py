@@ -161,9 +161,7 @@ class KnowledgeRegistry:
         """
         return list(self._parsers.keys())
 
-    def register_collection(
-        self, collection: KnowledgeCollection, replace: bool = False
-    ) -> None:
+    def register_collection(self, collection: KnowledgeCollection, replace: bool = False) -> None:
         """Register a collection.
 
         Args:
@@ -286,11 +284,7 @@ class KnowledgeRegistry:
         """
         if collection is None:
             return list(self._documents.values())
-        return [
-            doc
-            for (doc_id, col), doc in self._documents.items()
-            if col == collection
-        ]
+        return [doc for (doc_id, col), doc in self._documents.items() if col == collection]
 
     def document_count(self, collection: str | None = None) -> int:
         """Get the number of registered documents.
@@ -317,9 +311,7 @@ class KnowledgeRegistry:
                 self._chunks[key] = []
             self._chunks[key].append(chunk)
 
-    def get_document_chunks(
-        self, document_id: str, collection: str
-    ) -> list[DocumentChunk]:
+    def get_document_chunks(self, document_id: str, collection: str) -> list[DocumentChunk]:
         """Get chunks for a document.
 
         Args:

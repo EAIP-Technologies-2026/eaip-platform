@@ -35,33 +35,39 @@ class _E2EStore:
 
     async def upsert_points(self, collection: str, chunks: list) -> None:
         for c in chunks:
-            self.points.setdefault(collection, []).append({
-                "id": c.chunk_id,
-                "doc_id": c.document_id,
-                "content": c.content,
-                "idx": c.chunk_index,
-                "embedding": list(c.embedding),
-            })
+            self.points.setdefault(collection, []).append(
+                {
+                    "id": c.chunk_id,
+                    "doc_id": c.document_id,
+                    "content": c.content,
+                    "idx": c.chunk_index,
+                    "embedding": list(c.embedding),
+                }
+            )
         self.collections[collection]["points"] = len(self.points.get(collection, []))
 
     async def delete_points(self, collection: str, point_ids: list[str]) -> None:
         if collection in self.points:
-            self.points[collection] = [p for p in self.points[collection] if p["id"] not in point_ids]
+            self.points[collection] = [
+                p for p in self.points[collection] if p["id"] not in point_ids
+            ]
 
     async def search(self, collection: str, query) -> list[dict]:  # type: ignore[no-untyped-def]
         results = []
         for p in self.points.get(collection, []):
-            results.append({
-                "id": p["id"],
-                "score": 0.85,
-                "payload": {
-                    "document_id": p["doc_id"],
-                    "content": p["content"],
-                    "chunk_index": p["idx"],
-                    "title": "E2E Test Doc",
-                    "source": "e2e-test.txt",
-                },
-            })
+            results.append(
+                {
+                    "id": p["id"],
+                    "score": 0.85,
+                    "payload": {
+                        "document_id": p["doc_id"],
+                        "content": p["content"],
+                        "chunk_index": p["idx"],
+                        "title": "E2E Test Doc",
+                        "source": "e2e-test.txt",
+                    },
+                }
+            )
         results.sort(key=lambda r: r["score"], reverse=True)
         return results[: query.top_k]
 
@@ -94,7 +100,9 @@ class TestKnowledgeE2E:
             events.append(type(event).__name__)
 
         engine = KnowledgeEngine(
-            reg, store, embed,
+            reg,
+            store,
+            embed,
             event_publisher=publisher,
             default_chunking=ChunkingConfig(
                 strategy=ChunkingStrategy.RECURSIVE,
@@ -105,12 +113,14 @@ class TestKnowledgeE2E:
         )
 
         # 1. Create collections
-        col_technical = await engine.create_collection("technical-docs",
+        col_technical = await engine.create_collection(
+            "technical-docs",
             description="Technical documentation",
         )
         assert col_technical.name == "technical-docs"
 
-        col_product = await engine.create_collection("product-docs",
+        col_product = await engine.create_collection(
+            "product-docs",
             description="Product documentation",
         )
         assert col_product.name == "product-docs"
@@ -176,10 +186,13 @@ class TestKnowledgeE2E:
         retriever = KnowledgeRetriever(store, embed)
         from eaip.knowledge.models import RetrievalQuery
 
-        retrieval = await retriever.search("technical-docs", RetrievalQuery(
-            query="knowledge engine architecture",
-            top_k=2,
-        ))
+        retrieval = await retriever.search(
+            "technical-docs",
+            RetrievalQuery(
+                query="knowledge engine architecture",
+                top_k=2,
+            ),
+        )
         if retrieval.chunks:
             assert retrieval.context is not None
             assert "EAIP" in retrieval.context.context or "Knowledge" in retrieval.context.context

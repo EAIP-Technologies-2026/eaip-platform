@@ -84,9 +84,11 @@ class TaskDelegationService:
         if delegation.status is not DelegationStatus.PENDING:
             raise DelegationError(delegation_id, f"cannot accept — status is {delegation.status}")
 
-        accepted = delegation.model_copy(update={
-            "status": DelegationStatus.ACCEPTED,
-        })
+        accepted = delegation.model_copy(
+            update={
+                "status": DelegationStatus.ACCEPTED,
+            }
+        )
         self._delegations[delegation_id] = accepted
 
         self._publish(
@@ -117,10 +119,12 @@ class TaskDelegationService:
         if delegation.status is not DelegationStatus.PENDING:
             raise DelegationError(delegation_id, f"cannot reject — status is {delegation.status}")
 
-        rejected = delegation.model_copy(update={
-            "status": DelegationStatus.REJECTED,
-            "response": reason,
-        })
+        rejected = delegation.model_copy(
+            update={
+                "status": DelegationStatus.REJECTED,
+                "response": reason,
+            }
+        )
         self._delegations[delegation_id] = rejected
 
         self._publish(
@@ -152,10 +156,12 @@ class TaskDelegationService:
         if delegation.status is not DelegationStatus.ACCEPTED:
             raise DelegationError(delegation_id, f"cannot complete — status is {delegation.status}")
 
-        completed = delegation.model_copy(update={
-            "status": DelegationStatus.COMPLETED,
-            "response": result,
-        })
+        completed = delegation.model_copy(
+            update={
+                "status": DelegationStatus.COMPLETED,
+                "response": result,
+            }
+        )
         self._delegations[delegation_id] = completed
         self._log.info("delegation.completed", delegation_id=delegation_id)
         return completed
@@ -187,10 +193,7 @@ class TaskDelegationService:
         """
         results = list(self._delegations.values())
         if agent_id is not None:
-            results = [
-                d for d in results
-                if d.from_agent_id == agent_id or d.to_agent_id == agent_id
-            ]
+            results = [d for d in results if agent_id in (d.from_agent_id, d.to_agent_id)]
         if status is not None:
             results = [d for d in results if d.status is status]
         return results
@@ -211,11 +214,7 @@ class TaskDelegationService:
         """
         if known_agents is None:
             return []
-        return [
-            agent_id
-            for agent_id, caps in known_agents.items()
-            if capability in caps
-        ]
+        return [agent_id for agent_id, caps in known_agents.items() if capability in caps]
 
     def _publish(self, event: Any) -> None:
         if self._event_bus is not None:

@@ -22,15 +22,16 @@ class TestProviderRegistry:
         reg.register(_inst())
         try:
             reg.register(_inst())
-            assert False
+            raise AssertionError()
         except DuplicateRegistrationError:
             pass
 
     def test_replace(self) -> None:
         reg = ProviderRegistry()
         reg.register(_inst())
-        newer = ProviderInstance(name="ollama", provider_type="ollama",
-                                  endpoint="http://other:11434")
+        newer = ProviderInstance(
+            name="ollama", provider_type="ollama", endpoint="http://other:11434"
+        )
         reg.register(newer, replace=True)
         assert reg.get("ollama").endpoint == "http://other:11434"
 
@@ -38,7 +39,7 @@ class TestProviderRegistry:
         reg = ProviderRegistry()
         try:
             reg.get("nonexistent")
-            assert False
+            raise AssertionError()
         except NotFoundError:
             pass
 
@@ -57,9 +58,13 @@ class TestProviderRegistry:
     def test_all_and_available(self) -> None:
         reg = ProviderRegistry()
         from eaip.providers.models import ProviderStatus
+
         reg.register(_inst("p1"))
-        reg.register(ProviderInstance(name="p2", provider_type="x", endpoint="x",
-                                       status=ProviderStatus.AVAILABLE))
+        reg.register(
+            ProviderInstance(
+                name="p2", provider_type="x", endpoint="x", status=ProviderStatus.AVAILABLE
+            )
+        )
         assert len(reg.all()) == 2
         assert len(reg.available()) == 1
 

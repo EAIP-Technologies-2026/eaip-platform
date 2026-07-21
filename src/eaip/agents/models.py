@@ -11,6 +11,19 @@ from pydantic import BaseModel, ConfigDict, Field
 from eaip.shared.time import utc_now
 
 
+class AgentStatus(StrEnum):
+    """Lifecycle status of an agent definition."""
+
+    DRAFT = "draft"
+    REGISTERED = "registered"
+    READY = "ready"
+    RUNNING = "running"
+    PAUSED = "paused"
+    STOPPED = "stopped"
+    FAILED = "failed"
+    ARCHIVED = "archived"
+
+
 class StepType(StrEnum):
     """Types of work a step can represent."""
 
@@ -110,6 +123,7 @@ class RunRecord(BaseModel):
 
 __all__ = [
     "AgentSpec",
+    "AgentStatus",
     "Goal",
     "Plan",
     "RunRecord",

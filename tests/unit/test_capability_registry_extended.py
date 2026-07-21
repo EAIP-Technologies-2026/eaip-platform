@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from eaip.capabilities.capability import Capability
 from eaip.capabilities.registry import CapabilityRegistry
-from eaip.exceptions.domain import DuplicateRegistrationError, NotFoundError
 
 
 def _cap(name: str = "test.cap") -> Capability:

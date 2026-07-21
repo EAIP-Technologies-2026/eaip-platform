@@ -8,7 +8,6 @@ from typing import Any, ClassVar
 from eaip.automation.models import (
     AutomationExecution,
     AutomationRule,
-    AutomationStatus,
     RuleAction,
 )
 from eaip.events.event import DomainEvent

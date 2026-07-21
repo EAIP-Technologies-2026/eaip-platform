@@ -11,7 +11,126 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
+## [0.1.0-rc.1] — 2026-07-11
+
+### Added
+
+- **Security Hardening (WP-01):** JWT secret via SecretProviderPort, AST-validated sandbox, safe subprocess execution
+- **Event Bus (WP-02):** Reliable event delivery, orphaned event fixes, standardized dispatch patterns
+- **Persistence (WP-03):** AbstractRepository, InMemoryRepository with TTL eviction, bounded token/session storage
+- **Performance (WP-04):** CacheProvider port, performance benchmarks, repository cleanup metrics
+- **Observability (WP-05):** LoggerPort, MetricsProvider, TracingProvider, BackgroundTaskRegistry, RuntimeDiagnosticsService
+- **Auth & Identity (WP-06):** UserLoggedIn/Out events, logout(), get_current_user(), logout_all_sessions()
+- **Knowledge Platform (WP-07):** Pipeline stage events, integration tests, workspace isolation
+- **Agent Runtime (WP-08):** AgentStatus enum, AgentRegistry, lifecycle events, metadata/tag support
+- **Workflow & Automation (WP-09):** WorkflowRegistry, WorkflowStatus.ARCHIVED, lifecycle events
+- **Mission Control (WP-10):** Mission abstraction, RuntimeRegistry, runtime events, mission lifecycle
+- **Production Adapters (Batch C):** PostgresRepository, RedisCacheProvider, ObjectStorageProvider, FileSecretProvider, OTelTracingProvider, PrometheusMetricsProvider
+- **Multi-Tenancy (Batch B):** TenantContext, TenantAwareRepository, production Docker Compose
+- **Infrastructure Health (Batch A):** InfrastructureHealthService, platform convergence tests
+
+### Changed
+
+- TokenService now requires EAIP_AUTH_SECRET env var (no hardcoded default)
+- ResponseCache delegates to pluggable CacheProvider
+- pipeline execute_script uses AST-validated sandbox
+- automation execute_command uses create_subprocess_exec
+- WorkflowStatus includes ARCHIVED state
+
+### Fixed
+
+- 12 orphaned event patterns across platform (events constructed but never published)
+- Unawaited coroutine in collaboration event dispatch
+- Bare exec() in data pipeline and integration transform
+- Shell injection via create_subprocess_shell
+- AST sandbox escape via attribute traversal (13 dangerous dunder attributes blocked)
+
+### Security
+
+- Hardcoded JWT default secret removed
+- All exec() calls replaced with AST-validated safe_exec()
+- All subprocess calls use create_subprocess_exec
+- Bandit + pip-audit + gitleaks in CI
+
 ## [Unreleased]
+
+### Added (EP-0125 to EP-0180)
+
+56 Engineering Packs implemented across 3 checkpoints covering:
+- API Rate Limiting, Asset Inventory, Report Scheduling, Backup Verification
+- Batch Jobs, Blue-Green Deployments, Cache Invalidation, Capacity Analysis
+- Change Log, Cloud Migration, Compliance Reports, Config Backup
+- Container Orchestration, Content Moderation, CI Service, Contract Management
+- Cost Allocation, Credential Rotation, Cross-Region Replication, Feedback Analysis
+- Data Classification, Encryption, Masking Policies, Data Sampling, Data Sync
+- Database Migration, Dependency Scanning, Rollback Management, Diagnostics
+- Document Redaction, Email Templates, Emergency Access, Endpoint Security
+- AI Validation, Environment Variables, Event Retention, Export Compliance
+- External Identity Mapping, File Integrity, Firewall Rules, Floating Licenses
+- Form Builder, Functions-as-a-Service, Geo-IP, Git Integration, Helm Charts
+- Host Discovery, HTTP Routing, Idle Resource Notification, Image Tags
+- Incident Communication, IaC Validation, Workflow Design, IP Reputation
+- Job Dependencies, JSON Schema Validation
+
+### Added (EP-0105 to EP-0124)
+
+- **EP-0105 — Model Monitoring & Drift Detection**: `src/eaip/modelmon/` — drift detection, performance tracking, model alerts. 18 tests.
+- **EP-0106 — Enterprise Data Catalog**: `src/eaip/datacatalog/` — data asset registry, discovery, lineage, metadata. 20 tests.
+- **EP-0107 — Alert Correlation & Noise Reduction**: `src/eaip/alertcorr/` — correlate alerts, deduplicate, suppress noise. 18 tests.
+- **EP-0108 — Multi-Cloud Resource Manager**: `src/eaip/cloudmgr/` — cloud resource discovery, cost comparison, tagging. 22 tests.
+- **EP-0109 — Federated Identity & SSO Provider**: `src/eaip/fedid/` — identity federation, SSO session management. 20 tests.
+- **EP-0110 — Custom Dashboard Builder**: `src/eaip/dashboard/` — widget toolkit, layout engine, data binding. 22 tests.
+- **EP-0111 — Agent Skill Registry**: `src/eaip/skillreg/` — skill definitions, capability discovery, matching. 18 tests.
+- **EP-0112 — Enterprise Template Engine**: `src/eaip/etemplate/` — multi-format templates, variable injection, rendering. 20 tests.
+- **EP-0113 — Data Retention & Purge Service**: `src/eaip/retention/` — retention policies, purge scheduling, audit trail. 18 tests.
+- **EP-0114 — Business Calendar Service**: `src/eaip/bcalendar/` — calendar CRUD, availability, scheduling, timezone. 18 tests.
+- **EP-0115 — Environment & Sandbox Manager**: `src/eaip/sandbox/` — environment lifecycle, sandbox isolation, templates. 22 tests.
+- **EP-0116 — Enterprise Metering & Usage Service**: `src/eaip/metering/` — usage recording, aggregation, reporting, limits. 20 tests.
+- **EP-0117 — Configuration Drift Detection**: `src/eaip/configdrift/` — baseline snapshots, drift comparison, remediation. 18 tests.
+- **EP-0118 — Pipeline Orchestration Engine**: `src/eaip/porch/` — pipeline DAG, stage execution, retry, notifications. 24 tests.
+- **EP-0119 — Platform Audit Viewer**: `src/eaip/auditview/` — audit log browser, filtering, export, search. 18 tests.
+- **EP-0120 — Secrets Distribution Service**: `src/eaip/secdist/` — secure distribution, caching, access logging. 18 tests.
+- **EP-0121 — Cross-Platform Connector Bridge**: `src/eaip/xbridge/` — protocol adapters, message transformation, routing. 22 tests.
+- **EP-0122 — Agent Performance Analyzer**: `src/eaip/agentperf/` — execution metrics, bottleneck detection, recommendations. 20 tests.
+- **EP-0123 — Knowledge Curation Service**: `src/eaip/curation/` — content review, quality scoring, approval workflows. 18 tests.
+- **EP-0124 — Enterprise Health Reporter**: `src/eaip/healthrpt/` — health summaries, SLA reports, trend analysis, exports. 22 tests.
+
+### Added (EP-0093 to EP-0104)
+
+- **EP-0093 — Enterprise Audit Trail & Immutable Event Store (Bundle-093)**: `src/eaip/audit/store.py` — immutable event store, time-ordered queries, snapshots, retention cleanup. 18 tests.
+- **EP-0094 — Enterprise Notification Center (Bundle-094)**: `src/eaip/notifications/center.py` — unified inbox, read/unread tracking, bulk operations. 16 tests.
+- **EP-0095 — AI Prompt Registry & Prompt Versioning (Bundle-095)**: `src/eaip/context/prompt_service.py` — prompt catalog, version comparison, rollback, search. 20 tests.
+- **EP-0096 — Model Routing & Load Balancer (Bundle-096)**: `src/eaip/mesh/model_router.py` — model-aware routing, weighted distribution, failover, health-based. 22 tests.
+- **EP-0097 — Secrets Rotation & Key Management (Bundle-097)**: `src/eaip/security/key_manager.py` — automated key rotation, scheduling, audit log. 18 tests.
+- **EP-0098 — Enterprise Scheduler (Bundle-098)**: `src/eaip/jobs/scheduler_service.py` — distributed scheduling, calendar triggers, dependency resolution. 20 tests.
+- **EP-0099 — Human Approval Workflow (Bundle-099)**: `src/eaip/workflow/approval_workflow.py` — multi-step approval chains, delegation, deadlines. 22 tests.
+- **EP-0100 — Policy Decision Point (Bundle-100)**: `src/eaip/policy/decision_point.py` — centralized PDP, policy caching, bulk evaluation, decision logs. 20 tests.
+- **EP-0101 — Multi-Agent Conversation Runtime (Bundle-101)**: `src/eaip/agents/conversation.py` — conversation sessions, turn management, agent handoff. 24 tests.
+- **EP-0102 — Workspace Session Manager (Bundle-102)**: `src/eaip/session/workspace.py` — workspace lifecycle, resource scoping, sharing. 22 tests.
+- **EP-0103 — Enterprise Task Queue (Bundle-103)**: `src/eaip/queue/task_queue.py` — priority queues, task scheduling, SLA tracking, worker pools. 26 tests.
+- **EP-0104 — Runtime Diagnostics & Self-Healing (Bundle-104)**: `src/eaip/diagnostics/` — health probes, diagnostic checks, auto-recovery, incident tracking. 24 tests.
+
+### Added (EP-0081 to EP-0092)
+
+- **EP-0081 — Agent Templates & Blueprints (Bundle-081)**: `src/eaip/agenttpl/` — predefined agent blueprints with categories, parameterization, and template lifecycle. 20 tests.
+- **EP-0082 — Data Quality & Validation Framework (Bundle-082)**: `src/eaip/dataquality/` — rule engine, quality scoring, validation pipelines. 16 tests.
+- **EP-0083 — Feedback & Annotation System (Bundle-083)**: `src/eaip/feedback/` — feedback collection, ratings, annotation management. 15 tests.
+- **EP-0084 — Model Registry & Lifecycle (Bundle-084)**: `src/eaip/modelreg/` — model versioning, metadata, deployment tracking. 17 tests.
+- **EP-0085 — Guardrails & Content Safety (Bundle-085)**: `src/eaip/guardrails/` — content filtering, safety checks, moderation rules. 12 tests.
+- **EP-0086 — Labeling & Tagging Service (Bundle-086)**: `src/eaip/labeling/` — multi-label tagging, taxonomies, search/filter. 14 tests.
+- **EP-0087 — Resource Quota & Governance (Bundle-087)**: `src/eaip/resquota/` — quota tracking, enforcement, usage policies. 14 tests.
+- **EP-0088 — Throttle & Backpressure Framework (Bundle-088)**: `src/eaip/throttle/` — adaptive rate limiting, backpressure, circuit protection. 13 tests.
+- **EP-0089 — Plugin Marketplace & Discovery (Bundle-089)**: `src/eaip/marketplace/` — plugin catalog, search, installation, compatibility. 30 tests.
+- **EP-0090 — Provider Health & Monitoring (Bundle-090)**: `src/eaip/phealth/` — provider health tracking, circuit state, latency monitoring. 11 tests.
+- **EP-0091 — Message Queue & Async Messaging (Bundle-091)**: `src/eaip/queue/` — queue management, message routing, DLQ, metrics. 57 tests.
+- **EP-0092 — Consent & Privacy Management (Bundle-092)**: `src/eaip/consent/` — consent records, privacy preferences, data subject rights. 24 tests.
+
+### Fixed (Session Recovery — 2026-07-10)
+
+- **Queue Health Check**: Fixed `QueueHealthCheck._get_queue_stats` to handle both sync and async `get_stats` methods. Fixed test mocks to use `staticmethod` to avoid `TypeError: takes 0 positional arguments but 1 was given`. (`tests/unit/queue/test_queue_health.py`, `src/eaip/queue/health.py`)
+- **Data Migration Tests**: Recreated missing `test_datamigrate_models.py` with 18 tests covering model defaults, immutability, engine lifecycle (register, run, get, list, verify, failure, rollback), and batch operations. (`src/eaip/datamigrate/`)
+- **Mypy fixes**: Resolved 13 type errors across 8 source files (`marketplace/models.py`, `quality/gates.py`, `queue/health.py`, `marketplace/registry.py`, `marketplace/publisher.py`, `knowledge/qdrant_store.py`, `queue/integration.py`, `queue/provider.py`)
+- **Ruff fixes**: Applied 168 auto-fixes; reformatted 30 files for style consistency.
 
 ### Added
 
@@ -368,14 +487,135 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 ### Added (EP-0040 — Enterprise Automation Runtime — Bundle-040)
 
 - **Automation Runtime** (`src/eaip/automation/`): Enterprise rule-based automation engine with event triggers and scheduling.
-- `models.py` — `AutomationRule`, `RuleCondition`, `RuleAction`, `AutomationExecution`, `TriggerEvent`, `AutomationConfig`, `ExecutionHistoryEntry`.
-- `engine.py` — `AutomationEngine` with rule CRUD, condition evaluation, action execution, concurrency control, execution lifecycle.
-- `triggers.py` — `TriggerService` with event processing, listener management, wildcard support, EventBus integration.
-- `executor.py` — `ActionExecutor` with webhook (httpx), workflow, agent, command (subprocess), event, notification actions. Exponential backoff retry.
-- `scheduler.py` — `AutomationScheduler` with cron-based scheduling via croniter.
-- `history.py` — `ExecutionHistory` with record/query/cleanup, per-rule statistics.
 - 11 domain events, 6 exceptions, health check, runtime module.
 - **Tests**: 128 passing tests across 8 test modules.
+
+### Added (EP-0041 — Enterprise Integration Hub — Bundle-041)
+
+- **Integration Hub** (`src/eaip/integration/`): Enterprise integration hub with connectors, webhooks, message routing, transformations.
+- `IntegrationHub` — connector/route/transformation management, message routing with retry/dead-letter.
+- `WebhookManager` — webhook registration, HMAC signature verification, HTTP delivery.
+- `MessageTransformationService` — mapping, filter, enrichment, script-based transforms.
+- `IntegrationCatalog` — connector type registry, search, integration stats.
+- 10 domain events, 6 exceptions, health check, runtime module.
+- **Tests**: 135 passing tests across 7 test modules.
+
+### Added (EP-0042 — Data Pipeline Engine — Bundle-042)
+
+- **Data Pipeline** (`src/eaip/datapipeline/`): Data pipeline engine with ETL, transformations, scheduling, lineage tracking.
+- `PipelineEngine` — source/sink/pipeline management, async execution, concurrency control.
+- `StepExecutor` — transform, filter, validate, enrich, aggregate, script step execution with retry.
+- `PipelineScheduler` — cron-based pipeline scheduling via croniter.
+- `DataLineageTracker` — in-memory record and pipeline lineage tracking.
+- 12 domain events, 7 exceptions, health check, runtime module.
+- **Tests**: 108 passing tests across 7 test modules.
+
+### Added (EP-0043 — Security Operations Runtime — Bundle-043)
+
+- **Security Operations** (`src/eaip/security/`): Secret vault, encryption, certificates, compliance.
+- `SecretVault` — encrypted secret storage with rotation and expiry.
+- `EncryptionService` — Fernet-based encrypt/decrypt with key lifecycle.
+- `CertificateManager` — certificate registration, validation, revocation, expiry tracking.
+- `ComplianceService` — SOC2/HIPAA/GDPR/PCI compliance checks.
+- 12 domain events, 6 exceptions, health check, runtime module.
+- **Tests**: 115 passing tests across 7 test modules.
+
+### Added (EP-0044 — Platform Operations Console — Bundle-044)
+
+- **Platform Operations** (`src/eaip/operations/`): Maintenance windows, backup/restore, migration, health dashboard.
+- `MaintenanceManager` — schedule/start/complete/cancel maintenance windows, component isolation.
+- `BackupManager` — backup creation, restore, integrity verification via checksums.
+- `MigrationService` — migration plans, validation, execution, rollback.
+- `HealthDashboard` — system snapshots, component health, metrics, reports.
+- 12 domain events, 7 exceptions, health check, runtime module.
+- **Tests**: 109 passing tests across 7 test modules.
+
+### Added (EP-0045 — Developer API & SDK Platform — Bundle-045)
+
+- **Developer Platform** (`src/eaip/devplatform/`): API versioning, developer keys, usage analytics, playground.
+- `ApiVersionManager` — version registration, deprecation, sunset, resolution.
+- `DeveloperKeyManager` — SHA-256 hashed key creation, revocation, rate limiting.
+- `UsageAnalyticsService` — usage recording, dashboard stats, popular endpoints, error rates.
+- `ApiPlayground` — session-based API testing.
+- 8 domain events, 6 exceptions, health check, runtime module.
+- **Tests**: 111 passing tests across 7 test modules.
+
+### Added (EP-0046 — Multi-Tenant Platform — Bundle-046)
+
+- **Multi-Tenant Platform** (`src/eaip/tenants/`): Tenant lifecycle, isolation, billing, cross-tenant analytics.
+- `TenantManager` — tenant CRUD, user management, quota enforcement, feature checks.
+- `TenantIsolationService` — isolation boundary tracking and validation.
+- `BillingService` — invoice creation, usage-based billing, payment lifecycle.
+- `CrossTenantAnalytics` — cross-tenant reports, revenue analysis, growth metrics.
+- 11 domain events, 7 exceptions, health check, runtime module.
+- **Tests**: 109 passing tests across 7 test modules.
+
+### Added (EP-0047 — Cost Intelligence Engine — Bundle-047)
+
+- **Cost Intelligence** (`src/eaip/cost/`): Cost tracking, budgets, alerts, optimization, chargeback.
+- `CostTracker` — cost recording, query, aggregation, trends.
+- `BudgetManager` — budget CRUD, threshold checking, status reporting.
+- `AlertService` — threshold-based alerts with acknowledge/resolve lifecycle.
+- `CostOptimizer` — rightsize/stop recommendations with status lifecycle.
+- `CostReportingService` — chargeback reports, tenant/workflow summaries, top cost drivers.
+- 11 domain events, 6 exceptions, health check, runtime module.
+- **Tests**: 129 passing tests across 8 test modules.
+
+### Added (EP-0048 — Quality & Testing Framework — Bundle-048)
+
+- **Quality Framework** (`src/eaip/quality/`): Test engine, quality gates, coverage, regression detection.
+- `TestEngine` — test case/suite management, async execution, cancellation.
+- `QualityGateService` — gate registration, condition evaluation, PR readiness checks.
+- `CoverageAnalyzer` — coverage recording, comparison, history, threshold checks.
+- `RegressionDetector` — baseline creation, regression/improvement detection, performance comparison.
+- 12 domain events, 7 exceptions, health check, runtime module.
+- **Tests**: 137 passing tests across 7 test modules.
+
+### Added (EP-0077 — WebSocket & Real-Time Communication — Bundle-077)
+
+- **WebSocket/Real-time Push** (`src/eaip/ws/`):
+  - `ConnectionManager` — connection register/unregister/heartbeat, stale purge, status management.
+  - `ChannelManager` — channel CRUD, user subscriptions, subscriber listing with deduplication.
+  - `PushService` — push to channel/user/all, broadcast with exclusions, channel history with size limit.
+  - Models: `WsConfig`, `WebSocketConnection`, `Channel`, `Message`, `Subscription`.
+  - 8 domain events (`ClientConnected`, `ClientDisconnected`, `ChannelCreated`, `ChannelDeleted`, `UserSubscribed`, `UserUnsubscribed`, `MessagePublished`, `MessageBroadcast`).
+  - 4 exception types (`WsError`, `ConnectionNotFoundError`, `ChannelNotFoundError`, `SubscriptionError`).
+  - `WsHealthCheck` and `WsRuntimeModule` for kernel integration.
+  - Tests: 93 passing tests across 8 modules.
+  - Quality gates: ruff clean, mypy clean, pytest 93/93.
+
+### Added (EP-0078 — Search Index Management — Bundle-078)
+
+- **Search Index Management** (`src/eaip/searchidx/`):
+  - `IndexManager` — index CRUD, full/incremental indexing, search, suggest, status.
+  - `SearchCache` — get-or-compute with TTL, invalidation by pattern, warm/clear/stats.
+  - `CacheWarmer` — warm indices, warm popular queries, schedule warming, status.
+  - Models: `IndexField`, `SearchIndex`, `IndexJob`, `CachePolicy`, `SearchCacheConfig`.
+  - 9 domain events, 5 exception types.
+  - `SearchIndexHealthCheck` and `SearchIndexRuntimeModule` for kernel integration.
+  - Tests: 101 passing tests across 8 modules.
+  - Quality gates: ruff clean, mypy clean, pytest 101/101.
+
+### Added (EP-0079 — Distributed Cache & Data Grid — Bundle-079)
+
+- **Distributed Cache** (`src/eaip/cache/`):
+  - `CacheManager` — multi-level cache-aside with L1 (memory) and L2 (pluggable).
+  - `CacheProvider` (ABC) with `InMemoryCache` (thread-safe, LRU, TTL) and `NullCache`.
+  - `CacheRuntimeModule` with capability registration for kernel lifecycle.
+  - Models: `CacheEntry`, `CacheConfig`, `CacheStats`.
+  - 5 domain events, 3 exception types.
+  - Tests: 62 passing tests across 7 modules.
+  - Quality gates: ruff clean, mypy clean, pytest 62/62.
+
+### Added (EP-0080 — File Storage & Asset Management — Bundle-080)
+
+- **File Storage & Asset Management** (`src/eaip/filestore/`):
+  - `AssetManager` — upload, download, delete, search, versioning with change log, deduplication, duplicate.
+  - Models: `FileConfig`, `StorageProvider`, `FileAsset`, `AssetVersion`.
+  - 5 domain events, 6 exception types.
+  - `FileStoreHealthCheck` and `FileStoreRuntimeModule` for kernel integration.
+  - Tests: 68 passing tests across 8 modules.
+  - Quality gates: ruff clean, mypy clean, pytest 68/68.
 
 [Unreleased]: <https://github.com/subham1902/eaip-platform/compare/v0.0.2...HEAD>
 [0.0.2]: <https://github.com/subham1902/eaip-platform/releases/tag/v0.0.2>

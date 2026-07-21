@@ -8,6 +8,7 @@ from pydantic import Field
 
 from eaip.logging.config import LogFormat, LoggingConfig
 from eaip.settings.base import EAIPSettingsBase
+from eaip.settings.db_settings import DatabaseSettings
 from eaip.types import Environment, EnvName, NonEmptyStr
 
 
@@ -65,6 +66,7 @@ class PlatformSettings(EAIPSettingsBase):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     feature_flags: FeatureFlagSettings = Field(default_factory=FeatureFlagSettings)
     telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
 
 def load_platform_settings() -> PlatformSettings:

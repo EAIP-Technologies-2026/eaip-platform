@@ -28,9 +28,7 @@ class JobHealthCheck(HealthCheck):
             for job in self._executor._jobs.values():
                 runs = job.list_runs()
                 total_runs += len(runs)
-                active_runs += sum(
-                    1 for r in runs if r.status in ("running", "pending")
-                )
+                active_runs += sum(1 for r in runs if r.status in ("running", "pending"))
             details["total_runs"] = total_runs
             details["active_runs"] = active_runs
 

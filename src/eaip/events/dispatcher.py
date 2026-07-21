@@ -147,9 +147,7 @@ class EventDispatcher:
 
             # Collect matching subscriptions from the bus.
             subscriptions = [
-                entry.sub
-                for entry in self._bus._entries
-                if self._bus._matches(entry.sub, event)
+                entry.sub for entry in self._bus._entries if self._bus._matches(entry.sub, event)
             ]
 
             if not subscriptions:

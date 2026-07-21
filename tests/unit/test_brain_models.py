@@ -40,14 +40,14 @@ class TestBrainQuery:
         q = BrainQuery(query="test")
         try:
             q.query = "changed"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except (ValueError, TypeError):
             pass
 
     def test_extra_forbidden(self) -> None:
         try:
             BrainQuery(query="test", unknown_field="x")
-            assert False, "should forbid extra"
+            raise AssertionError("should forbid extra")
         except (ValueError, TypeError):
             pass
 
@@ -76,7 +76,7 @@ class TestBrainSource:
         s = BrainSource(source_type="knowledge", source_id="s1", content_preview="x")
         try:
             s.source_type = "memory"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except (ValueError, TypeError):
             pass
 
@@ -93,8 +93,12 @@ class TestBrainResult:
 
     def test_with_sources(self) -> None:
         sources = (
-            BrainSource(source_type="knowledge", source_id="k1", content_preview="c1", relevance_score=0.9),
-            BrainSource(source_type="memory", source_id="m1", content_preview="c2", relevance_score=0.8),
+            BrainSource(
+                source_type="knowledge", source_id="k1", content_preview="c1", relevance_score=0.9
+            ),
+            BrainSource(
+                source_type="memory", source_id="m1", content_preview="c2", relevance_score=0.8
+            ),
         )
         r = BrainResult(
             query="q1",
@@ -115,7 +119,7 @@ class TestBrainResult:
         r = BrainResult(query="test")
         try:
             r.query = "changed"
-            assert False, "should be frozen"
+            raise AssertionError("should be frozen")
         except (ValueError, TypeError):
             pass
 

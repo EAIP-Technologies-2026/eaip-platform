@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 
-
 # Simple token estimate: ~4 characters per token
 _TOKEN_FACTOR: float = 4.0
 
@@ -211,9 +210,7 @@ class ContextBuilder:
                             docs.append(
                                 ContextDocument(
                                     content=content,
-                                    source=(
-                                        f"knowledge:{getattr(chunk, 'document_id', '')}"
-                                    ),
+                                    source=(f"knowledge:{getattr(chunk, 'document_id', '')}"),
                                     relevance_score=getattr(chunk, "score", 0.0),
                                 )
                             )

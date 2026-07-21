@@ -10,7 +10,6 @@ from eaip.analytics.models import (
     AggregationType,
     DashboardDefinition,
     DashboardWidget,
-    TimeSeriesPoint,
     TimeSeriesResult,
 )
 from eaip.analytics.service import AnalyticsService
@@ -30,7 +29,9 @@ class DashboardService:
     async def create_dashboard(self, definition: DashboardDefinition) -> DashboardDefinition:
         """Create a new dashboard."""
         self._dashboards[definition.id] = definition
-        self._log.info("analytics.dashboard.created", dashboard_id=definition.id, name=definition.name)
+        self._log.info(
+            "analytics.dashboard.created", dashboard_id=definition.id, name=definition.name
+        )
         return definition
 
     async def get_dashboard(self, dashboard_id: str) -> DashboardDefinition:
@@ -40,7 +41,9 @@ class DashboardService:
             raise DashboardNotFoundError(dashboard_id)
         return dashboard
 
-    async def update_dashboard(self, dashboard_id: str, updates: dict[str, Any]) -> DashboardDefinition:
+    async def update_dashboard(
+        self, dashboard_id: str, updates: dict[str, Any]
+    ) -> DashboardDefinition:
         """Update an existing dashboard."""
         existing = await self.get_dashboard(dashboard_id)
 

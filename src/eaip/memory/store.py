@@ -122,9 +122,7 @@ class InMemoryStore:
         item = await self.read(scoped_id)
         if item is None:
             return False
-        restored = item.model_copy(
-            update={"status": MemoryStatus.ACTIVE, "updated_at": utc_now()}
-        )
+        restored = item.model_copy(update={"status": MemoryStatus.ACTIVE, "updated_at": utc_now()})
         self._items[scoped_id.fully_qualified()] = restored
         self._log.debug("store.restored", fq_id=scoped_id.fully_qualified())
         return True
@@ -159,7 +157,11 @@ class InMemoryStore:
                 continue
             if item.importance < query.importance_min or item.importance > query.importance_max:
                 continue
-            if query.query and query.query.lower() not in item.content.lower() and query.query.lower() not in " ".join(item.tags).lower():
+            if (
+                query.query
+                and query.query.lower() not in item.content.lower()
+                and query.query.lower() not in " ".join(item.tags).lower()
+            ):
                 continue
             score = self._compute_score(item, query)
             if score >= query.score_threshold:
@@ -470,9 +472,7 @@ class MemoryStoreAdapter:
         Returns:
             The memory item, or None.
         """
-        if self._retriever is not None:
-            return await self._retriever.retrieve_by_id(scoped_id)
-        return await self._store.read(scoped_id)
+        return await self._retriever.retrieve_by_id(scoped_id)
 
     async def retrieve_by_type(
         self,
@@ -490,9 +490,7 @@ class MemoryStoreAdapter:
         Returns:
             A list of memory items.
         """
-        if self._retriever is not None:
-            return await self._retriever.retrieve_by_type(memory_type, scope, limit)
-        return await self._store.list_by_scope(scope, memory_type=memory_type, limit=limit)
+        return await self._retriever.retrieve_by_type(memory_type, scope, limit)
 
     async def retrieve_by_tags(
         self,
@@ -510,11 +508,7 @@ class MemoryStoreAdapter:
         Returns:
             A list of memory items.
         """
-        if self._retriever is not None:
-            return await self._retriever.retrieve_by_tags(tags, scope, limit)
-        all_items = await self._store.list_by_scope(scope, limit=limit * 10)
-        matched = [i for i in all_items if any(t in i.tags for t in tags)]
-        return matched[:limit]
+        return await self._retriever.retrieve_by_tags(tags, scope, limit)
 
     async def delete_many(self, fq_ids: list[str]) -> int:
         """Delete multiple items.

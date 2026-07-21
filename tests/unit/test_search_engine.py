@@ -4,9 +4,8 @@ import pydantic
 import pytest
 
 from eaip.search.engine import EnterpriseSearchEngine
-from eaip.search.exceptions import ProviderNotFoundError, SearchQueryError
+from eaip.search.exceptions import ProviderNotFoundError
 from eaip.search.models import SearchQuery, SearchResult, SearchResultItem
-from eaip.search.providers import SearchProvider
 
 
 class _MockProvider:
@@ -65,7 +64,7 @@ class TestEnterpriseSearchEngine:
         assert result.total_count == 0
 
     def test_search_invalid_page_size(self) -> None:
-        engine = EnterpriseSearchEngine()
+        EnterpriseSearchEngine()
         with pytest.raises(pydantic.ValidationError):
             SearchQuery(query="test", page_size=0)
 
@@ -143,6 +142,7 @@ class TestEnterpriseSearchEngine:
     async def test_provider_failure_does_not_block_others(self) -> None:
         class FailingProvider:
             name = "fail"
+
             async def search(self, query: SearchQuery) -> SearchResult:
                 raise RuntimeError("fail")
 

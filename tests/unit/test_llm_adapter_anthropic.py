@@ -73,9 +73,7 @@ class TestAnthropicAdapter:
 
     async def test_complete_with_tools(self) -> None:
         registry = ToolRegistry()
-        adapter = AnthropicAdapter(
-            provider=_HealthyAnthropicProvider(), tool_registry=registry
-        )
+        adapter = AnthropicAdapter(provider=_HealthyAnthropicProvider(), tool_registry=registry)
         request = LLMRequest(
             model="claude-3-opus",
             messages=(ChatMessage(role="user", content="Hi"),),

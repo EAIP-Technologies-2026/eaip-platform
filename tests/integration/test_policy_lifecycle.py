@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
-from eaip.app import ApplicationBuilder
-from eaip.health.checks import HealthStatus
-from eaip.health.reporter import HealthReporter
 from eaip.policy.authorization import AuthorizationManager
 from eaip.policy.context import PolicyEvaluationContext
 from eaip.policy.engine import PolicyEngine
@@ -34,9 +29,14 @@ class TestPolicyLifecycle:
     async def test_authorization_manager_with_registry(self) -> None:
         engine = PolicyEngine()
         registry = PolicyRegistry()
-        rule = PolicyRule(id="r1", name="Deny Admin Delete", effect=PolicyEffect.DENY,
-                          subjects=("admin",), actions=("capability:invoke",),
-                          resources=("capability:admin.*",))
+        rule = PolicyRule(
+            id="r1",
+            name="Deny Admin Delete",
+            effect=PolicyEffect.DENY,
+            subjects=("admin",),
+            actions=("capability:invoke",),
+            resources=("capability:admin.*",),
+        )
         policy = Policy(id="p1", name="admin-policy", rules=(rule,))
         registry.register(policy)
 
@@ -50,9 +50,10 @@ class TestPolicyLifecycle:
         )
 
         from eaip.policy.exceptions import PolicyViolationError
+
         try:
             auth.authorize(ctx)
-            assert False, "expected PolicyViolationError"
+            raise AssertionError("expected PolicyViolationError")
         except PolicyViolationError:
             pass
 
@@ -60,13 +61,29 @@ class TestPolicyLifecycle:
         engine = PolicyEngine()
         registry = PolicyRegistry()
 
-        viewer = PolicyRule(id="v1", name="Viewer Read", effect=PolicyEffect.ALLOW,
-                            subjects=("viewer",), actions=("read",))
-        admin = PolicyRule(id="a1", name="Admin All", effect=PolicyEffect.ALLOW,
-                           subjects=("admin",), actions=("*",))
-        deny_dangerous = PolicyRule(id="d1", name="Deny Shutdown", effect=PolicyEffect.DENY,
-                                    subjects=("admin",), actions=("capability:invoke",),
-                                    resources=("capability:system.shutdown",), priority=100)
+        viewer = PolicyRule(
+            id="v1",
+            name="Viewer Read",
+            effect=PolicyEffect.ALLOW,
+            subjects=("viewer",),
+            actions=("read",),
+        )
+        admin = PolicyRule(
+            id="a1",
+            name="Admin All",
+            effect=PolicyEffect.ALLOW,
+            subjects=("admin",),
+            actions=("*",),
+        )
+        deny_dangerous = PolicyRule(
+            id="d1",
+            name="Deny Shutdown",
+            effect=PolicyEffect.DENY,
+            subjects=("admin",),
+            actions=("capability:invoke",),
+            resources=("capability:system.shutdown",),
+            priority=100,
+        )
 
         registry.register(Policy(id="viewer-pol", name="viewer", rules=(viewer,)))
         registry.register(Policy(id="admin-pol", name="admin", rules=(admin, deny_dangerous)))
@@ -74,22 +91,31 @@ class TestPolicyLifecycle:
         auth = AuthorizationManager(engine, registry)
 
         ctx_view = PolicyEvaluationContext(
-            subject_id="u1", subject_roles=("viewer",), action="read", resource="file",
+            subject_id="u1",
+            subject_roles=("viewer",),
+            action="read",
+            resource="file",
         )
         auth.authorize(ctx_view)
 
         ctx_admin_read = PolicyEvaluationContext(
-            subject_id="u2", subject_roles=("admin",), action="read", resource="file",
+            subject_id="u2",
+            subject_roles=("admin",),
+            action="read",
+            resource="file",
         )
         auth.authorize(ctx_admin_read)
 
         ctx_shutdown = PolicyEvaluationContext(
-            subject_id="u3", subject_roles=("admin",), action="capability:invoke",
+            subject_id="u3",
+            subject_roles=("admin",),
+            action="capability:invoke",
             resource="capability:system.shutdown",
         )
         from eaip.policy.exceptions import PolicyViolationError
+
         try:
             auth.authorize(ctx_shutdown)
-            assert False, "expected PolicyViolationError"
+            raise AssertionError("expected PolicyViolationError")
         except PolicyViolationError:
             pass

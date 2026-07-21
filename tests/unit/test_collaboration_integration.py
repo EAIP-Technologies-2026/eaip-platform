@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from eaip.collaboration.approval import CollaborationApprovalService
 from eaip.collaboration.coordinator import CoordinationEngine
 from eaip.collaboration.delegation import TaskDelegationService
-from eaip.collaboration.approval import CollaborationApprovalService
-from eaip.collaboration.state import SharedStateManager
-from eaip.collaboration.tracking import ExecutionTracker
 from eaip.collaboration.health import CollaborationHealthCheck
 from eaip.collaboration.integration import CollaborationRuntimeModule
+from eaip.collaboration.state import SharedStateManager
+from eaip.collaboration.tracking import ExecutionTracker
 
 
 class TestCollaborationRuntimeModule:

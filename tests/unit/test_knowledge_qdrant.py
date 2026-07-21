@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.knowledge.models import DocumentChunk, RetrievalQuery
 from eaip.knowledge.qdrant_store import QdrantStore
 
 

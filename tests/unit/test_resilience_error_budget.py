@@ -27,8 +27,8 @@ class TestErrorBudget:
     def test_budget_exhaustion(self) -> None:
         eb = ErrorBudget("test", ErrorBudgetConfig(max_error_rate=0.3))
         eb.record_success()  # 0 errors / 1 total = 0% error
-        eb.record_error()     # 1 error / 2 total = 50% > 30% threshold
-        eb.record_error()     # 2 errors / 3 total = 66% > 30% threshold
+        eb.record_error()  # 1 error / 2 total = 50% > 30% threshold
+        eb.record_error()  # 2 errors / 3 total = 66% > 30% threshold
         assert eb.is_exhausted
 
     def test_budget_warning(self) -> None:
@@ -36,7 +36,7 @@ class TestErrorBudget:
         eb.record_success()
         eb.record_success()
         eb.record_success()
-        eb.record_error()     # 1 error / 4 total = 25% < 50% threshold
+        eb.record_error()  # 1 error / 4 total = 25% < 50% threshold
         assert eb.error_rate == 0.25
         assert not eb.is_exhausted
 

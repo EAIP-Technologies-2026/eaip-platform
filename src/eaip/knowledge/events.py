@@ -90,14 +90,80 @@ class FederatedSearchExecuted(KnowledgeEngineEvent):
     duration_ms: float
 
 
+# ── Pipeline stage events ──────────────────────────────────────────
+
+
+class KnowledgeUploaded(KnowledgeEngineEvent):
+    """Published when a document is uploaded to the ingestion pipeline."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.uploaded"
+    document_id: str
+    collection: str
+    size_bytes: int
+    format: str
+
+
+class ChunkingCompleted(KnowledgeEngineEvent):
+    """Published after document chunking completes."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.chunking.completed"
+    document_id: str
+    chunk_count: int
+    duration_ms: float
+
+
+class EmbeddingCreated(KnowledgeEngineEvent):
+    """Published when embeddings are generated for document chunks."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.embedding.created"
+    document_id: str
+    chunk_count: int
+    dimensions: int
+    duration_ms: float
+
+
+class KnowledgeIndexed(KnowledgeEngineEvent):
+    """Published when a document is fully indexed in the vector store."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.indexed"
+    document_id: str
+    collection: str
+    chunk_count: int
+    duration_ms: float
+
+
+class SearchExecuted(KnowledgeEngineEvent):
+    """Published after any knowledge search (semantic, hybrid, keyword)."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.search.executed"
+    query: str
+    collection: str
+    search_type: str = "semantic"
+    result_count: int
+    duration_ms: float
+
+
+class VectorStoreCleared(KnowledgeEngineEvent):
+    """Published when a vector store collection is cleared."""
+
+    event_type: ClassVar[str] = "eaip.knowledge.vector_store.cleared"
+    collection: str
+
+
 __all__ = [
+    "ChunkingCompleted",
     "CollectionCreated",
     "CollectionDeleted",
     "DocumentDeleted",
     "DocumentIngested",
+    "EmbeddingCreated",
     "FederatedSearchExecuted",
     "HybridSearchExecuted",
     "KnowledgeEngineEvent",
+    "KnowledgeIndexed",
     "KnowledgeQuery",
+    "KnowledgeUploaded",
     "RetrievalExecuted",
+    "SearchExecuted",
+    "VectorStoreCleared",
 ]

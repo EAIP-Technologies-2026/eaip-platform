@@ -235,7 +235,9 @@ class TestCorsMiddleware:
         async def handler(req: ApiRequest) -> ApiResponse:
             return ApiResponse(request_id=req.id, status_code=200)
 
-        req = ApiRequest(id="r1", method=HttpMethod.GET, path="/", headers={"Origin": "http://example.com"})
+        req = ApiRequest(
+            id="r1", method=HttpMethod.GET, path="/", headers={"Origin": "http://example.com"}
+        )
         resp = await mw.handle(req, handler)
         assert resp.headers.get("Access-Control-Allow-Origin") == "http://example.com"
 

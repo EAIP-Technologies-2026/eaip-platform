@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from eaip.automation.models import (
     AutomationExecution,
     AutomationStatus,
     ExecutionHistoryEntry,
-    TriggerType,
 )
 from eaip.logging.context import get_logger
 
@@ -54,17 +53,13 @@ class ExecutionHistory:
         return self._details.get(execution_id)
 
     async def cleanup_history(self, retention_days: int) -> int:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        cutoff = datetime.now(UTC) - timedelta(days=retention_days)
         before = len(self._entries)
         self._entries = {
-            eid: entry
-            for eid, entry in self._entries.items()
-            if entry.started_at > cutoff
+            eid: entry for eid, entry in self._entries.items() if entry.started_at > cutoff
         }
         self._details = {
-            eid: detail
-            for eid, detail in self._details.items()
-            if eid in self._entries
+            eid: detail for eid, detail in self._details.items() if eid in self._entries
         }
         removed = before - len(self._entries)
         if removed:
@@ -72,7 +67,8 @@ class ExecutionHistory:
         return removed
 
     async def get_statistics(
-        self, rule_id: str | None = None,
+        self,
+        rule_id: str | None = None,
     ) -> dict[str, Any]:
         entries = list(self._entries.values())
         if rule_id is not None:

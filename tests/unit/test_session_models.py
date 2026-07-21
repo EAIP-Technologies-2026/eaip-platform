@@ -60,14 +60,14 @@ class TestSession:
         s = Session(id="s1")
         try:
             s.id = "s2"
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 
     def test_extra_forbidden(self) -> None:
         try:
             Session(id="s1", unknown_field="x")  # type: ignore[call-arg]
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 
@@ -97,7 +97,7 @@ class TestSessionContext:
         ctx = SessionContext(session_id="s1")
         try:
             ctx.session_id = "s2"
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 
@@ -140,7 +140,7 @@ class TestContextPropagationConfig:
         cfg = ContextPropagationConfig()
         try:
             cfg.max_depth = 10
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 
@@ -193,7 +193,7 @@ class TestExecutionContext:
         ec = ExecutionContext(id="e1", name="test", session_id="s1")
         try:
             ec.name = "changed"
-            assert False
+            raise AssertionError()
         except Exception:
             pass
 

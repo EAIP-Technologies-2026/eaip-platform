@@ -227,7 +227,10 @@ class AgentRuntime:
             self._runs[run_id] = run
 
             completed_steps = await self._execute_steps(
-                list(plan.steps), run, tracer, run_id,
+                list(plan.steps),
+                run,
+                tracer,
+                run_id,
             )
 
             run = run.model_copy(update={"steps": tuple(completed_steps)})

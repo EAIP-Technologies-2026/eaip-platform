@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
-
-import pytest
+from unittest.mock import MagicMock
 
 from eaip.workforce.integration import WorkforceRuntimeModule
 from eaip.workforce.orchestrator import WorkforceOrchestrator

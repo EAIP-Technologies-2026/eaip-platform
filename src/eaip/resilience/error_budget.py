@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from datetime import timedelta
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from eaip.logging.context import get_logger
 

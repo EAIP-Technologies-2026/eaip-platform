@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
-
 from eaip.analytics.aggregation import AggregationEngine
 from eaip.analytics.dashboard import DashboardService
 from eaip.analytics.integration import AnalyticsRuntimeModule
@@ -46,8 +44,12 @@ class TestAnalyticsRuntimeModule:
         dash = DashboardService(analytics_service=svc)
         tel = TelemetryCollector(analytics_service=svc)
         module = AnalyticsRuntimeModule(
-            analytics_service=svc, trend_analyzer=trends, aggregation_engine=agg,
-            kpi_engine=kpi, dashboard_service=dash, telemetry_collector=tel,
+            analytics_service=svc,
+            trend_analyzer=trends,
+            aggregation_engine=agg,
+            kpi_engine=kpi,
+            dashboard_service=dash,
+            telemetry_collector=tel,
         )
         assert module.analytics_service is svc
         assert module.trend_analyzer is trends

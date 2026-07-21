@@ -69,11 +69,13 @@ class SharedStateManager:
         if state is None:
             raise CollaborationError(f"No shared state for session {session_id}")
 
-        updated = state.model_copy(update={
-            "variables": {**state.variables, key: value},
-            "version": state.version + 1,
-            "updated_at": datetime.now(),
-        })
+        updated = state.model_copy(
+            update={
+                "variables": {**state.variables, key: value},
+                "version": state.version + 1,
+                "updated_at": datetime.now(),
+            }
+        )
         self._states[session_id] = updated
 
         self._publish(
@@ -145,14 +147,16 @@ class SharedStateManager:
         if state is None:
             raise CollaborationError(f"No shared state for session {session_id}")
 
-        updated = state.model_copy(update={
-            "agent_contributions": {
-                **state.agent_contributions,
-                agent_id: summary,
-            },
-            "version": state.version + 1,
-            "updated_at": datetime.now(),
-        })
+        updated = state.model_copy(
+            update={
+                "agent_contributions": {
+                    **state.agent_contributions,
+                    agent_id: summary,
+                },
+                "version": state.version + 1,
+                "updated_at": datetime.now(),
+            }
+        )
         self._states[session_id] = updated
         return updated
 
@@ -195,15 +199,17 @@ class SharedStateManager:
         if source is None:
             raise CollaborationError(f"No shared state for source session {source_id}")
 
-        merged = target.model_copy(update={
-            "variables": {**target.variables, **source.variables},
-            "agent_contributions": {
-                **target.agent_contributions,
-                **source.agent_contributions,
-            },
-            "version": max(target.version, source.version) + 1,
-            "updated_at": datetime.now(),
-        })
+        merged = target.model_copy(
+            update={
+                "variables": {**target.variables, **source.variables},
+                "agent_contributions": {
+                    **target.agent_contributions,
+                    **source.agent_contributions,
+                },
+                "version": max(target.version, source.version) + 1,
+                "updated_at": datetime.now(),
+            }
+        )
         self._states[target_id] = merged
         self._log.info(
             "state.merged",

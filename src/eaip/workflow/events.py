@@ -171,6 +171,43 @@ class WorkflowParallelGroupCompleted(DomainEvent):
     duration_ms: float = 0.0
 
 
+# ── Workflow lifecycle events ──────────────────────────────────────
+
+
+class WorkflowCreated(DomainEvent):
+    """Published when a new workflow definition is created."""
+
+    event_type: ClassVar[str] = "eaip.workflow.created"
+    workflow_id: str
+    name: str
+    version: str = ""
+
+
+class WorkflowUpdated(DomainEvent):
+    """Published when a workflow definition is updated."""
+
+    event_type: ClassVar[str] = "eaip.workflow.updated"
+    workflow_id: str
+    name: str
+    changes: tuple[str, ...] = ()
+
+
+class WorkflowArchived(DomainEvent):
+    """Published when a workflow definition is archived."""
+
+    event_type: ClassVar[str] = "eaip.workflow.archived"
+    workflow_id: str
+    name: str
+
+
+class WorkflowCancelled(DomainEvent):
+    """Published when a workflow execution is cancelled."""
+
+    event_type: ClassVar[str] = "eaip.workflow.cancelled"
+    run_id: str
+    workflow_id: str
+
+
 WorkflowEvent = (
     WorkflowStarted
     | WorkflowStepStarted
@@ -189,13 +226,20 @@ WorkflowEvent = (
     | WorkflowChildCompleted
     | WorkflowParallelGroupStarted
     | WorkflowParallelGroupCompleted
+    | WorkflowCreated
+    | WorkflowUpdated
+    | WorkflowArchived
+    | WorkflowCancelled
 )
 
 
 __all__ = [
+    "WorkflowArchived",
+    "WorkflowCancelled",
     "WorkflowChildCompleted",
     "WorkflowChildStarted",
     "WorkflowCompleted",
+    "WorkflowCreated",
     "WorkflowEvent",
     "WorkflowParallelGroupCompleted",
     "WorkflowParallelGroupStarted",
@@ -211,4 +255,5 @@ __all__ = [
     "WorkflowStepStarted",
     "WorkflowStepTimedOut",
     "WorkflowTimedOut",
+    "WorkflowUpdated",
 ]

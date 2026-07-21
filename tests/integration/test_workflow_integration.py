@@ -122,7 +122,9 @@ class TestWorkflowEngineWithApproval:
             approval_handler=approval_handler,
         )
         steps = (
-            WorkflowStep(id="s1", name="Requires Approval", agent_id="agent_a", prompt="needs approval"),  # noqa: E501
+            WorkflowStep(
+                id="s1", name="Requires Approval", agent_id="agent_a", prompt="needs approval"
+            ),
         )
         definition = WorkflowDefinition(id="wf_app", name="WithApproval", steps=steps)
         result = await engine.execute(definition)
@@ -132,9 +134,7 @@ class TestWorkflowEngineWithApproval:
 class TestWorkflowEngineCancellation:
     async def test_cancel_during_execution(self) -> None:
         engine = WorkflowEngine(agent_runtime=_TestAgentRuntime())
-        steps = (
-            WorkflowStep(id="s1", name="First", agent_id="agent_a", prompt="start"),
-        )
+        steps = (WorkflowStep(id="s1", name="First", agent_id="agent_a", prompt="start"),)
         definition = WorkflowDefinition(id="wf_cancel", name="Cancel", steps=steps)
         task = asyncio.create_task(engine.execute(definition))
         await asyncio.sleep(0.01)

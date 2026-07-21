@@ -138,7 +138,10 @@ class WorkflowEngine:
         except TimeoutError:
             sm.transition(WorkflowState.TIMED_OUT)
             result = self._make_result(
-                run_id, definition, started_at, WorkflowStatus.TIMED_OUT,
+                run_id,
+                definition,
+                started_at,
+                WorkflowStatus.TIMED_OUT,
                 f"workflow timed out after {workflow_timeout}s",
             )
             await self._publish(
@@ -166,29 +169,40 @@ class WorkflowEngine:
             else:
                 self._try_transition(run_id, WorkflowState.COMPLETED)
 
-        run = WorkflowRun(**{
-            **run.model_dump(),
-            "status": result.status,
-            "result": result.result,
-            "error": result.error,
-            "duration_ms": result.duration_ms,
-            "state_machine_state": sm.state.value,
-        })
+        run = WorkflowRun(
+            **{
+                **run.model_dump(),
+                "status": result.status,
+                "result": result.result,
+                "error": result.error,
+                "duration_ms": result.duration_ms,
+                "state_machine_state": sm.state.value,
+            }
+        )
         self._runs[run_id] = run
         self._cancel_flags.discard(run_id)
         self._pause_flags.discard(run_id)
 
         await self._publish(
             WorkflowCompleted(
-                run_id=run_id, workflow_id=definition.id, status=result.status,
-                duration_ms=result.duration_ms, result=result.result,
-                error=result.error, step_count=result.step_count,
-                completed_count=result.completed_count, failed_count=result.failed_count,
+                run_id=run_id,
+                workflow_id=definition.id,
+                status=result.status,
+                duration_ms=result.duration_ms,
+                result=result.result,
+                error=result.error,
+                step_count=result.step_count,
+                completed_count=result.completed_count,
+                failed_count=result.failed_count,
             )
         )
-        self._record_metric("workflow.completed", {
-            "workflow_id": definition.id, "status": result.status.value,
-        })
+        self._record_metric(
+            "workflow.completed",
+            {
+                "workflow_id": definition.id,
+                "status": result.status.value,
+            },
+        )
 
         for plugin in self._plugins:
             await plugin.on_workflow_end(run_id=run_id, result=result)
@@ -202,9 +216,12 @@ class WorkflowEngine:
                 sm.transition(WorkflowState.CANCELLED)
             r = self._runs[run_id]
             if r.status in (WorkflowStatus.PENDING, WorkflowStatus.RUNNING, WorkflowStatus.PAUSED):
-                self._runs[run_id] = WorkflowRun(**{
-                    **r.model_dump(), "status": WorkflowStatus.CANCELLED,
-                })
+                self._runs[run_id] = WorkflowRun(
+                    **{
+                        **r.model_dump(),
+                        "status": WorkflowStatus.CANCELLED,
+                    }
+                )
                 self._cancel_flags.discard(run_id)
 
     async def pause(self, run_id: str) -> None:
@@ -225,13 +242,17 @@ class WorkflowEngine:
     async def resume(self, run_id: str) -> WorkflowResult:
         if run_id not in self._runs:
             return WorkflowResult(
-                run_id=run_id, workflow_id="", status=WorkflowStatus.FAILED,
+                run_id=run_id,
+                workflow_id="",
+                status=WorkflowStatus.FAILED,
                 error="run not found",
             )
         run = self._runs[run_id]
         if run.status != WorkflowStatus.PAUSED:
             return WorkflowResult(
-                run_id=run_id, workflow_id=run.workflow_id, status=run.status,
+                run_id=run_id,
+                workflow_id=run.workflow_id,
+                status=run.status,
                 error="run is not paused",
             )
         self._pause_flags.discard(run_id)
@@ -314,10 +335,15 @@ class WorkflowEngine:
             final_status = WorkflowStatus.COMPLETED
 
         return WorkflowResult(
-            run_id=run_id, workflow_id=definition.id, status=final_status,
-            step_count=len(step_records), completed_count=completed,
-            failed_count=failed, skipped_count=skipped,
-            timed_out_count=timed_out, duration_ms=duration,
+            run_id=run_id,
+            workflow_id=definition.id,
+            status=final_status,
+            step_count=len(step_records),
+            completed_count=completed,
+            failed_count=failed,
+            skipped_count=skipped,
+            timed_out_count=timed_out,
+            duration_ms=duration,
         )
 
     async def _execute_dag(
@@ -367,7 +393,11 @@ class WorkflowEngine:
 
             if parallel_tasks:
                 group_results = await self._execute_parallel_group(
-                    run_id, definition, parallel_tasks, ctx, parallel_groups,
+                    run_id,
+                    definition,
+                    parallel_tasks,
+                    ctx,
+                    parallel_groups,
                 )
                 for rec_list, grp_id in group_results:
                     completed_groups.add(grp_id)
@@ -376,7 +406,11 @@ class WorkflowEngine:
                         if rec.status == WorkflowStepStatus.COMPLETED:
                             completed += 1
                             self._decrement_dependents(
-                                rec.step_id, in_deg, queue, ready, definition,
+                                rec.step_id,
+                                in_deg,
+                                queue,
+                                ready,
+                                definition,
                             )
                         elif rec.status == WorkflowStepStatus.FAILED:
                             failed += 1
@@ -392,7 +426,9 @@ class WorkflowEngine:
 
             if not self._should_run(step, ctx, definition):
                 rec = WorkflowStepRecord(
-                    step_id=step.id, name=step.name, status=WorkflowStepStatus.SKIPPED,
+                    step_id=step.id,
+                    name=step.name,
+                    status=WorkflowStepStatus.SKIPPED,
                 )
                 step_records.append(rec)
                 skipped += 1
@@ -424,10 +460,15 @@ class WorkflowEngine:
             final_status = WorkflowStatus.COMPLETED
 
         return WorkflowResult(
-            run_id=run_id, workflow_id=definition.id, status=final_status,
-            step_count=len(step_records), completed_count=completed,
-            failed_count=failed, skipped_count=skipped,
-            timed_out_count=timed_out, duration_ms=duration,
+            run_id=run_id,
+            workflow_id=definition.id,
+            status=final_status,
+            step_count=len(step_records),
+            completed_count=completed,
+            failed_count=failed,
+            skipped_count=skipped,
+            timed_out_count=timed_out,
+            duration_ms=duration,
         )
 
     async def _execute_parallel_group(
@@ -444,8 +485,10 @@ class WorkflowEngine:
 
         await self._publish(
             WorkflowParallelGroupStarted(
-                run_id=run_id, workflow_id=definition.id,
-                group_id=group_id, step_count=len(steps_to_run),
+                run_id=run_id,
+                workflow_id=definition.id,
+                group_id=group_id,
+                step_count=len(steps_to_run),
             )
         )
 
@@ -466,14 +509,17 @@ class WorkflowEngine:
                 for s in steps_to_run:
                     await self._publish(
                         WorkflowStepTimedOut(
-                            run_id=run_id, workflow_id=definition.id,
-                            step_id=s.id, step_name=s.name,
+                            run_id=run_id,
+                            workflow_id=definition.id,
+                            step_id=s.id,
+                            step_name=s.name,
                             timeout_seconds=group.timeout_seconds,
                         )
                     )
                 timed_out_records = [
                     WorkflowStepRecord(
-                        step_id=s.id, name=s.name,
+                        step_id=s.id,
+                        name=s.name,
                         status=WorkflowStepStatus.TIMED_OUT,
                         error=f"parallel group timed out after {group.timeout_seconds}s",
                     )
@@ -482,9 +528,12 @@ class WorkflowEngine:
                 group_duration = (time.monotonic() - group_start) * 1000
                 await self._publish(
                     WorkflowParallelGroupCompleted(
-                        run_id=run_id, workflow_id=definition.id,
-                        group_id=group_id, completed=0,
-                        failed=0, duration_ms=group_duration,
+                        run_id=run_id,
+                        workflow_id=definition.id,
+                        group_id=group_id,
+                        completed=0,
+                        failed=0,
+                        duration_ms=group_duration,
                     )
                 )
                 return [(timed_out_records, group_id)]
@@ -494,12 +543,14 @@ class WorkflowEngine:
         records: list[WorkflowStepRecord] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                records.append(WorkflowStepRecord(
-                    step_id=steps_to_run[i].id,
-                    name=steps_to_run[i].name,
-                    status=WorkflowStepStatus.FAILED,
-                    error=str(result),
-                ))
+                records.append(
+                    WorkflowStepRecord(
+                        step_id=steps_to_run[i].id,
+                        name=steps_to_run[i].name,
+                        status=WorkflowStepStatus.FAILED,
+                        error=str(result),
+                    )
+                )
             elif isinstance(result, WorkflowStepRecord):
                 records.append(result)
 
@@ -509,9 +560,12 @@ class WorkflowEngine:
 
         await self._publish(
             WorkflowParallelGroupCompleted(
-                run_id=run_id, workflow_id=definition.id,
-                group_id=group_id, completed=completed_count,
-                failed=failed_count, duration_ms=group_duration,
+                run_id=run_id,
+                workflow_id=definition.id,
+                group_id=group_id,
+                completed=completed_count,
+                failed=failed_count,
+                duration_ms=group_duration,
             )
         )
 
@@ -530,25 +584,33 @@ class WorkflowEngine:
     ) -> WorkflowStepRecord:
         step_start = time.monotonic()
         rec = WorkflowStepRecord(
-            step_id=step.id, name=step.name, status=WorkflowStepStatus.RUNNING,
-            agent_id=step.agent_id, tool_name=step.tool_name,
-            prompt=step.prompt, input=step.input, attempt=0,
+            step_id=step.id,
+            name=step.name,
+            status=WorkflowStepStatus.RUNNING,
+            agent_id=step.agent_id,
+            tool_name=step.tool_name,
+            prompt=step.prompt,
+            input=step.input,
+            attempt=0,
             started_at=datetime.fromtimestamp(step_start, tz=UTC),
         )
 
         # Approval checkpoint before execution
         if step.requires_approval and self._approval_handler:
-            rec = WorkflowStepRecord(**{
-                **rec.model_dump(),
-                "status": WorkflowStepStatus.WAITING_APPROVAL,
-            })
+            rec = WorkflowStepRecord(
+                **{
+                    **rec.model_dump(),
+                    "status": WorkflowStepStatus.WAITING_APPROVAL,
+                }
+            )
             sm = self._state_machines.get(run_id)
             if sm and sm.can_transition(WorkflowState.WAITING_APPROVAL):
                 sm.transition(WorkflowState.WAITING_APPROVAL)
 
             approval_timeout = (
                 definition.timeout_config.approval_timeout_seconds
-                if definition.timeout_config else 3600.0
+                if definition.timeout_config
+                else 3600.0
             )
             try:
                 token = await self._approval_handler.request_approval(
@@ -563,18 +625,23 @@ class WorkflowEngine:
                     timeout_seconds=approval_timeout,
                 )
             except Exception as exc:
-                rec = WorkflowStepRecord(**{
-                    **rec.model_dump(),
-                    "status": WorkflowStepStatus.FAILED,
-                    "error": f"approval request failed: {exc}",
-                    "completed_at": datetime.fromtimestamp(time.monotonic(), tz=UTC),
-                })
+                rec = WorkflowStepRecord(
+                    **{
+                        **rec.model_dump(),
+                        "status": WorkflowStepStatus.FAILED,
+                        "error": f"approval request failed: {exc}",
+                        "completed_at": datetime.fromtimestamp(time.monotonic(), tz=UTC),
+                    }
+                )
                 await self._publish(
                     WorkflowStepFailed(
-                        run_id=run_id, workflow_id=definition.id,
-                        step_id=step.id, step_name=step.name,
+                        run_id=run_id,
+                        workflow_id=definition.id,
+                        step_id=step.id,
+                        step_name=step.name,
                         error=f"approval request failed: {exc}",
-                        attempt=0, will_retry=False,
+                        attempt=0,
+                        will_retry=False,
                     )
                 )
                 return rec
@@ -583,8 +650,10 @@ class WorkflowEngine:
 
             await self._publish(
                 WorkflowStepApprovalRequired(
-                    run_id=run_id, workflow_id=definition.id,
-                    step_id=step.id, step_name=step.name,
+                    run_id=run_id,
+                    workflow_id=definition.id,
+                    step_id=step.id,
+                    step_name=step.name,
                     payload=rec.input,
                     resume_token=token,
                     approval_prompt=step.approval_prompt,
@@ -596,14 +665,22 @@ class WorkflowEngine:
 
         await self._publish(
             WorkflowStepStarted(
-                run_id=run_id, workflow_id=definition.id, step_id=step.id,
-                step_name=step.name, agent_id=step.agent_id,
-                tool_name=step.tool_name, attempt=0,
+                run_id=run_id,
+                workflow_id=definition.id,
+                step_id=step.id,
+                step_name=step.name,
+                agent_id=step.agent_id,
+                tool_name=step.tool_name,
+                attempt=0,
             )
         )
-        self._record_metric("workflow.step.started", {
-            "workflow_id": definition.id, "step_id": step.id,
-        })
+        self._record_metric(
+            "workflow.step.started",
+            {
+                "workflow_id": definition.id,
+                "step_id": step.id,
+            },
+        )
         for plugin in self._plugins:
             await plugin.on_step_start(run_id=run_id, step_id=step.id, context=ctx)
 
@@ -619,10 +696,13 @@ class WorkflowEngine:
 
         for attempt in range(max_attempts):
             if run_id in self._cancel_flags:
-                rec = WorkflowStepRecord(**{
-                    **rec.model_dump(),
-                    "status": WorkflowStepStatus.SKIPPED, "error": "cancelled",
-                })
+                rec = WorkflowStepRecord(
+                    **{
+                        **rec.model_dump(),
+                        "status": WorkflowStepStatus.SKIPPED,
+                        "error": "cancelled",
+                    }
+                )
                 break
             if attempt > 0:
                 await asyncio.sleep(delay + (jitter * (time.monotonic() % 1)))
@@ -638,30 +718,46 @@ class WorkflowEngine:
                     output = await self._execute_step_action(step)
             except TimeoutError:
                 last_error = f"step timed out after {step.timeout_seconds}s"
-                rec = WorkflowStepRecord(**{
-                    **rec.model_dump(), "attempt": attempt, "error": last_error,
-                })
+                rec = WorkflowStepRecord(
+                    **{
+                        **rec.model_dump(),
+                        "attempt": attempt,
+                        "error": last_error,
+                    }
+                )
                 await self._publish(
                     WorkflowStepTimedOut(
-                        run_id=run_id, workflow_id=definition.id,
-                        step_id=step.id, step_name=step.name,
+                        run_id=run_id,
+                        workflow_id=definition.id,
+                        step_id=step.id,
+                        step_name=step.name,
                         timeout_seconds=step.timeout_seconds,
                     )
                 )
                 continue
             except Exception as exc:
                 last_error = str(exc)
-                rec = WorkflowStepRecord(**{
-                    **rec.model_dump(), "attempt": attempt, "error": last_error,
-                })
+                rec = WorkflowStepRecord(
+                    **{
+                        **rec.model_dump(),
+                        "attempt": attempt,
+                        "error": last_error,
+                    }
+                )
                 continue
 
             elapsed = (time.monotonic() - step_start) * 1000
             rec = WorkflowStepRecord(
-                step_id=step.id, name=step.name, status=WorkflowStepStatus.COMPLETED,
-                agent_id=step.agent_id, tool_name=step.tool_name,
-                prompt=step.prompt, input=step.input,
-                output=output, attempt=attempt, duration_ms=elapsed,
+                step_id=step.id,
+                name=step.name,
+                status=WorkflowStepStatus.COMPLETED,
+                agent_id=step.agent_id,
+                tool_name=step.tool_name,
+                prompt=step.prompt,
+                input=step.input,
+                output=output,
+                attempt=attempt,
+                duration_ms=elapsed,
                 started_at=rec.started_at,
                 completed_at=datetime.fromtimestamp(time.monotonic(), tz=UTC),
                 approval_token=rec.approval_token,
@@ -670,19 +766,32 @@ class WorkflowEngine:
             ctx = ctx.add_agent_output(step.id, output)
             await self._publish(
                 WorkflowStepCompleted(
-                    run_id=run_id, workflow_id=definition.id, step_id=step.id,
-                    step_name=step.name, agent_id=step.agent_id,
-                    tool_name=step.tool_name, attempt=attempt,
-                    duration_ms=elapsed, output=output,
+                    run_id=run_id,
+                    workflow_id=definition.id,
+                    step_id=step.id,
+                    step_name=step.name,
+                    agent_id=step.agent_id,
+                    tool_name=step.tool_name,
+                    attempt=attempt,
+                    duration_ms=elapsed,
+                    output=output,
                 )
             )
-            self._record_metric("workflow.step.completed", {
-                "workflow_id": definition.id, "step_id": step.id,
-                "attempt": str(attempt), "duration_ms": str(elapsed),
-            })
+            self._record_metric(
+                "workflow.step.completed",
+                {
+                    "workflow_id": definition.id,
+                    "step_id": step.id,
+                    "attempt": str(attempt),
+                    "duration_ms": str(elapsed),
+                },
+            )
             for plugin in self._plugins:
                 await plugin.on_step_end(
-                    run_id=run_id, step_id=step.id, context=ctx, status="completed",
+                    run_id=run_id,
+                    step_id=step.id,
+                    context=ctx,
+                    status="completed",
                 )
             return rec
 
@@ -691,16 +800,23 @@ class WorkflowEngine:
         else:
             final_status = WorkflowStepStatus.FAILED
 
-        rec = WorkflowStepRecord(**{
-            **rec.model_dump(), "status": final_status,
-            "error": last_error or "unknown error",
-            "completed_at": datetime.fromtimestamp(time.monotonic(), tz=UTC),
-        })
+        rec = WorkflowStepRecord(
+            **{
+                **rec.model_dump(),
+                "status": final_status,
+                "error": last_error or "unknown error",
+                "completed_at": datetime.fromtimestamp(time.monotonic(), tz=UTC),
+            }
+        )
         await self._publish(
             WorkflowStepFailed(
-                run_id=run_id, workflow_id=definition.id, step_id=step.id,
-                step_name=step.name, error=last_error or "unknown error",
-                attempt=max_attempts - 1, will_retry=False,
+                run_id=run_id,
+                workflow_id=definition.id,
+                step_id=step.id,
+                step_name=step.name,
+                error=last_error or "unknown error",
+                attempt=max_attempts - 1,
+                will_retry=False,
             )
         )
         for plugin in self._plugins:
@@ -739,10 +855,12 @@ class WorkflowEngine:
 
         if parent_cfg and parent_cfg.inherit_context and parent_run_id in self._runs:
             parent_run = self._runs[parent_run_id]
-            ctx = WorkflowContext(**{
-                **ctx.model_dump(),
-                "variables": {**parent_run.context, **ctx.variables},
-            })
+            ctx = WorkflowContext(
+                **{
+                    **ctx.model_dump(),
+                    "variables": {**parent_run.context, **ctx.variables},
+                }
+            )
 
         await self._publish(
             WorkflowChildStarted(
@@ -758,10 +876,12 @@ class WorkflowEngine:
         if parent_run_id in self._runs:
             parent_run = self._runs[parent_run_id]
             child_ids = [*parent_run.child_run_ids, result.run_id]
-            self._runs[parent_run_id] = WorkflowRun(**{
-                **parent_run.model_dump(),
-                "child_run_ids": tuple(child_ids),
-            })
+            self._runs[parent_run_id] = WorkflowRun(
+                **{
+                    **parent_run.model_dump(),
+                    "child_run_ids": tuple(child_ids),
+                }
+            )
 
         await self._publish(
             WorkflowChildCompleted(
@@ -783,7 +903,8 @@ class WorkflowEngine:
     # ------------------------------------------------------------------
 
     def _build_graph(
-        self, definition: WorkflowDefinition,
+        self,
+        definition: WorkflowDefinition,
     ) -> tuple[dict[str, list[str]], dict[str, int]]:
         adj: dict[str, list[str]] = {s.id: [] for s in definition.steps}
         in_deg: dict[str, int] = {s.id: 0 for s in definition.steps}
@@ -816,7 +937,9 @@ class WorkflowEngine:
         return len(definition.edges) > 0
 
     def _find_group_for_step(
-        self, step_id: str, groups: dict[str, ParallelGroup],
+        self,
+        step_id: str,
+        groups: dict[str, ParallelGroup],
     ) -> str | None:
         for gid, group in groups.items():
             if step_id in group.step_ids:
@@ -840,7 +963,10 @@ class WorkflowEngine:
                     queue.append(step_map[tid])
 
     def _should_run(
-        self, step: WorkflowStep, ctx: WorkflowContext, definition: WorkflowDefinition,
+        self,
+        step: WorkflowStep,
+        ctx: WorkflowContext,
+        definition: WorkflowDefinition,
     ) -> bool:
         for edge in definition.edges:
             if edge.target_id == step.id and edge.source_id in ctx.variables:
@@ -889,8 +1015,12 @@ class WorkflowEngine:
     ) -> WorkflowResult:
         duration = (time.monotonic() - started_at) * 1000
         return WorkflowResult(
-            run_id=run_id, workflow_id=definition.id, status=status,
-            error=error, step_count=len(definition.steps), duration_ms=duration,
+            run_id=run_id,
+            workflow_id=definition.id,
+            status=status,
+            error=error,
+            step_count=len(definition.steps),
+            duration_ms=duration,
         )
 
     def _try_transition(self, run_id: str, target: WorkflowState) -> None:

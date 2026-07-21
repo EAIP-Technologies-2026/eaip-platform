@@ -206,13 +206,15 @@ class CollaborationApprovalService:
         pending: list[dict[str, Any]] = []
         for record in self._approvals.values():
             if record.status is ApprovalStatus.PENDING and approver_id in record.approvers:
-                pending.append({
-                    "approval_id": record.approval_id,
-                    "session_id": record.session_id,
-                    "step_id": record.step_id,
-                    "approvers": record.approvers,
-                    "responded": approver_id in record.responses,
-                })
+                pending.append(
+                    {
+                        "approval_id": record.approval_id,
+                        "session_id": record.session_id,
+                        "step_id": record.step_id,
+                        "approvers": record.approvers,
+                        "responded": approver_id in record.responses,
+                    }
+                )
         return pending
 
     def _is_fully_approved(self, record: ApprovalRecord) -> bool:

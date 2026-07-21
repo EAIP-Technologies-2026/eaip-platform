@@ -6,8 +6,6 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from eaip.brain.enterprise_brain import EnterpriseBrain
-from eaip.brain.events import BrainEvent
-from eaip.brain.health import BrainHealthCheck
 from eaip.brain.models import EnterpriseBrainConfig
 from eaip.capabilities.capability import Capability, CapabilityStatus
 from eaip.health.checks import HealthCheck, HealthReport, HealthStatus

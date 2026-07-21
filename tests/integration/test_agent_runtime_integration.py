@@ -48,11 +48,10 @@ class _MockLLMAdapter:
     name = "mock"
     version = "0.1.0"
 
-    async def complete(
-        self, request: object, *, context: object | None = None
-    ) -> object:
+    async def complete(self, request: object, *, context: object | None = None) -> object:
         return LLMResponse(
-            model="mock", provider="mock",
+            model="mock",
+            provider="mock",
             content="Mock response for planning",
             finish_reason="stop",
         )
@@ -91,8 +90,11 @@ class TestAgentRuntimeWithFixedPlan:
             goal=goal,
             steps=(
                 Step(
-                    id="s1", name="get_paris_weather", type=StepType.TOOL_CALL,
-                    tool_name="get_weather", input={"city": "Paris"},
+                    id="s1",
+                    name="get_paris_weather",
+                    type=StepType.TOOL_CALL,
+                    tool_name="get_weather",
+                    input={"city": "Paris"},
                 ),
             ),
         )
@@ -116,12 +118,18 @@ class TestAgentRuntimeWithFixedPlan:
             goal=goal,
             steps=(
                 Step(
-                    id="s1", name="weather_step", type=StepType.TOOL_CALL,
-                    tool_name="get_weather", input={"city": "Tokyo"},
+                    id="s1",
+                    name="weather_step",
+                    type=StepType.TOOL_CALL,
+                    tool_name="get_weather",
+                    input={"city": "Tokyo"},
                 ),
                 Step(
-                    id="s2", name="calc_step", type=StepType.TOOL_CALL,
-                    tool_name="calculate", input={"expression": "2 + 2"},
+                    id="s2",
+                    name="calc_step",
+                    type=StepType.TOOL_CALL,
+                    tool_name="calculate",
+                    input={"expression": "2 + 2"},
                 ),
             ),
         )
@@ -146,12 +154,18 @@ class TestAgentRuntimeWithFixedPlan:
             goal=goal,
             steps=(
                 Step(
-                    id="s1", name="good_step", type=StepType.TOOL_CALL,
-                    tool_name="get_weather", input={"city": "Berlin"},
+                    id="s1",
+                    name="good_step",
+                    type=StepType.TOOL_CALL,
+                    tool_name="get_weather",
+                    input={"city": "Berlin"},
                 ),
                 Step(
-                    id="s2", name="bad_step", type=StepType.TOOL_CALL,
-                    tool_name="nonexistent_tool", input={},
+                    id="s2",
+                    name="bad_step",
+                    type=StepType.TOOL_CALL,
+                    tool_name="nonexistent_tool",
+                    input={},
                 ),
             ),
         )
@@ -176,8 +190,11 @@ class TestAgentRuntimeWithFixedPlan:
             goal=goal1,
             steps=(
                 Step(
-                    id="s1", name="weather", type=StepType.TOOL_CALL,
-                    tool_name="get_weather", input={"city": "London"},
+                    id="s1",
+                    name="weather",
+                    type=StepType.TOOL_CALL,
+                    tool_name="get_weather",
+                    input={"city": "London"},
                 ),
             ),
         )
@@ -192,9 +209,7 @@ class TestAgentRuntimeWithFixedPlan:
 
 
 class TestAgentRuntimeWithLLMPlanner:
-    async def test_create_plan_via_llm(
-        self, runtime: AgentRuntime, agent_spec: AgentSpec
-    ) -> None:
+    async def test_create_plan_via_llm(self, runtime: AgentRuntime, agent_spec: AgentSpec) -> None:
         goal = Goal(text="Get the weather for Tokyo and then calculate 15 + 27")
         run = await runtime.create_run(agent_spec, goal)
 

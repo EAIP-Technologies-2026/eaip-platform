@@ -31,8 +31,7 @@ def traced(
     Usage::
 
         @traced(attributes={"component": "provider"})
-        async def my_chat(request: ChatRequest) -> ChatResponse:
-            ...
+        async def my_chat(request: ChatRequest) -> ChatResponse: ...
     """
     attrs = dict(attributes) if attributes else {}
 
@@ -42,9 +41,7 @@ def traced(
         if _is_async_gen(func):
 
             @functools.wraps(func)
-            async def async_gen_wrapper(
-                *args: Any, **kwargs: Any
-            ) -> AsyncGenerator[Any, None]:
+            async def async_gen_wrapper(*args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
                 tracer = _get_eaip_tracer()
                 with tracer.start_as_current_span(
                     name, kind=kind, attributes=attrs or None
@@ -62,9 +59,7 @@ def traced(
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             tracer = _get_eaip_tracer()
-            with tracer.start_as_current_span(
-                name, kind=kind, attributes=attrs or None
-            ) as span:
+            with tracer.start_as_current_span(name, kind=kind, attributes=attrs or None) as span:
                 try:
                     return await func(*args, **kwargs)
                 except Exception as exc:

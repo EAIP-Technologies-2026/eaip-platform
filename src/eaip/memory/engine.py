@@ -205,13 +205,15 @@ class MemoryEngine:
 
         self._run_hooks("after_store", scope)
 
-        self._publish_event(MemoryCreated(
-            memory_id=mem_id,
-            memory_type=memory_type,
-            scope=scope,
-            importance=item.importance,
-            tags=item.tags,
-        ))
+        self._publish_event(
+            MemoryCreated(
+                memory_id=mem_id,
+                memory_type=memory_type,
+                scope=scope,
+                importance=item.importance,
+                tags=item.tags,
+            )
+        )
 
         self._log.info(
             "engine.memory_created",
@@ -242,28 +244,34 @@ class MemoryEngine:
         item = await self._store.read(scoped_id)
 
         if item is not None and item.status == MemoryStatus.EXPIRED:
-            self._publish_event(MemoryExpired(
-                memory_id=memory_id,
-                scope=scope,
-                memory_type=item.memory_type,
-            ))
+            self._publish_event(
+                MemoryExpired(
+                    memory_id=memory_id,
+                    scope=scope,
+                    memory_type=item.memory_type,
+                )
+            )
             return item
 
         if item is not None:
-            updated = item.model_copy(update={
-                "access_count": item.access_count + 1,
-                "accessed_at": utc_now(),
-            })
+            updated = item.model_copy(
+                update={
+                    "access_count": item.access_count + 1,
+                    "accessed_at": utc_now(),
+                }
+            )
             try:
                 await self._store.update(updated)
                 self._registry.register(updated)
             except Exception:
                 self._log.warning("engine.access_update_failed", memory_id=memory_id)
 
-            self._publish_event(MemoryRetrieved(
-                memory_id=memory_id,
-                scope=scope,
-            ))
+            self._publish_event(
+                MemoryRetrieved(
+                    memory_id=memory_id,
+                    scope=scope,
+                )
+            )
 
         return item
 
@@ -341,12 +349,14 @@ class MemoryEngine:
 
         self._registry.register(result)
 
-        self._publish_event(MemoryUpdated(
-            memory_id=memory_id,
-            scope=scope,
-            version=result.version,
-            changes=tuple(changes),
-        ))
+        self._publish_event(
+            MemoryUpdated(
+                memory_id=memory_id,
+                scope=scope,
+                version=result.version,
+                changes=tuple(changes),
+            )
+        )
 
         self._log.info("engine.memory_updated", memory_id=memory_id, changes=changes)
         return result
@@ -380,11 +390,13 @@ class MemoryEngine:
         self._run_hooks("after_delete", scope)
 
         if result:
-            self._publish_event(MemoryDeleted(
-                memory_id=memory_id,
-                scope=scope,
-                reason=reason,
-            ))
+            self._publish_event(
+                MemoryDeleted(
+                    memory_id=memory_id,
+                    scope=scope,
+                    reason=reason,
+                )
+            )
             self._log.info("engine.memory_deleted", memory_id=memory_id, reason=reason)
 
         return result
@@ -406,15 +418,17 @@ class MemoryEngine:
             result = await self._retrieval.search(query)
             duration = (time.monotonic() - t0) * 1000
 
-            self._publish_event(MemorySearchExecuted(
-                query=query.query,
-                filters={
-                    "memory_types": [t.value for t in query.memory_types],
-                    "tags": query.tags,
-                },
-                result_count=result.total_count,
-                duration_ms=duration,
-            ))
+            self._publish_event(
+                MemorySearchExecuted(
+                    query=query.query,
+                    filters={
+                        "memory_types": [t.value for t in query.memory_types],
+                        "tags": query.tags,
+                    },
+                    result_count=result.total_count,
+                    duration_ms=duration,
+                )
+            )
             return result
         except Exception as exc:
             raise MemoryEngineError(
@@ -507,10 +521,12 @@ class MemoryEngine:
         if self._config.enable_consolidation and items:
             report = await self._consolidation.consolidate_episodic_to_semantic(items)
             if report.source_count > 0:
-                self._publish_event(MemoryConsolidated(
-                    source_ids=tuple(m.memory_id for m in items[: report.source_count]),
-                    consolidated_count=report.consolidated_count,
-                ))
+                self._publish_event(
+                    MemoryConsolidated(
+                        source_ids=tuple(m.memory_id for m in items[: report.source_count]),
+                        consolidated_count=report.consolidated_count,
+                    )
+                )
             return report
         return ConsolidationReport()
 
@@ -531,11 +547,13 @@ class MemoryEngine:
         scoped_id = ScopedMemoryId(memory_id=memory_id, scope=scope)
         result = await self._expiration.expire_memory(scoped_id)
         if result:
-            self._publish_event(MemoryExpired(
-                memory_id=memory_id,
-                scope=scope,
-                memory_type=MemoryType.LONG_TERM,
-            ))
+            self._publish_event(
+                MemoryExpired(
+                    memory_id=memory_id,
+                    scope=scope,
+                    memory_type=MemoryType.LONG_TERM,
+                )
+            )
         return result
 
     async def archive_memory(
@@ -555,10 +573,12 @@ class MemoryEngine:
         scoped_id = ScopedMemoryId(memory_id=memory_id, scope=scope)
         result = await self._expiration.archive_memory(scoped_id)
         if result:
-            self._publish_event(MemoryArchived(
-                memory_id=memory_id,
-                scope=scope,
-            ))
+            self._publish_event(
+                MemoryArchived(
+                    memory_id=memory_id,
+                    scope=scope,
+                )
+            )
         return result
 
     async def run_expiration_cycle(self) -> int:
@@ -604,10 +624,12 @@ class MemoryEngine:
 
         summary = await self._summarizer.summarize(memories, max_length)
 
-        self._publish_event(MemorySummarized(
-            memory_id=",".join(memory_ids),
-            scope=scope,
-        ))
+        self._publish_event(
+            MemorySummarized(
+                memory_id=",".join(memory_ids),
+                scope=scope,
+            )
+        )
         return summary
 
     async def health(self) -> dict[str, Any]:

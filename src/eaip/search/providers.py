@@ -77,34 +77,35 @@ class KnowledgeSearchProvider:
                     raise ProviderSearchError(
                         "No retrieval engine or federation available.",
                     )
+            elif self._retrieval_engine is not None:
+                raw = await self._retrieval_engine.search(
+                    query.query,
+                    collection="default",
+                    top_k=query.page_size,
+                    score_threshold=query.min_score,
+                    alpha=query.alpha,
+                )
+            elif self._federation is not None:
+                raw = await self._federation.search_enterprise_brain(
+                    query.query,
+                    top_k=query.page_size,
+                )
             else:
-                if self._retrieval_engine is not None:
-                    raw = await self._retrieval_engine.search(
-                        query.query,
-                        collection="default",
-                        top_k=query.page_size,
-                        score_threshold=query.min_score,
-                        alpha=query.alpha,
-                    )
-                elif self._federation is not None:
-                    raw = await self._federation.search_enterprise_brain(
-                        query.query,
-                        top_k=query.page_size,
-                    )
-                else:
-                    raise ProviderSearchError(
-                        "No retrieval engine or federation available.",
-                    )
+                raise ProviderSearchError(
+                    "No retrieval engine or federation available.",
+                )
 
             items = self._to_items(raw, query)
             result = self._build_result(items, raw, query, t0)
 
-            self._publish_event(ProviderSearchExecuted(
-                provider_name=self.name,
-                query=query.query,
-                result_count=result.total_count,
-                duration_ms=result.duration_ms,
-            ))
+            self._publish_event(
+                ProviderSearchExecuted(
+                    provider_name=self.name,
+                    query=query.query,
+                    result_count=result.total_count,
+                    duration_ms=result.duration_ms,
+                )
+            )
 
             return result
 
@@ -120,7 +121,6 @@ class KnowledgeSearchProvider:
             ) from exc
 
     async def _search_multi_collections(self, query: SearchQuery) -> RetrievalResult:
-        from eaip.knowledge.models import RetrievalQuery  # noqa: PLC0415
 
         retrieve = self._retrieval_engine
         if retrieve is None:
@@ -159,15 +159,17 @@ class KnowledgeSearchProvider:
             if chunk.attribution:
                 attrs["title"] = chunk.attribution.document_title or ""
                 attrs["source"] = chunk.attribution.source or ""
-            items.append(SearchResultItem(
-                id=chunk.chunk_id,
-                collection=chunk.collection,
-                content=chunk.content,
-                score=chunk.score,
-                title=attrs.get("title", ""),
-                source=attrs.get("source", ""),
-                metadata=dict(chunk.metadata),
-            ))
+            items.append(
+                SearchResultItem(
+                    id=chunk.chunk_id,
+                    collection=chunk.collection,
+                    content=chunk.content,
+                    score=chunk.score,
+                    title=attrs.get("title", ""),
+                    source=attrs.get("source", ""),
+                    metadata=dict(chunk.metadata),
+                )
+            )
         return items
 
     def _build_result(
@@ -246,12 +248,14 @@ class MemorySearchProvider:
                 query=query.query,
             )
 
-            self._publish_event(ProviderSearchExecuted(
-                provider_name=self.name,
-                query=query.query,
-                result_count=result.total_count,
-                duration_ms=result.duration_ms,
-            ))
+            self._publish_event(
+                ProviderSearchExecuted(
+                    provider_name=self.name,
+                    query=query.query,
+                    result_count=result.total_count,
+                    duration_ms=result.duration_ms,
+                )
+            )
 
             return result
 
@@ -276,15 +280,17 @@ class MemorySearchProvider:
                 meta = dict(getattr(memory, "metadata", {}))
                 if mem_type_str:
                     meta["memory_type"] = mem_type_str
-                items.append(SearchResultItem(
-                    id=str(mem_id),
-                    collection="memory",
-                    content=content,
-                    score=float(score),
-                    title="",
-                    source="memory",
-                    metadata=meta,
-                ))
+                items.append(
+                    SearchResultItem(
+                        id=str(mem_id),
+                        collection="memory",
+                        content=content,
+                        score=float(score),
+                        title="",
+                        source="memory",
+                        metadata=meta,
+                    )
+                )
         except Exception as exc:
             self._log.warning("memory_provider.to_items_failed", error=str(exc))
         return items

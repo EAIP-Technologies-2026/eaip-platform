@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.memory.integration import MemoryIntegration, MemoryRuntimeModule, create_memory_integration
+from eaip.memory.integration import (
+    MemoryIntegration,
+    MemoryRuntimeModule,
+    create_memory_integration,
+)
 from eaip.memory.models import MemoryConfig, RetentionConfig
 from eaip.memory.store import InMemoryStore
 
@@ -22,6 +26,7 @@ class TestMemoryIntegration:
     async def test_start_with_existing_engine(self) -> None:
         store = InMemoryStore()
         from eaip.memory.engine import MemoryEngine
+
         engine = MemoryEngine(store)
         integration = MemoryIntegration(engine=engine)
         await integration.start()

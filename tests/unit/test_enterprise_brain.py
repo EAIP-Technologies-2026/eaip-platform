@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from eaip.brain.enterprise_brain import EnterpriseBrain
-from eaip.brain.exceptions import BrainQueryError, BrainSourceUnavailableError
-from eaip.brain.models import BrainQuery, BrainResult, BrainSource, EnterpriseBrainConfig
+from eaip.brain.exceptions import BrainQueryError
+from eaip.brain.models import BrainQuery, BrainResult, EnterpriseBrainConfig
 
 
 class TestEnterpriseBrainInit:
@@ -47,7 +47,9 @@ class TestEnterpriseBrainQuery:
         mock_engine.search = AsyncMock(return_value=mock_result)
 
         brain = EnterpriseBrain(knowledge_engine=mock_engine)
-        result = await brain.query(BrainQuery(query="test", include_memory=False, include_context=False))
+        result = await brain.query(
+            BrainQuery(query="test", include_memory=False, include_context=False)
+        )
         assert len(result.sources) == 1
         assert result.sources[0].source_type == "knowledge"
         assert result.sources[0].source_id == "chunk1"
@@ -67,7 +69,9 @@ class TestEnterpriseBrainQuery:
         mock_engine.search_memories = AsyncMock(return_value=mock_result)
 
         brain = EnterpriseBrain(memory_engine=mock_engine)
-        result = await brain.query(BrainQuery(query="test", include_knowledge=False, include_context=False))
+        result = await brain.query(
+            BrainQuery(query="test", include_knowledge=False, include_context=False)
+        )
         assert len(result.sources) == 1
         assert result.sources[0].source_type == "memory"
         assert result.sources[0].source_id == "mem1"
@@ -86,7 +90,9 @@ class TestEnterpriseBrainQuery:
         mock_builder.assemble = AsyncMock(return_value=mock_context)
 
         brain = EnterpriseBrain(context_builder=mock_builder)
-        result = await brain.query(BrainQuery(query="test", include_knowledge=False, include_memory=False))
+        result = await brain.query(
+            BrainQuery(query="test", include_knowledge=False, include_memory=False)
+        )
         assert len(result.sources) == 1
         assert result.sources[0].source_type == "context"
         assert result.sources[0].source_id == "ctx:test"
@@ -139,8 +145,12 @@ class TestEnterpriseBrainQuery:
         mock_knowledge = AsyncMock()
         mock_knowledge.search = AsyncMock(return_value=MagicMock(chunks=[chunk, chunk]))
 
-        brain = EnterpriseBrain(knowledge_engine=mock_knowledge, memory_engine=None, context_builder=None)
-        result = await brain.query(BrainQuery(query="test", include_memory=False, include_context=False))
+        brain = EnterpriseBrain(
+            knowledge_engine=mock_knowledge, memory_engine=None, context_builder=None
+        )
+        result = await brain.query(
+            BrainQuery(query="test", include_memory=False, include_context=False)
+        )
         assert len(result.sources) == 1
 
     @pytest.mark.asyncio
@@ -156,9 +166,13 @@ class TestEnterpriseBrainQuery:
         mock_knowledge = AsyncMock()
         mock_knowledge.search = AsyncMock(return_value=MagicMock(chunks=[chunk_high, chunk_low]))
 
-        brain = EnterpriseBrain(knowledge_engine=mock_knowledge, memory_engine=None, context_builder=None)
+        brain = EnterpriseBrain(
+            knowledge_engine=mock_knowledge, memory_engine=None, context_builder=None
+        )
         result = await brain.query(
-            BrainQuery(query="test", score_threshold=0.5, include_memory=False, include_context=False)
+            BrainQuery(
+                query="test", score_threshold=0.5, include_memory=False, include_context=False
+            )
         )
         assert len(result.sources) == 1
         assert result.sources[0].source_id == "high"
@@ -227,7 +241,9 @@ class TestEnterpriseBrainConvenienceMethods:
         mock_engine = AsyncMock()
         mock_engine.search = AsyncMock(return_value=MagicMock(chunks=[chunk]))
 
-        brain = EnterpriseBrain(knowledge_engine=mock_engine, memory_engine=None, context_builder=None)
+        brain = EnterpriseBrain(
+            knowledge_engine=mock_engine, memory_engine=None, context_builder=None
+        )
         sources = await brain.query_knowledge("test query")
         assert len(sources) == 1
         assert sources[0].source_type == "knowledge"
@@ -243,7 +259,9 @@ class TestEnterpriseBrainConvenienceMethods:
         mock_engine = AsyncMock()
         mock_engine.search_memories = AsyncMock(return_value=MagicMock(results=[search_item]))
 
-        brain = EnterpriseBrain(memory_engine=mock_engine, knowledge_engine=None, context_builder=None)
+        brain = EnterpriseBrain(
+            memory_engine=mock_engine, knowledge_engine=None, context_builder=None
+        )
         sources = await brain.query_memory("test query")
         assert len(sources) == 1
         assert sources[0].source_type == "memory"

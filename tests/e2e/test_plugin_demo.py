@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from eaip.health.checks import HealthStatus
 from eaip.exceptions.domain import PluginError
+from eaip.health.checks import HealthStatus
 from eaip.plugins.dependency import PluginDependencyValidator
 from eaip.plugins.lifecycle import PluginLifecycleManager
 from eaip.plugins.loader import PluginLoader
@@ -50,9 +50,7 @@ class _DataPlugin:
             name="data",
             version="2.0.0",
             description="Ingests and processes data",
-            dependencies=(
-                PluginDependency(name="metrics", version_spec=">=1.0.0"),
-            ),
+            dependencies=(PluginDependency(name="metrics", version_spec=">=1.0.0"),),
             tags=("data", "ingestion"),
         )
         self._started = False
@@ -142,8 +140,7 @@ async def test_plugin_demo_activation_failure() -> None:
 
 
 @pytest.mark.asyncio
-async def test_plugin_demo_partial_activation(
-) -> None:
+async def test_plugin_demo_partial_activation() -> None:
     """Demonstrate that all-or-nothing activation raises on any failure."""
     registry = PluginRegistry()
     loader = PluginLoader(registry)

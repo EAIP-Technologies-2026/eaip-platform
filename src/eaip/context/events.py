@@ -50,10 +50,25 @@ class ContextCompressed(ContextEvent):
     ratio: float
 
 
+class PromptVersionCompared(DomainEvent):
+    event_type: ClassVar[str] = "eaip.context.prompt.version.compared"
+    prompt_id: str
+    version_a: str
+    version_b: str
+
+
+class PromptRolledBack(DomainEvent):
+    event_type: ClassVar[str] = "eaip.context.prompt.rolled.back"
+    prompt_id: str
+    target_version: str
+
+
 __all__ = [
     "ContextAssembled",
     "ContextCompressed",
     "ContextEvent",
     "PromptCreated",
+    "PromptRolledBack",
+    "PromptVersionCompared",
     "PromptVersioned",
 ]

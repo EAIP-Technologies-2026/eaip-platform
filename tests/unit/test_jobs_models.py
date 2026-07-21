@@ -58,7 +58,8 @@ class TestJobDefinition:
 
     def test_with_schedule(self) -> None:
         d = JobDefinition(
-            id="job_2", name="Scheduled Job",
+            id="job_2",
+            name="Scheduled Job",
             schedule=JobSchedule(interval_seconds=300.0),
             priority=JobPriority.HIGH,
             timeout_seconds=60.0,
@@ -78,7 +79,8 @@ class TestJobRun:
 
     def test_completed(self) -> None:
         r = JobRun(
-            id="run_1", job_id="job_1",
+            id="run_1",
+            job_id="job_1",
             status=JobStatus.COMPLETED,
             result="success",
             duration_ms=1500.0,

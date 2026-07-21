@@ -291,7 +291,9 @@ class MiddlewarePipeline:
             mw_instance = mw
             prev = chain
 
-            async def _next(req: ApiRequest, m: Middleware = mw_instance, nxt: Handler = prev) -> ApiResponse:  # noqa: E501
+            async def _next(
+                req: ApiRequest, m: Middleware = mw_instance, nxt: Handler = prev
+            ) -> ApiResponse:
                 return await m.handle(req, nxt)
 
             chain = _next

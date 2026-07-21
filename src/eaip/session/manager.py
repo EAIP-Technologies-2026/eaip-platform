@@ -146,8 +146,13 @@ class SessionManager:
         session = await self.get_session(session_id)
 
         allowed_updates = {
-            "metadata", "tags", "context_snapshot", "ttl_seconds", "expires_at",
-            "workflow_id", "user_id",
+            "metadata",
+            "tags",
+            "context_snapshot",
+            "ttl_seconds",
+            "expires_at",
+            "workflow_id",
+            "user_id",
         }
         filtered = {k: v for k, v in updates.items() if k in allowed_updates}
 
@@ -161,9 +166,7 @@ class SessionManager:
         updated = Session(**new_data)
         self._sessions[session_id] = updated
 
-        self._event_publisher(
-            SessionUpdated(session_id=session_id, changes=filtered)
-        )
+        self._event_publisher(SessionUpdated(session_id=session_id, changes=filtered))
 
         self._log.info("session.updated", session_id=session_id)
         return updated
@@ -295,10 +298,7 @@ class SessionManager:
         Returns:
             A list of active Session objects.
         """
-        results = [
-            s for s in self._sessions.values()
-            if s.status is SessionStatus.ACTIVE
-        ]
+        results = [s for s in self._sessions.values() if s.status is SessionStatus.ACTIVE]
 
         if user_id is not None:
             results = [s for s in results if s.user_id == user_id]

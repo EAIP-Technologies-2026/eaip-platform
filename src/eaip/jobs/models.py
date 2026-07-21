@@ -50,8 +50,11 @@ class CronExpression(BaseModel):
         if len(parts) != 5:
             raise ValueError(f"Invalid cron expression: {expression!r}")
         return CronExpression(
-            minute=parts[0], hour=parts[1], day_of_month=parts[2],
-            month=parts[3], day_of_week=parts[4],
+            minute=parts[0],
+            hour=parts[1],
+            day_of_month=parts[2],
+            month=parts[3],
+            day_of_week=parts[4],
         )
 
 
@@ -121,14 +124,11 @@ class JobRun(BaseModel):
 class JobHandler(Protocol):
     """Protocol for job execution handlers."""
 
-    async def execute(self, run: JobRun) -> str:
-        ...
+    async def execute(self, run: JobRun) -> str: ...
 
-    async def cancel(self, run_id: str) -> None:
-        ...
+    async def cancel(self, run_id: str) -> None: ...
 
-    async def checkpoint(self, run_id: str, data: dict[str, Any]) -> None:
-        ...
+    async def checkpoint(self, run_id: str, data: dict[str, Any]) -> None: ...
 
 
 JobCoroutine = Callable[..., Awaitable[None]]

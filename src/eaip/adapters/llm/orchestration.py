@@ -110,9 +110,7 @@ class ToolCallOrchestrator:
                     rounds=round_count,
                 )
 
-            messages.append(
-                ChatMessage(role="assistant", content=chat_response.content)
-            )
+            messages.append(ChatMessage(role="assistant", content=chat_response.content))
 
             for tc in response_tool_calls:
                 result = await self._execute_single_tool(tc)
