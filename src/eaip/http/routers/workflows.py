@@ -267,6 +267,11 @@ async def duplicate_workflow(request: Request, workflow_id: str, _user: dict = D
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=str(e))
 
 
+@router.post("/{workflow_id}/start")
+async def start_workflow(request: Request, workflow_id: str, _user: dict = Depends(get_current_user)):
+    return await execute_workflow(request, workflow_id, _user)
+
+
 @router.post("/{workflow_id}/execute")
 async def execute_workflow(request: Request, workflow_id: str, _user: dict = Depends(get_current_user)):
     registry = _get_registry(request)
@@ -348,6 +353,34 @@ async def cancel_workflow_execution(request: Request, execution_id: str, _user: 
     if engine:
         await engine.cancel(execution_id)
     return {"status": "ok"}
+
+
+@router.get("/runs/{run_id}")
+async def get_workflow_run(request: Request, run_id: str, _user: dict = Depends(get_current_user)):
+    engine = _get_engine(request)
+    if engine is None:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Engine not available")
+
+    run = engine.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Run {run_id} not found")
+
+    return {
+        "id": run.id,
+        "workflowId": run.workflow_id,
+        "workflowName": run.definition.name if run.definition else "",
+        "status": run.status.value,
+        "currentStep": run.steps[-1].node_id if run.steps else None,
+        "startedAt": run.started_at.isoformat() if run.started_at else None,
+        "completedAt": run.completed_at.isoformat() if run.completed_at else None,
+        "duration": run.duration_ms,
+        "triggeredBy": "manual",
+        "triggeredByType": "manual",
+        "steps": [
+            {"name": s.name, "status": s.status.value, "duration": s.duration_ms, "nodeId": s.node_id}
+            for s in run.steps
+        ],
+    }
 
 
 @router.post("/executions/{execution_id}/retry")

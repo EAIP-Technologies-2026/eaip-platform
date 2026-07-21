@@ -32,6 +32,8 @@ async def app():
     from eaip.agents.registry import AgentRegistry
     from eaip.agents.runtime import AgentRuntime
     from eaip.auth.auth_providers import AuthenticationService
+    from eaip.memory.engine import MemoryEngine
+    from eaip.memory.store import InMemoryStore
     from eaip.workflow.registry import WorkflowRegistry
     from eaip.workflow.executor import WorkflowEngine
     from eaip.runtime.mission import MissionRegistry
@@ -43,6 +45,7 @@ async def app():
         (AgentRegistry, AgentRegistry(event_bus=e)),
         (AgentRuntime, AgentRuntime(llm_adapter=None, tool_registry=None, event_bus=e)),
         (AuthenticationService, AuthenticationService(secret="test-secret", event_bus=e)),
+        (MemoryEngine, MemoryEngine(InMemoryStore())),
         (WorkflowRegistry, WorkflowRegistry(event_bus=e)),
         (WorkflowEngine, WorkflowEngine(event_bus=e)),
         (MissionRegistry, MissionRegistry(event_bus=e)),
@@ -415,10 +418,49 @@ class TestMemory:
         r = await client.get("/memory/agents/agent-1/graph")
         assert r.status_code == 200
 
-    async def test_get_memory(self, client):
-        r = await client.get("/memory/mem-1")
+    async def test_set_and_get_memory(self, client):
+        r = await client.put("/memory/my-key", json={"value": "hello"})
         assert r.status_code == 200
+        data = r.json()
+        assert data["key"] == "my-key"
+        assert data["value"] == "hello"
+        assert "id" in data
+        assert "timestamp" in data
+
+        r = await client.get("/memory/my-key")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["key"] == "my-key"
+        assert data["value"] == "hello"
+
+    async def test_get_memory_not_found(self, client):
+        r = await client.get("/memory/nonexistent")
+        assert r.status_code == 404
+
+    async def test_delete_memory(self, client):
+        await client.put("/memory/to-delete", json={"value": "bye"})
+        r = await client.delete("/memory/to-delete")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "deleted"
+
+        r = await client.get("/memory/to-delete")
+        assert r.status_code == 404
+
+    async def test_list_memory_with_prefix(self, client):
+        await client.put("/memory/alpha", json={"value": "a"})
+        await client.put("/memory/beta", json={"value": "b"})
+        await client.put("/memory/gamma", json={"value": "c"})
+
+        r = await client.get("/memory?prefix=a")
+        assert r.status_code == 200
+        keys = [e["key"] for e in r.json()]
+        assert "alpha" in keys
+        assert "beta" not in keys
 
     async def test_search_memory(self, client):
-        r = await client.get("/memory/search?q=test")
+        await client.put("/memory/searchable", json={"value": "find me"})
+        r = await client.get("/memory/search?q=find")
         assert r.status_code == 200
+        keys = [e["key"] for e in r.json()]
+        assert "searchable" in keys

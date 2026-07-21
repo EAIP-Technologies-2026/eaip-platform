@@ -63,6 +63,13 @@ async def _async_main() -> None:
     wf_engine = WorkflowEngine(event_bus=events)
     container.register_instance(WorkflowEngine, wf_engine)
 
+    # Memory services
+    from eaip.memory.engine import MemoryEngine
+    from eaip.memory.store import InMemoryStore
+
+    memory_engine = MemoryEngine(InMemoryStore())
+    container.register_instance(MemoryEngine, memory_engine)
+
     # Mission services
     from eaip.runtime.mission import MissionRegistry
 

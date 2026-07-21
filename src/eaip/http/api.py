@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import time
-import uuid
-from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -20,6 +18,7 @@ from eaip.http.routers import (
     events_router,
     knowledge,
     marketplace_routes,
+    memory,
     mission_analytics,
     missions,
     monitoring,
@@ -130,25 +129,7 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app.include_router(search_router.router)
     app.include_router(marketplace_routes.router)
     app.include_router(notifications_router.router)
-
-    # Memory graph router (inline - simple)
-    @app.get("/memory/agents/{agent_id}/graph")
-    async def memory_graph(agent_id: str):
-        return {"nodes": [], "edges": []}
-
-    @app.get("/memory/{memory_id}")
-    async def get_memory(memory_id: str):
-        return {
-            "key": memory_id,
-            "value": "",
-            "type": "memory",
-            "importance": 0.5,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-    @app.get("/memory/search")
-    async def search_memory(q: str = ""):
-        return []
+    app.include_router(memory.router)
 
     log.info("http.routes_registered", count=len(app.routes))
 
