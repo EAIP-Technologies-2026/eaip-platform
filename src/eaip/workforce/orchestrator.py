@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from eaip.logging.context import get_logger
 from eaip.workforce.events import (
@@ -26,6 +26,10 @@ from eaip.workforce.models import (
     WorkforceMetrics,
 )
 from eaip.workforce.worker import WorkerRegistry
+
+if TYPE_CHECKING:
+    from eaip.agents.models import AgentSpec, Goal
+    from eaip.workflow.models import WorkflowContext, WorkflowDefinition
 
 
 class WorkforceOrchestrator:
@@ -190,20 +194,27 @@ class WorkforceOrchestrator:
         if definition.worker_type is WorkerType.AGENT:
             if self._agent_runtime is None:
                 raise AssignmentError(assignment.id, "agent runtime not available")
-            run = await self._agent_runtime.create_run(
-                definition.agent_id, assignment.task_description
-            )
-            result = await self._agent_runtime.start_run(run.id)
-            return cast(str, result.result)
+            from eaip.agents.models import AgentSpec, Goal
+
+            spec = AgentSpec(id=definition.agent_id, name=definition.name)
+            goal = Goal(text=assignment.task_description or definition.description)
+            run = await self._agent_runtime.create_run(spec, goal)
+            completed = await self._agent_runtime.start_run(run.id)
+            return cast(str, completed.result)
 
         if definition.worker_type is WorkerType.WORKFLOW:
             if self._workflow_engine is None:
                 raise AssignmentError(assignment.id, "workflow engine not available")
-            run = await self._workflow_engine.start(
-                workflow_id=definition.workflow_id,
-                context={"task": assignment.task_description},
+            from eaip.workflow.models import WorkflowContext, WorkflowDefinition
+
+            wf_def = WorkflowDefinition(
+                id=definition.workflow_id,
+                name=definition.name,
+                description=definition.description,
             )
-            return run.result if run else ""
+            ctx = WorkflowContext(variables={"task": assignment.task_description})
+            result = await self._workflow_engine.execute(wf_def, ctx)
+            return result.result or result.error or ""
 
         if definition.worker_type is WorkerType.JOB:
             if self._job_scheduler is None:

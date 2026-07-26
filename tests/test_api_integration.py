@@ -73,10 +73,12 @@ async def client(app):
 
 
 @pytest.fixture
-async def auth_token(client):
-    r = await client.post("/auth/login", json={"email": "admin", "password": "admin"})
+async def authenticated_client(client):
+    r = await client.post("/api/auth/login", json={"email": "admin", "password": "admin"})
     assert r.status_code == 200
-    return r.json()["token"]
+    token = r.json()["token"]
+    client.headers = {"Authorization": f"Bearer {token}"}
+    return client
 
 
 class TestHealth:
@@ -104,7 +106,7 @@ class TestHealth:
 
 class TestAuth:
     async def test_login_success(self, client):
-        r = await client.post("/auth/login", json={"email": "admin", "password": "admin"})
+        r = await client.post("/api/auth/login", json={"email": "admin", "password": "admin"})
         assert r.status_code == 200
         data = r.json()
         assert "token" in data
@@ -112,314 +114,314 @@ class TestAuth:
         assert data["user"]["roles"] == ["admin", "user"]
 
     async def test_login_invalid_credentials(self, client):
-        r = await client.post("/auth/login", json={"email": "admin", "password": "invalid"})
+        r = await client.post("/api/auth/login", json={"email": "admin", "password": "invalid"})
         assert r.status_code == 401
 
     async def test_login_missing_credentials(self, client):
-        r = await client.post("/auth/login", json={})
+        r = await client.post("/api/auth/login", json={})
         assert r.status_code == 401
 
-    async def test_auth_me(self, client, auth_token):
-        r = await client.get("/auth/me")
+    async def test_auth_me(self, authenticated_client):
+        r = await authenticated_client.get("/api/auth/me")
         assert r.status_code == 200
         data = r.json()
         assert "user" in data
 
-    async def test_users_me(self, client, auth_token):
-        r = await client.get("/users/me")
+    async def test_users_me(self, authenticated_client):
+        r = await authenticated_client.get("/api/users/me")
         assert r.status_code == 200
         data = r.json()
         assert "id" in data
         assert "roles" in data
 
-    async def test_logout(self, client, auth_token):
-        r = await client.post("/auth/logout")
+    async def test_logout(self, authenticated_client):
+        r = await authenticated_client.post("/api/auth/logout")
         assert r.status_code == 200
 
-    async def test_update_profile(self, client, auth_token):
-        r = await client.put("/users/me", json={"name": "Updated User"})
+    async def test_update_profile(self, authenticated_client):
+        r = await authenticated_client.put("/api/users/me", json={"name": "Updated User"})
         assert r.status_code == 200
         data = r.json()
         assert data["name"] == "Updated User"
 
 
 class TestAgents:
-    async def test_list_agents_empty(self, client):
-        r = await client.get("/agents")
+    async def test_list_agents_empty(self, authenticated_client):
+        r = await authenticated_client.get("/api/agents")
         assert r.status_code == 200
         assert r.json() == []
 
-    async def test_create_agent(self, client):
-        r = await client.post("/agents", json={"name": "Test Agent", "description": "A test"})
+    async def test_create_agent(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Test Agent", "description": "A test"})
         assert r.status_code == 200
         data = r.json()
         assert data["name"] == "Test Agent"
         assert data["status"] == "draft"
         return data["id"]
 
-    async def test_create_and_get_agent(self, client):
-        r = await client.post("/agents", json={"name": "Agent 1"})
+    async def test_create_and_get_agent(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Agent 1"})
         agent_id = r.json()["id"]
-        r = await client.get(f"/agents/{agent_id}")
+        r = await authenticated_client.get(f"/api/agents/{agent_id}")
         assert r.status_code == 200
         assert r.json()["name"] == "Agent 1"
 
-    async def test_update_agent(self, client):
-        r = await client.post("/agents", json={"name": "Before"})
+    async def test_update_agent(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Before"})
         agent_id = r.json()["id"]
-        r = await client.put(f"/agents/{agent_id}", json={"name": "After"})
+        r = await authenticated_client.put(f"/api/agents/{agent_id}", json={"name": "After"})
         assert r.status_code == 200
         assert r.json()["name"] == "After"
 
-    async def test_delete_agent(self, client):
-        r = await client.post("/agents", json={"name": "To Delete"})
+    async def test_delete_agent(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "To Delete"})
         agent_id = r.json()["id"]
-        r = await client.delete(f"/agents/{agent_id}")
+        r = await authenticated_client.delete(f"/api/agents/{agent_id}")
         assert r.status_code == 200
-        r = await client.get(f"/agents/{agent_id}")
+        r = await authenticated_client.get(f"/api/agents/{agent_id}")
         assert r.status_code == 404
 
-    async def test_agent_stats(self, client):
-        r = await client.get("/agents/stats")
+    async def test_agent_stats(self, authenticated_client):
+        r = await authenticated_client.get("/api/agents/stats")
         assert r.status_code == 200
         data = r.json()
         assert "totalAgents" in data
         assert "runningAgents" in data
 
-    async def test_agent_health(self, client):
-        r = await client.get("/agents/health")
+    async def test_agent_health(self, authenticated_client):
+        r = await authenticated_client.get("/api/agents/health")
         assert r.status_code == 200
         data = r.json()
         assert "status" in data
 
-    async def test_agent_duplicate(self, client):
-        r = await client.post("/agents", json={"name": "Original"})
+    async def test_agent_duplicate(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Original"})
         agent_id = r.json()["id"]
-        r = await client.post(f"/agents/{agent_id}/duplicate")
+        r = await authenticated_client.post(f"/api/agents/{agent_id}/duplicate")
         assert r.status_code == 200
         assert "Copy" in r.json()["name"]
 
-    async def test_agent_archive(self, client):
-        r = await client.post("/agents", json={"name": "To Archive"})
+    async def test_agent_archive(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "To Archive"})
         agent_id = r.json()["id"]
-        r = await client.post(f"/agents/{agent_id}/archive")
+        r = await authenticated_client.post(f"/api/agents/{agent_id}/archive")
         assert r.status_code == 200
 
-    async def test_agent_execute(self, client):
-        r = await client.post("/agents", json={"name": "Executor"})
+    async def test_agent_execute(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Executor"})
         agent_id = r.json()["id"]
-        r = await client.post(f"/agents/{agent_id}/execute", json={"input": "hello"})
+        r = await authenticated_client.post(f"/api/agents/{agent_id}/execute", json={"input": "hello"})
         assert r.status_code == 200
         data = r.json()
         assert "id" in data
         assert "status" in data
 
-    async def test_agent_executions_list(self, client):
-        r = await client.post("/agents", json={"name": "Exec Lister"})
+    async def test_agent_executions_list(self, authenticated_client):
+        r = await authenticated_client.post("/api/agents", json={"name": "Exec Lister"})
         agent_id = r.json()["id"]
-        r = await client.get(f"/agents/{agent_id}/executions")
+        r = await authenticated_client.get(f"/api/agents/{agent_id}/executions")
         assert r.status_code == 200
 
 
 class TestWorkflows:
-    async def test_list_workflows_empty(self, client):
-        r = await client.get("/workflows")
+    async def test_list_workflows_empty(self, authenticated_client):
+        r = await authenticated_client.get("/api/workflows")
         assert r.status_code == 200
 
-    async def test_create_workflow(self, client):
-        r = await client.post("/workflows", json={"name": "Test WF", "nodes": [{"id": "s1", "name": "Step 1", "agent_id": "agent-1"}], "connections": []})
+    async def test_create_workflow(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Test WF", "nodes": [{"id": "s1", "name": "Step 1", "agent_id": "agent-1"}], "connections": []})
         assert r.status_code == 200
         data = r.json()
         assert data["name"] == "Test WF"
 
-    async def test_get_workflow(self, client):
-        r = await client.post("/workflows", json={"name": "Get Test"})
+    async def test_get_workflow(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Get Test"})
         wf_id = r.json()["id"]
-        r = await client.get(f"/workflows/{wf_id}")
+        r = await authenticated_client.get(f"/api/workflows/{wf_id}")
         assert r.status_code == 200
 
-    async def test_update_workflow(self, client):
-        r = await client.post("/workflows", json={"name": "Before"})
+    async def test_update_workflow(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Before"})
         wf_id = r.json()["id"]
-        r = await client.put(f"/workflows/{wf_id}", json={"name": "After"})
+        r = await authenticated_client.put(f"/api/workflows/{wf_id}", json={"name": "After"})
         assert r.status_code == 200
         assert r.json()["name"] == "After"
 
-    async def test_delete_workflow(self, client):
-        r = await client.post("/workflows", json={"name": "Del"})
+    async def test_delete_workflow(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Del"})
         wf_id = r.json()["id"]
-        r = await client.delete(f"/workflows/{wf_id}")
+        r = await authenticated_client.delete(f"/api/workflows/{wf_id}")
         assert r.status_code == 200
-        r = await client.get(f"/workflows/{wf_id}")
+        r = await authenticated_client.get(f"/api/workflows/{wf_id}")
         assert r.status_code == 404
 
-    async def test_workflow_stats(self, client):
-        r = await client.get("/workflows/stats")
+    async def test_workflow_stats(self, authenticated_client):
+        r = await authenticated_client.get("/api/workflows/stats")
         assert r.status_code == 200
         data = r.json()
         assert "totalWorkflows" in data
 
-    async def test_workflow_health(self, client):
-        r = await client.get("/workflows/health")
+    async def test_workflow_health(self, authenticated_client):
+        r = await authenticated_client.get("/api/workflows/health")
         assert r.status_code == 200
 
-    async def test_workflow_duplicate(self, client):
-        r = await client.post("/workflows", json={"name": "Orig"})
+    async def test_workflow_duplicate(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Orig"})
         wf_id = r.json()["id"]
-        r = await client.post(f"/workflows/{wf_id}/duplicate")
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/duplicate")
         assert r.status_code == 200
 
-    async def test_workflow_archive(self, client):
-        r = await client.post("/workflows", json={"name": "Arch"})
+    async def test_workflow_archive(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Arch"})
         wf_id = r.json()["id"]
-        r = await client.post(f"/workflows/{wf_id}/archive")
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/archive")
         assert r.status_code == 200
 
-    async def test_workflow_execute(self, client):
-        r = await client.post("/workflows", json={"name": "Exe"})
+    async def test_workflow_execute(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Exe"})
         wf_id = r.json()["id"]
-        r = await client.post(f"/workflows/{wf_id}/execute")
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/execute")
         assert r.status_code == 200
         assert "id" in r.json()
 
 
 class TestMissions:
-    async def test_list_missions_empty(self, client):
-        r = await client.get("/missions")
+    async def test_list_missions_empty(self, authenticated_client):
+        r = await authenticated_client.get("/api/missions")
         assert r.status_code == 200
 
-    async def test_create_mission(self, client):
-        r = await client.post("/missions", json={"name": "Test Mission"})
+    async def test_create_mission(self, authenticated_client):
+        r = await authenticated_client.post("/api/missions", json={"name": "Test Mission"})
         assert r.status_code == 200
         data = r.json()
         assert data["name"] == "Test Mission"
 
-    async def test_mission_stats(self, client):
-        r = await client.get("/missions/stats")
+    async def test_mission_stats(self, authenticated_client):
+        r = await authenticated_client.get("/api/missions/stats")
         assert r.status_code == 200
 
-    async def test_execute_mission(self, client):
-        r = await client.post("/missions", json={"name": "Exec"})
+    async def test_execute_mission(self, authenticated_client):
+        r = await authenticated_client.post("/api/missions", json={"name": "Exec"})
         mid = r.json()["id"]
-        r = await client.post(f"/missions/{mid}/execute")
+        r = await authenticated_client.post(f"/api/missions/{mid}/execute")
         assert r.status_code == 200
 
 
 class TestKnowledge:
-    async def test_knowledge_stats(self, client):
-        r = await client.get("/knowledge/stats")
+    async def test_knowledge_stats(self, authenticated_client):
+        r = await authenticated_client.get("/api/knowledge/stats")
         assert r.status_code == 200
 
-    async def test_list_collections(self, client):
-        r = await client.get("/knowledge/collections")
+    async def test_list_collections(self, authenticated_client):
+        r = await authenticated_client.get("/api/knowledge/collections")
         assert r.status_code == 200
 
-    async def test_create_collection(self, client):
-        r = await client.post("/knowledge/collections", json={"name": "Test Collection"})
+    async def test_create_collection(self, authenticated_client):
+        r = await authenticated_client.post("/api/knowledge/collections", json={"name": "Test Collection"})
         assert r.status_code == 200
         data = r.json()
         assert data["name"] == "Test Collection"
 
-    async def test_list_documents(self, client):
-        r = await client.get("/knowledge/documents")
+    async def test_list_documents(self, authenticated_client):
+        r = await authenticated_client.get("/api/knowledge/documents")
         assert r.status_code == 200
 
-    async def test_search_knowledge(self, client):
-        r = await client.get("/knowledge/search?q=test")
+    async def test_search_knowledge(self, authenticated_client):
+        r = await authenticated_client.get("/api/knowledge/search?q=test")
         assert r.status_code == 200
         data = r.json()
         assert "results" in data
         assert "total" in data
 
-    async def test_knowledge_activity(self, client):
-        r = await client.get("/knowledge/activity")
+    async def test_knowledge_activity(self, authenticated_client):
+        r = await authenticated_client.get("/api/knowledge/activity")
         assert r.status_code == 200
 
 
 class TestRuntime:
-    async def test_runtime_metrics(self, client):
-        r = await client.get("/runtime/metrics")
+    async def test_runtime_metrics(self, authenticated_client):
+        r = await authenticated_client.get("/api/runtime/metrics")
         assert r.status_code == 200
         data = r.json()
         assert "runningAgents" in data
         assert "runningWorkflows" in data
 
-    async def test_runtime_health(self, client):
-        r = await client.get("/runtime/health")
+    async def test_runtime_health(self, authenticated_client):
+        r = await authenticated_client.get("/api/runtime/health")
         assert r.status_code == 200
 
-    async def test_runtime_status(self, client):
-        r = await client.get("/runtime/status")
+    async def test_runtime_status(self, authenticated_client):
+        r = await authenticated_client.get("/api/runtime/status")
         assert r.status_code == 200
 
 
 class TestEvents:
     async def test_list_activity(self, client):
-        r = await client.get("/events/activity")
+        r = await client.get("/api/events/activity")
         assert r.status_code == 200
 
     async def test_list_events(self, client):
-        r = await client.get("/events")
+        r = await client.get("/api/events")
         assert r.status_code == 200
 
     async def test_publish_event(self, client):
-        r = await client.post("/events/publish", json={"type": "test", "payload": {}})
+        r = await client.post("/api/events/publish", json={"type": "test", "payload": {}})
         assert r.status_code == 200
 
     async def test_subscribe_event(self, client):
-        r = await client.post("/events/subscribe", json={"type": "test"})
+        r = await client.post("/api/events/subscribe", json={"type": "test"})
         assert r.status_code == 200
 
 
 class TestMonitoring:
     async def test_monitoring_health(self, client):
-        r = await client.get("/monitoring/health")
+        r = await client.get("/api/monitoring/health")
         assert r.status_code == 200
 
     async def test_monitoring_metrics(self, client):
-        r = await client.get("/monitoring/metrics")
+        r = await client.get("/api/monitoring/metrics")
         assert r.status_code == 200
 
     async def test_monitoring_logs(self, client):
-        r = await client.get("/monitoring/logs")
+        r = await client.get("/api/monitoring/logs")
         assert r.status_code == 200
 
 
 class TestOrganizations:
     async def test_list_orgs(self, client):
-        r = await client.get("/organizations")
+        r = await client.get("/api/organizations")
         assert r.status_code == 200
 
     async def test_create_org(self, client):
-        r = await client.post("/organizations", json={"name": "Test Org"})
+        r = await client.post("/api/organizations", json={"name": "Test Org"})
         assert r.status_code == 200
 
     async def test_get_org(self, client):
-        r = await client.get("/organizations/org-1")
+        r = await client.get("/api/organizations/org-1")
         assert r.status_code == 200
 
 
 class TestDeployments:
     async def test_list_deployments(self, client):
-        r = await client.get("/deployments")
+        r = await client.get("/api/deployments")
         assert r.status_code == 200
 
     async def test_create_deployment(self, client):
-        r = await client.post("/deployments", json={"name": "Test", "environment": "prod"})
+        r = await client.post("/api/deployments", json={"name": "Test", "environment": "prod"})
         assert r.status_code == 200
 
     async def test_get_deployment(self, client):
-        r = await client.get("/deployments/deploy-1")
+        r = await client.get("/api/deployments/deploy-1")
         assert r.status_code == 200
 
 
 class TestMemory:
     async def test_memory_graph(self, client):
-        r = await client.get("/memory/agents/agent-1/graph")
+        r = await client.get("/api/memory/agents/agent-1/graph")
         assert r.status_code == 200
 
     async def test_set_and_get_memory(self, client):
-        r = await client.put("/memory/my-key", json={"value": "hello"})
+        r = await client.put("/api/memory/my-key", json={"value": "hello"})
         assert r.status_code == 200
         data = r.json()
         assert data["key"] == "my-key"
@@ -427,40 +429,40 @@ class TestMemory:
         assert "id" in data
         assert "timestamp" in data
 
-        r = await client.get("/memory/my-key")
+        r = await client.get("/api/memory/my-key")
         assert r.status_code == 200
         data = r.json()
         assert data["key"] == "my-key"
         assert data["value"] == "hello"
 
     async def test_get_memory_not_found(self, client):
-        r = await client.get("/memory/nonexistent")
+        r = await client.get("/api/memory/nonexistent")
         assert r.status_code == 404
 
     async def test_delete_memory(self, client):
-        await client.put("/memory/to-delete", json={"value": "bye"})
-        r = await client.delete("/memory/to-delete")
+        await client.put("/api/memory/to-delete", json={"value": "bye"})
+        r = await client.delete("/api/memory/to-delete")
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "deleted"
 
-        r = await client.get("/memory/to-delete")
+        r = await client.get("/api/memory/to-delete")
         assert r.status_code == 404
 
     async def test_list_memory_with_prefix(self, client):
-        await client.put("/memory/alpha", json={"value": "a"})
-        await client.put("/memory/beta", json={"value": "b"})
-        await client.put("/memory/gamma", json={"value": "c"})
+        await client.put("/api/memory/alpha", json={"value": "a"})
+        await client.put("/api/memory/beta", json={"value": "b"})
+        await client.put("/api/memory/gamma", json={"value": "c"})
 
-        r = await client.get("/memory?prefix=a")
+        r = await client.get("/api/memory?prefix=a")
         assert r.status_code == 200
         keys = [e["key"] for e in r.json()]
         assert "alpha" in keys
         assert "beta" not in keys
 
     async def test_search_memory(self, client):
-        await client.put("/memory/searchable", json={"value": "find me"})
-        r = await client.get("/memory/search?q=find")
+        await client.put("/api/memory/searchable", json={"value": "find me"})
+        r = await client.get("/api/memory/search?q=find")
         assert r.status_code == 200
         keys = [e["key"] for e in r.json()]
         assert "searchable" in keys

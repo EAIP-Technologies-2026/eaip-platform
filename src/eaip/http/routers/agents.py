@@ -12,6 +12,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 from eaip.agents.models import AgentSpec, AgentStatus, Goal, RunStatus
 from eaip.agents.registry import AgentRegistry
 from eaip.agents.runtime import AgentRuntime
+from eaip.events.store import EventStore
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 
@@ -282,7 +283,10 @@ async def list_agent_executions(request: Request, agent_id: str, _user: dict = D
 
 
 @router.get("/{agent_id}/events")
-async def list_agent_events(request: Request, agent_id: str, _user: dict = Depends(get_current_user)):
+async def list_agent_events(request: Request, agent_id: str, limit: int = 50, _user: dict = Depends(get_current_user)):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent_by(agent_id=agent_id, limit=limit)
     return []
 
 @router.post("/{agent_id}/executions/{execution_id}/pause")

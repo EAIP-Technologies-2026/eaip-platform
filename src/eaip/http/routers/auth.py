@@ -69,6 +69,7 @@ async def login(request: Request, body: dict[str, Any], response: Response):
 
     return {
         "token": result.token,
+        "refresh_token": result.refresh_token,
         "user": {
             "id": result.identity.get("sub", username),
             "name": result.identity.get("name", username),

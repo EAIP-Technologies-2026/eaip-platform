@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 
 import uvicorn
@@ -50,7 +51,13 @@ async def _async_main() -> None:
     from eaip.auth.auth_providers import AuthenticationService
     from eaip.auth.tokens import TokenService
 
-    auth_service = AuthenticationService(secret="eaip-dev-secret-do-not-use-in-production", event_bus=events)
+    auth_secret = os.environ.get("EAIP_AUTH_SECRET")
+    if not auth_secret:
+        auth_secret = os.environ.get("EAIP_AUTH__SECRET")
+    auth_service = AuthenticationService(
+        secret=auth_secret,
+        event_bus=events,
+    )
     container.register_instance(AuthenticationService, auth_service)
 
     # Workflow services
@@ -73,7 +80,12 @@ async def _async_main() -> None:
     # Mission services
     from eaip.runtime.mission import MissionRegistry
 
-    mission_registry = MissionRegistry(event_bus=events)
+    mission_registry = MissionRegistry(
+        event_bus=events,
+        agent_runtime=agent_runtime,
+        workflow_registry=wf_registry,
+        workflow_engine=wf_engine,
+    )
     container.register_instance(MissionRegistry, mission_registry)
 
     # WebSocket services
@@ -88,27 +100,83 @@ async def _async_main() -> None:
     container.register_instance(ChannelManager, channel_mgr)
     container.register_instance(PushService, push_svc)
 
+    # Workspace services
+    from eaip.session.workspace import WorkspaceManager
+
+    workspace_manager = WorkspaceManager(event_bus=events)
+    container.register_instance(WorkspaceManager, workspace_manager)
+
     # Knowledge services
+    from eaip.knowledge.embedding import MockEmbeddingProvider
     from eaip.knowledge.engine import KnowledgeEngine
     from eaip.knowledge.registry import KnowledgeRegistry as KR
 
     knowledge_registry = KR()
 
-    def _publish_event(event):
-        try:
-            if _asyncio_loop and not _asyncio_loop.is_closed():
-                _asyncio_loop.create_task(events.publish(event))
-        except (RuntimeError, Exception):
-            pass
+    async def _publish_event(event):
+        if _asyncio_loop and not _asyncio_loop.is_closed():
+            try:
+                await events.publish(event)
+            except Exception:
+                pass
 
     knowledge_engine = KnowledgeEngine(
         knowledge_registry,
         knowledge_registry,
-        None,
+        MockEmbeddingProvider(),
         event_publisher=_publish_event,
     )
     container.register_instance(KR, knowledge_registry)
     container.register_instance(KnowledgeEngine, knowledge_engine)
+
+    # Event store for activity feed
+    from eaip.events.event import DomainEvent
+    from eaip.events.store import EventStore
+
+    event_store = EventStore(maxlen=1000)
+    container.register_instance(EventStore, event_store)
+
+    async def _record_event(event: DomainEvent) -> None:
+        await event_store.record(event)
+
+    events.subscribe(DomainEvent, _record_event, include_subclasses=True)
+
+    # Workforce services
+    from eaip.workforce.integration import WorkforceRuntimeModule
+
+    workforce_module = WorkforceRuntimeModule(
+        agent_runtime=agent_runtime,
+        workflow_engine=wf_engine,
+        event_bus=events,
+    )
+    container.register_instance(WorkforceRuntimeModule, workforce_module)
+    container.register_instance(workforce_module.registry.__class__, workforce_module.registry)
+    container.register_instance(workforce_module.orchestrator.__class__, workforce_module.orchestrator)
+
+    # Admin services
+    from eaip.admin.audit import AuditLogger
+    from eaip.admin.manager import RuntimeManager
+    from eaip.core.feature_flags import FeatureFlagRegistry
+    from eaip.enterprise_settings.service import EnterpriseSettingsService
+    from eaip.license.manager import LicenseManager
+
+    audit_logger = AuditLogger(event_bus=events)
+    container.register_instance(AuditLogger, audit_logger)
+
+    kernel = lifecycle.kernel
+    if kernel is not None:
+        runtime_mgr = RuntimeManager(kernel=kernel, event_bus=events)
+        container.register_instance(RuntimeManager, runtime_mgr)
+        await workforce_module.start(kernel)
+
+    license_mgr = LicenseManager(event_callback=lambda e: asyncio.ensure_future(events.publish(e)) if hasattr(events, 'publish') else None)
+    container.register_instance(LicenseManager, license_mgr)
+
+    settings_svc = EnterpriseSettingsService()
+    container.register_instance(EnterpriseSettingsService, settings_svc)
+
+    ff_registry: FeatureFlagRegistry = container.resolve(FeatureFlagRegistry)
+    container.register_instance(FeatureFlagRegistry, ff_registry)
 
     log.info("services.registered", count=len(container._providers))
 

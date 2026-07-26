@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Request
 
 from eaip.agents.registry import AgentRegistry
+from eaip.events.store import EventStore
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.logging.context import get_logger
 from eaip.workflow.registry import WorkflowRegistry
@@ -61,13 +63,26 @@ async def monitoring_metrics(request: Request):
         except Exception:
             pass
 
+    start = getattr(request.app.state, "_start_time", None)
+    uptime_str = "0s"
+    if start:
+        elapsed = int(time.time() - start)
+        days, rem = divmod(elapsed, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes, secs = divmod(rem, 60)
+        parts = []
+        if days: parts.append(f"{days}d")
+        if hours: parts.append(f"{hours}h")
+        if minutes: parts.append(f"{minutes}m")
+        parts.append(f"{secs}s")
+        uptime_str = " ".join(parts)
+
     return [
         {"label": "Active Agents", "value": str(agent_count), "unit": "", "change": 0, "trend": "stable"},
         {"label": "Workflows", "value": str(workflow_count), "unit": "", "change": 0, "trend": "stable"},
         {"label": "Missions", "value": str(mission_count), "unit": "", "change": 0, "trend": "stable"},
         {"label": "Knowledge Collections", "value": str(doc_count), "unit": "", "change": 0, "trend": "stable"},
-        {"label": "API Response", "value": "0", "unit": "ms", "change": 0, "trend": "stable"},
-        {"label": "Uptime", "value": "0s", "unit": "", "change": 0, "trend": "stable"},
+        {"label": "Uptime", "value": uptime_str, "unit": "", "change": 0, "trend": "stable"},
     ]
 
 
@@ -118,4 +133,7 @@ async def monitoring_diagnostics(request: Request):
 
 @router.get("/events")
 async def monitoring_events(request: Request, limit: int = 50):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent(limit=limit)
     return []

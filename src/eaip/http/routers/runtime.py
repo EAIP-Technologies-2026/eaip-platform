@@ -86,6 +86,13 @@ async def runtime_metrics(request: Request, _user: dict = Depends(get_current_us
         except Exception:
             pass
 
+    agent_runtime = container.try_resolve(AgentRuntime)
+    avg_latency = 0
+    if agent_runtime:
+        all_runs = agent_runtime.list_runs()
+        durations = [r.duration_ms for r in all_runs if r.duration_ms > 0]
+        avg_latency = round(sum(durations) / len(durations), 2) if durations else 0
+
     mem = psutil.virtual_memory()
     cpu_pct = psutil.cpu_percent(interval=None)
 
@@ -94,12 +101,10 @@ async def runtime_metrics(request: Request, _user: dict = Depends(get_current_us
         "memoryPercent": mem.percent,
         "memoryUsed": f"{mem.used // (1024 * 1024)} MB",
         "memoryTotal": f"{mem.total // (1024 * 1024)} MB",
-        "avgLatencyMs": 0,
-        "eventThroughput": 0,
+        "avgLatencyMs": avg_latency,
         "runningAgents": running_agents,
         "runningWorkflows": running_workflows,
         "knowledgeJobs": knowledge_jobs,
-        "activeUsers": 0,
         "uptime": _get_uptime(request),
     }
 

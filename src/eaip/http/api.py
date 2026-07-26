@@ -21,16 +21,19 @@ from eaip.http.routers import (
     memory,
     mission_analytics,
     missions,
-    monitoring,
     monitoring_routes,
     notifications_router,
     organizations,
     runtime,
+    search_persistence,
     search_router,
     websocket,
+    workforce,
     workflow_designer,
+    workflow_export,
     workflow_versions,
     workflows,
+    workspaces,
 )
 from eaip.logging.context import get_logger
 
@@ -109,27 +112,31 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
             "name": "eaip-platform",
         }
 
-    # Register all routers
-    app.include_router(auth.router)
-    app.include_router(agents.router)
-    app.include_router(workflows.router)
-    app.include_router(knowledge.router)
-    app.include_router(missions.router)
-    app.include_router(runtime.router)
-    app.include_router(events_router.router)
-    app.include_router(monitoring.router)
-    app.include_router(organizations.router)
-    app.include_router(deployments.router)
+    # Register all routers under the /api prefix (matching the frontend API URL)
+    # WebSocket stays at the root so the wsUrl remains ws://host/ws.
+    app.include_router(auth.router, prefix="/api")
+    app.include_router(agents.router, prefix="/api")
+    app.include_router(workflows.router, prefix="/api")
+    app.include_router(knowledge.router, prefix="/api")
+    app.include_router(missions.router, prefix="/api")
+    app.include_router(runtime.router, prefix="/api")
+    app.include_router(events_router.router, prefix="/api")
+    app.include_router(organizations.router, prefix="/api")
+    app.include_router(deployments.router, prefix="/api")
     app.include_router(websocket.router)
-    app.include_router(workflow_versions.router)
-    app.include_router(workflow_designer.router)
-    app.include_router(mission_analytics.router)
-    app.include_router(admin.router)
-    app.include_router(monitoring_routes.router)
-    app.include_router(search_router.router)
-    app.include_router(marketplace_routes.router)
-    app.include_router(notifications_router.router)
-    app.include_router(memory.router)
+    app.include_router(workflow_versions.router, prefix="/api")
+    app.include_router(workflow_designer.router, prefix="/api")
+    app.include_router(mission_analytics.router, prefix="/api")
+    app.include_router(admin.router, prefix="/api")
+    app.include_router(monitoring_routes.router, prefix="/api")
+    app.include_router(search_router.router, prefix="/api")
+    app.include_router(search_persistence.router, prefix="/api")
+    app.include_router(workforce.router, prefix="/api")
+    app.include_router(marketplace_routes.router, prefix="/api")
+    app.include_router(notifications_router.router, prefix="/api")
+    app.include_router(memory.router, prefix="/api")
+    app.include_router(workspaces.router, prefix="/api")
+    app.include_router(workflow_export.router, prefix="/api")
 
     log.info("http.routes_registered", count=len(app.routes))
 

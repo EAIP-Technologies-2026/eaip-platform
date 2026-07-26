@@ -8,7 +8,7 @@ from eaip.infrastructure.db.migrations import Migration
 async def up(conn) -> None:
     # ── Extensions ────────────────────────────────────────────────
     await conn.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
-    await conn.execute("CREATE EXTENSION IF NOT EXISTS uuid_ossp")
+    await conn.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
 
     # ── Organizations ─────────────────────────────────────────────
     await conn.execute("""

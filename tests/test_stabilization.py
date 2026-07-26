@@ -60,7 +60,7 @@ async def client(app):
 
 @pytest.fixture
 async def authenticated_client(client):
-    r = await client.post("/auth/login", json={"email": "admin", "password": "admin"})
+    r = await client.post("/api/auth/login", json={"email": "admin", "password": "admin"})
     assert r.status_code == 200
     token = r.json()["token"]
     client.headers = {"Authorization": f"Bearer {token}"}
@@ -149,13 +149,13 @@ class TestWebSocketBridge:
 
 class TestEventBusPublish:
     async def test_event_publish_via_api(self, client):
-        r = await client.post("/events/publish", json={"type": "test", "payload": {"msg": "hello"}})
+        r = await client.post("/api/events/publish", json={"type": "test", "payload": {"msg": "hello"}})
         assert r.status_code == 200
         data = r.json()
         assert "eventId" in data
 
     async def test_event_subscribe_via_api(self, client):
-        r = await client.post("/events/subscribe", json={"type": "test"})
+        r = await client.post("/api/events/subscribe", json={"type": "test"})
         assert r.status_code == 200
         data = r.json()
         assert "subscriptionId" in data
@@ -199,88 +199,91 @@ class TestBackgroundTasks:
 
 class TestAdminEndpoints:
     async def test_admin_snapshot(self, authenticated_client):
-        r = await authenticated_client.get("/admin/snapshot")
+        r = await authenticated_client.get("/api/admin/snapshot")
         assert r.status_code == 200
         data = r.json()
         assert "services" in data
         assert "health" in data
 
     async def test_admin_users(self, authenticated_client):
-        r = await authenticated_client.get("/admin/users")
+        r = await authenticated_client.get("/api/admin/users")
         assert r.status_code == 200
 
     async def test_admin_roles(self, authenticated_client):
-        r = await authenticated_client.get("/admin/roles")
+        r = await authenticated_client.get("/api/admin/roles")
         assert r.status_code == 200
-        assert "roles" in r.json()
+        data = r.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+        assert data[0]["id"] == "admin"
 
     async def test_admin_settings(self, authenticated_client):
-        r = await authenticated_client.get("/admin/settings")
+        r = await authenticated_client.get("/api/admin/settings")
         assert r.status_code == 200
 
     async def test_admin_audit(self, authenticated_client):
-        r = await authenticated_client.get("/admin/audit")
+        r = await authenticated_client.get("/api/admin/audit")
         assert r.status_code == 200
 
     async def test_admin_feature_flags(self, authenticated_client):
-        r = await authenticated_client.get("/admin/feature-flags")
+        r = await authenticated_client.get("/api/admin/feature-flags")
         assert r.status_code == 200
 
 
 class TestMonitoringEndpoints:
     async def test_monitoring_metrics(self, client):
-        r = await client.get("/monitoring/metrics")
+        r = await client.get("/api/monitoring/metrics")
         assert r.status_code == 200
         data = r.json()
         assert isinstance(data, list)
 
     async def test_monitoring_diagnostics(self, client):
-        r = await client.get("/monitoring/diagnostics")
+        r = await client.get("/api/monitoring/diagnostics")
         assert r.status_code == 200
         assert "checks" in r.json()
 
 
 class TestSearchEndpoints:
     async def test_search(self, client):
-        r = await client.get("/search?q=test")
+        r = await client.get("/api/search?q=test")
         assert r.status_code == 200
         assert "results" in r.json()
 
     async def test_search_suggestions(self, client):
-        r = await client.get("/search/suggestions?q=test")
+        r = await client.get("/api/search/suggestions?q=test")
         assert r.status_code == 200
 
     async def test_search_recent(self, client):
-        r = await client.get("/search/recent")
+        r = await client.get("/api/search/recent")
         assert r.status_code == 200
 
     async def test_search_saved(self, client):
-        r = await client.get("/search/saved")
+        r = await client.get("/api/search/saved")
         assert r.status_code == 200
 
 
 class TestMarketplaceEndpoints:
     async def test_marketplace_packages(self, client):
-        r = await client.get("/marketplace/packages")
+        r = await client.get("/api/marketplace/packages")
         assert r.status_code == 200
 
     async def test_marketplace_categories(self, client):
-        r = await client.get("/marketplace/categories")
+        r = await client.get("/api/marketplace/categories")
         assert r.status_code == 200
         assert "categories" in r.json()
 
     async def test_marketplace_featured(self, client):
-        r = await client.get("/marketplace/packages/featured")
+        r = await client.get("/api/marketplace/packages/featured")
         assert r.status_code == 200
 
 
 class TestWorkflowDesignerPersistence:
-    async def test_create_and_save_designer(self, client):
-        r = await client.post("/workflows", json={"name": "Designer Test"})
+    async def test_create_and_save_designer(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Designer Test"})
         assert r.status_code == 200
         wf_id = r.json()["id"]
 
-        r = await client.put(f"/designer/{wf_id}", json={
+        r = await authenticated_client.put(f"/api/designer/{wf_id}", json={
             "nodes": [{"id": "n1", "label": "Start", "x": 100, "y": 100}],
             "edges": [],
             "viewport": {"x": 0, "y": 0, "zoom": 1},
@@ -288,45 +291,45 @@ class TestWorkflowDesignerPersistence:
         assert r.status_code == 200
         assert r.json()["status"] == "saved"
 
-    async def test_load_designer(self, client):
-        r = await client.post("/workflows", json={"name": "Load Test"})
+    async def test_load_designer(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Load Test"})
         wf_id = r.json()["id"]
 
-        await client.put(f"/designer/{wf_id}", json={
+        await authenticated_client.put(f"/api/designer/{wf_id}", json={
             "nodes": [{"id": "n1", "label": "Agent", "x": 200, "y": 150}],
             "edges": [],
             "viewport": {"x": 0, "y": 0, "zoom": 1},
         })
 
-        r = await client.get(f"/designer/{wf_id}")
+        r = await authenticated_client.get(f"/api/designer/{wf_id}")
         assert r.status_code == 200
         assert "nodes" in r.json()
 
-    async def test_designer_autosave(self, client):
-        r = await client.post("/workflows", json={"name": "Autosave Test"})
+    async def test_designer_autosave(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Autosave Test"})
         wf_id = r.json()["id"]
 
-        r = await client.post(f"/designer/{wf_id}/autosave", json={
+        r = await authenticated_client.post(f"/api/designer/{wf_id}/autosave", json={
             "nodes": [{"id": "n1", "label": "Test", "x": 50, "y": 50}],
             "edges": [],
             "viewport": {"x": 0, "y": 0, "zoom": 1},
         })
         assert r.status_code == 200
 
-        r = await client.get(f"/designer/{wf_id}/autosave")
+        r = await authenticated_client.get(f"/api/designer/{wf_id}/autosave")
         assert r.status_code == 200
         assert r.json()["hasAutosave"] is True
 
-        r = await client.delete(f"/designer/{wf_id}/autosave")
+        r = await authenticated_client.delete(f"/api/designer/{wf_id}/autosave")
         assert r.status_code == 200
 
 
 class TestWorkflowVersions:
-    async def test_create_workflow_version(self, client):
-        r = await client.post("/workflows", json={"name": "Version Test"})
+    async def test_create_workflow_version(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Version Test"})
         wf_id = r.json()["id"]
 
-        r = await client.post(f"/workflows/{wf_id}/versions", json={
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={
             "version": 1,
             "nodes": [{"id": "n1", "label": "Step 1", "x": 0, "y": 0}],
             "connections": [],
@@ -335,29 +338,29 @@ class TestWorkflowVersions:
         assert r.status_code == 200
         assert r.json()["version"] == 1
 
-    async def test_list_workflow_versions(self, client):
-        r = await client.post("/workflows", json={"name": "List Versions Test"})
+    async def test_list_workflow_versions(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "List Versions Test"})
         wf_id = r.json()["id"]
 
-        r = await client.get(f"/workflows/{wf_id}/versions")
+        r = await authenticated_client.get(f"/api/workflows/{wf_id}/versions")
         assert r.status_code == 200
 
-    async def test_publish_version(self, client):
-        r = await client.post("/workflows", json={"name": "Publish Test"})
+    async def test_publish_version(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Publish Test"})
         wf_id = r.json()["id"]
 
-        r = await client.post(f"/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
         version_id = r.json()["id"]
 
-        r = await client.post(f"/workflows/{wf_id}/versions/{version_id}/publish")
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions/{version_id}/publish")
         assert r.status_code == 200
 
-    async def test_archive_version(self, client):
-        r = await client.post("/workflows", json={"name": "Archive Test"})
+    async def test_archive_version(self, authenticated_client):
+        r = await authenticated_client.post("/api/workflows", json={"name": "Archive Test"})
         wf_id = r.json()["id"]
 
-        r = await client.post(f"/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
         version_id = r.json()["id"]
 
-        r = await client.post(f"/workflows/{wf_id}/versions/{version_id}/archive")
+        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions/{version_id}/archive")
         assert r.status_code == 200

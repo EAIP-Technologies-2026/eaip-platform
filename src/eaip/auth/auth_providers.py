@@ -83,6 +83,7 @@ class MockIdentityProvider:
             "name": username,
             "email": f"{username}@example.com",
             "provider": request.provider,
+            "roles": ["admin", "user"],
         }
 
         return AuthenticationResult(

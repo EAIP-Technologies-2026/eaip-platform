@@ -18,6 +18,9 @@ if str(_SRC) not in sys.path:
 # Default to the LOCAL environment so settings load deterministically.
 os.environ.setdefault("EAIP_CORE__ENVIRONMENT", "local")
 
+# Default JWT signing secret for test isolation.
+os.environ.setdefault("EAIP_AUTH_SECRET", "test-secret-do-not-use-in-production")
+
 
 @pytest.fixture(autouse=True)
 def _restore_logging_config() -> None:

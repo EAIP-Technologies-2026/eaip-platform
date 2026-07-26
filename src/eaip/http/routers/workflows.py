@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.events.store import EventStore
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.workflow.executor import WorkflowEngine
@@ -327,7 +328,10 @@ async def list_workflow_executions(request: Request, workflow_id: str, _user: di
 
 
 @router.get("/{workflow_id}/events")
-async def list_workflow_events(request: Request, workflow_id: str, _user: dict = Depends(get_current_user)):
+async def list_workflow_events(request: Request, workflow_id: str, limit: int = 50, _user: dict = Depends(get_current_user)):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent_by(workflow_id=workflow_id, limit=limit)
     return []
 
 

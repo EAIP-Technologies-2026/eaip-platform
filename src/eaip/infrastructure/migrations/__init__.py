@@ -9,14 +9,10 @@ def load_all_migrations() -> list[Migration]:
     migrations: list[Migration] = []
 
     try:
-        from eaip.infrastructure.migrations._001_initial_schema import migration as m001  # type: ignore[import-not-found]
+        from eaip.infrastructure.migrations.m001_initial_schema import migration as m001
         migrations.append(m001)
     except (ImportError, ModuleNotFoundError):
-        try:
-            from eaip.infrastructure.migrations.001_initial_schema import migration as m001
-            migrations.append(m001)
-        except (ImportError, ModuleNotFoundError):
-            pass
+        pass
 
     migrations.sort(key=lambda m: m.id)
     return migrations

@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.events.store import EventStore
 from eaip.http.dependencies import get_current_user
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.knowledge.models import DocumentFormat, IndexingStatus, KnowledgeDocument
@@ -171,6 +172,41 @@ async def get_document(request: Request, document_id: str, _user: dict = Depends
     raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Document {document_id} not found")
 
 
+@router.post("/documents")
+async def create_document(request: Request, body: dict[str, Any], _user: dict = Depends(get_current_user)):
+    engine = _get_engine(request)
+    doc_id = f"doc-{uuid.uuid4().hex[:12]}"
+    title = body.get("title", "Untitled")
+    content = body.get("content", "")
+    collection = body.get("collection", "default")
+    fmt = DocumentFormat.TXT
+    if engine:
+        try:
+            result = await engine.ingest(
+                document_id=doc_id,
+                content=content.encode("utf-8"),
+                doc_format=fmt,
+                title=title,
+                collection=collection,
+            )
+            return _doc_to_dict(result.document)
+        except Exception as e:
+            log.warning("create_document.ingest_failed", error=str(e))
+    return {
+        "id": doc_id,
+        "title": title,
+        "content": content,
+        "tags": body.get("tags", []),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "type": fmt.value,
+        "metadata": {},
+        "version": 1,
+        "size": len(content.encode("utf-8")),
+        "status": "indexed",
+    }
+
+
 @router.delete("/documents/{document_id}")
 async def delete_document(request: Request, document_id: str, _user: dict = Depends(get_current_user)):
     engine = _get_engine(request)
@@ -188,7 +224,7 @@ async def reindex_document(request: Request, document_id: str, _user: dict = Dep
 
 
 @router.post("/documents/upload")
-async def upload_document(request: Request, file: UploadFile, _user: dict = Depends(get_current_user)):
+async def upload_document(request: Request, file: UploadFile, collection: str = "default", _user: dict = Depends(get_current_user)):
     engine = _get_engine(request)
     content_bytes = await file.read()
     content_str = content_bytes.decode("utf-8", errors="replace")
@@ -209,7 +245,7 @@ async def upload_document(request: Request, file: UploadFile, _user: dict = Depe
                 content=content_bytes,
                 doc_format=fmt,
                 title=file.filename or "Untitled",
-                collection="default",
+                collection=collection,
             )
             doc = result.document
             return _doc_to_dict(doc)
@@ -271,4 +307,7 @@ async def search_knowledge(
 
 @router.get("/activity")
 async def knowledge_activity(request: Request, limit: int = 20, _user: dict = Depends(get_current_user)):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent_by(type="knowledge", limit=limit)
     return []

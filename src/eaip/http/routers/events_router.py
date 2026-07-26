@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Request
 
 from eaip.events.event import DomainEvent
+from eaip.events.store import EventStore
 from eaip.logging.context import get_logger
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -17,6 +18,9 @@ class GenericEvent(DomainEvent):
 
 @router.get("/activity")
 async def list_activity(request: Request, limit: int = 50):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent(limit)
     return []
 
 

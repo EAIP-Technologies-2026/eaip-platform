@@ -7,9 +7,13 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.agents.runtime import AgentRuntime
+from eaip.events.store import EventStore
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.runtime.mission import MissionRegistry, MissionStatus
+from eaip.workflow.executor import WorkflowEngine
+from eaip.workflow.registry import WorkflowRegistry
 
 router = APIRouter(prefix="/missions", tags=["missions"])
 log = get_logger("eaip.http.routers.missions")
@@ -25,7 +29,7 @@ def _mission_to_dict(m) -> dict[str, Any]:
         "name": m.name,
         "description": m.metadata.get("description", "") if m.metadata else "",
         "status": m.status.value,
-        "progress": 100 if m.status == MissionStatus.COMPLETED else (50 if m.status == MissionStatus.RUNNING else (10 if m.status == MissionStatus.QUEUED else 0)),
+        "progress": 1.0 if m.status == MissionStatus.COMPLETED else (0.5 if m.status == MissionStatus.RUNNING else (0.1 if m.status == MissionStatus.QUEUED else 0.0)),
         "startedAt": datetime.fromtimestamp(m._started_at, tz=timezone.utc).isoformat() if m._started_at else None,
         "completedAt": datetime.fromtimestamp(m._completed_at, tz=timezone.utc).isoformat() if m._completed_at else None,
         "steps": [],
@@ -97,6 +101,7 @@ async def get_mission(request: Request, mission_id: str, _user: dict = Depends(g
 
 @router.post("/{mission_id}/execute")
 async def execute_mission(request: Request, mission_id: str, _user: dict = Depends(get_current_user)):
+    container = request.app.state.lifecycle.platform.container
     registry = _get_registry(request)
     mission = None
     if registry:
@@ -109,11 +114,23 @@ async def execute_mission(request: Request, mission_id: str, _user: dict = Depen
 
     if mission:
         await mission.queue()
-        await mission.start()
-        await mission.complete(f"Mission {mission_id} executed successfully")
+        await mission.execute()
     return {"executionId": f"exec-{mission_id}-{uuid.uuid4().hex[:4]}"}
+
+
+@router.delete("/{mission_id}")
+async def delete_mission(request: Request, mission_id: str, _user: dict = Depends(get_current_user)):
+    registry = _get_registry(request)
+    if registry:
+        removed = await registry.delete(mission_id)
+        if not removed:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Mission {mission_id} not found")
+    return {"status": "deleted"}
 
 
 @router.get("/{mission_id}/logs")
 async def get_mission_logs(request: Request, mission_id: str, _user: dict = Depends(get_current_user)):
+    store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
+    if store is not None:
+        return store.recent_by(mission_id=mission_id)
     return []

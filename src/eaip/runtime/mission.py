@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
@@ -19,6 +19,11 @@ from eaip.runtime.events import (
     MissionFailed,
     MissionStarted,
 )
+
+if TYPE_CHECKING:
+    from eaip.agents.runtime import AgentRuntime
+    from eaip.workflow.executor import WorkflowEngine
+    from eaip.workflow.registry import WorkflowRegistry
 
 
 class MissionStatus(StrEnum):
@@ -47,6 +52,9 @@ class Mission:
         workflow_ids: tuple[str, ...] = (),
         knowledge_collections: tuple[str, ...] = (),
         metadata: dict[str, Any] | None = None,
+        agent_runtime: Any | None = None,
+        workflow_registry: Any | None = None,
+        workflow_engine: Any | None = None,
     ) -> None:
         self.mission_id = mission_id
         self.name = name
@@ -55,6 +63,9 @@ class Mission:
         self.workflow_ids = workflow_ids
         self.knowledge_collections = knowledge_collections
         self.metadata = metadata or {}
+        self._agent_runtime = agent_runtime
+        self._workflow_registry = workflow_registry
+        self._workflow_engine = workflow_engine
         self.status = MissionStatus.DRAFT
         self._started_at: float | None = None
         self._completed_at: float | None = None
@@ -102,6 +113,49 @@ class Mission:
         await self._publish(MissionCancelled(mission_id=self.mission_id))
         self._log.info("mission.cancelled", mission_id=self.mission_id)
 
+    async def execute(self) -> None:
+        """Execute this mission by running all referenced agents and workflows.
+
+        Iterates agent_ids and invokes AgentRuntime for each, then
+        iterates workflow_ids and invokes WorkflowEngine via WorkflowRegistry.
+        Results are accumulated into the mission result string.
+        """
+        await self.start()
+        results: list[str] = []
+
+        if self._agent_runtime is not None:
+            from eaip.agents.models import AgentSpec, Goal
+
+            for agent_id in self.agent_ids:
+                try:
+                    spec = AgentSpec(id=agent_id, name=agent_id)
+                    goal = Goal(text=self.name)
+                    run = await self._agent_runtime.create_run(spec, goal)
+                    completed = await self._agent_runtime.start_run(run.id)
+                    results.append(f"agent:{agent_id} -> {completed.result or 'ok'}")
+                except Exception as exc:
+                    results.append(f"agent:{agent_id} -> error: {exc}")
+                    self._log.warning("mission.agent.failed", agent_id=agent_id, error=str(exc))
+
+        if self._workflow_engine is not None and self._workflow_registry is not None:
+            for workflow_id in self.workflow_ids:
+                try:
+                    definition = await self._workflow_registry.get(workflow_id)
+                    if definition is not None:
+                        from eaip.workflow.models import WorkflowContext
+
+                        ctx = WorkflowContext(variables={"mission_id": self.mission_id})
+                        wf_result = await self._workflow_engine.execute(definition, ctx)
+                        results.append(f"workflow:{workflow_id} -> {wf_result.status.value}")
+                    else:
+                        results.append(f"workflow:{workflow_id} -> not found")
+                except Exception as exc:
+                    results.append(f"workflow:{workflow_id} -> error: {exc}")
+                    self._log.warning("mission.workflow.failed", workflow_id=workflow_id, error=str(exc))
+
+        combined = "; ".join(results) if results else "no agents or workflows to execute"
+        await self.complete(result=combined)
+
     # ── Properties ──────────────────────────────────────────────────
 
     @property
@@ -144,9 +198,18 @@ class MissionRegistry:
     Supports CRUD and provides aggregate statistics.
     """
 
-    def __init__(self, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self,
+        event_bus: EventBus | None = None,
+        agent_runtime: Any | None = None,
+        workflow_registry: Any | None = None,
+        workflow_engine: Any | None = None,
+    ) -> None:
         self._missions: dict[str, Mission] = {}
         self._event_bus = event_bus
+        self._agent_runtime = agent_runtime
+        self._workflow_registry = workflow_registry
+        self._workflow_engine = workflow_engine
         self._log = get_logger("eaip.runtime.mission_registry")
 
     async def create(
@@ -168,6 +231,9 @@ class MissionRegistry:
             workflow_ids=workflow_ids,
             knowledge_collections=knowledge_collections,
             metadata=metadata,
+            agent_runtime=self._agent_runtime,
+            workflow_registry=self._workflow_registry,
+            workflow_engine=self._workflow_engine,
         )
         self._missions[mission_id] = mission
         if self._event_bus is not None:
@@ -179,6 +245,13 @@ class MissionRegistry:
 
     async def get(self, mission_id: str) -> Mission | None:
         return self._missions.get(mission_id)
+
+    async def delete(self, mission_id: str) -> bool:
+        if mission_id not in self._missions:
+            return False
+        del self._missions[mission_id]
+        self._log.info("mission.deleted", mission_id=mission_id)
+        return True
 
     async def list_missions(
         self, status: MissionStatus | None = None

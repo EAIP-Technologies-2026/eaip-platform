@@ -1,134 +1,206 @@
-# Alpha Release Checklist
+# EAIP Alpha Release Checklist
 
-> **Purpose:** Verify that the EAIP platform meets all quality, security, and functionality gates required for an Alpha release.
-> **Source:** Architecture audit — 33 verified findings resolved across 7 work packages.
-> **Owner:** Subham Panigrahi (@subham1902)
-> **Last updated:** 2026-07-11
+**Version:** 0.0.2
+**Date:** 2026-07-21
 
----
-
-## Instructions
-
-Run this checklist after all 4 sprints (8 weeks) of Alpha stabilization work are complete. Every item must be checked and verified before declaring "Alpha Ready."
+> Use this checklist to track readiness for an Alpha release. Each item must be verified before release.
 
 ---
 
-## Section 1: Security (All Critical Findings Resolved)
+## 1. Backend
 
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 1.1 | JWT secret is not hard-coded in source | `grep -r "eaip-auth-secret-default" src/eaip/` returns empty | ☐ |
-| 1.2 | JWT secret is configurable via `SecretProviderPort` or environment variable | Read `auth/tokens.py:__init__` — no default secret parameter | ☐ |
-| 1.3 | `datapipeline/steps.py` no longer uses `exec()` | Grep `src/eaip/datapipeline/steps.py` for `exec(` | ☐ |
-| 1.4 | `integration/transform.py` no longer uses `exec()` | Grep `src/eaip/integration/transform.py` for `exec(` | ☐ |
-| 1.5 | `automation/executor.py` no longer uses `create_subprocess_shell` | Grep for `create_subprocess_shell` in `src/eaip/automation/` | ☐ |
-| 1.6 | Bandit scan passes with zero medium+ findings | `make security` | ☐ |
-| 1.7 | detect-secrets baseline has no new secrets | `detect-secrets scan --baseline .secrets.baseline` | ☐ |
+### Core Platform
+- [ ] **FAIL** Ruff lint passes with < 100 errors — 6420 violations found (D-series docstrings)
+- [ ] **FAIL** mypy type-check passes — 1 error: migration filename `001_initial_schema.py` is invalid decimal literal
+- [ ] **PASS** Python 3.11+ compatibility — tested on 3.13.14
+- [ ] **PASS** All core dependencies installable — `pip install -e .` succeeds
+- [ ] **PASS** Platform boots successfully — `python -m eaip` starts Uvicorn
+- [ ] **PASS** 27 HTTP routes registered — verified via `create_app()`
 
----
+### Authentication
+- [ ] **FAIL** Auth integration tests pass — 13 failed, 3 errored: `EAIP_AUTH_SECRET` not set
+- [ ] **PASS** JWT tokens generated and validated — `TokenService` functional when env var is set
+- [ ] **FAIL** No hardcoded production secrets — `"eaip-dev-secret-do-not-use-in-production"` in `__main__.py`
+- [ ] **FAIL** Token service handles missing secret gracefully — raises `RuntimeError` instead of degraded mode
 
-## Section 2: Event Bus (All Events Delivered)
+### Event System
+- [ ] **PASS** EventBus publishes and delivers events — 2,541 event-related unit tests pass
+- [ ] **PASS** EventStore records all DomainEvent with classification
+- [ ] **PASS** Recent events retrievable by agent, workflow, mission, type filters
 
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 2.1 | `TokenService` publishes to `EventBus` | Read `auth/tokens.py` — `_emit()` body is not `pass` | ☐ |
-| 2.2 | `AuthenticationService` publishes to `EventBus` | Read `auth/auth_providers.py` — `_emit()` body is not `pass` | ☐ |
-| 2.3 | `apiext/caching.py` publishes cache events | Verify `CacheMiss`, `CacheHit`, `CacheInvalidated` are published | ☐ |
-| 2.4 | `gateway/router.py` publishes endpoint lifecycle events | Verify `EndpointRegistered`, `EndpointUnregistered`, `ApiRequestProcessed` | ☐ |
-| 2.5 | `sandbox/manager.py` publishes sandbox lifecycle events | Verify all 5 event types published | ☐ |
-| 2.6 | `bluegreen/manager.py` publishes switch lifecycle events | Verify all 4 event types published | ☐ |
-| 2.7 | `observability/slo.py` publishes SLO status events | Verify `SloStatusChanged`, `SloViolated` published | ☐ |
-| 2.8 | `firewall/manager.py` publishes rule lifecycle events | Verify `RuleCreated`, `RuleUpdated`, `RuleDeleted`, `RuleSetActivated` | ☐ |
-| 2.9 | `eventret/manager.py` publishes retention policy events | Verify `PolicyCreated` event published | ☐ |
-| 2.10 | `xbridge/bridge.py` publishes connector lifecycle events | Verify `ConnectorRegistered`, `ConnectorUpdated`, `ConnectorDeleted` | ☐ |
-| 2.11 | `collaboration/coordinator.py:_publish()` awaits the event bus call | Verify `_publish` is `async def` and contains `await` | ☐ |
-| 2.12 | Single event dispatch pattern exists across the platform | No custom `_emit()`/`_event_callback` patterns remain | ☐ |
+### WebSocket / Realtime
+- [ ] **PASS** WebSocket endpoint accepts connections at `/ws`
+- [ ] **PASS** ConnectionManager tracks connections with heartbeat/purge
+- [ ] **PASS** PushService delivers messages to channel subscribers
+- [ ] **PASS** EventStore events are classified and pushed with channel context
+- [ ] **FAIL** 9 ws unit test files pass — all pass
+- [ ] **PASS*** Channel filtering implementation in `event_listener` — *pending end-to-end verification due to missing frontend subscribe protocol
 
----
+### Workflow Engine
+- [ ] **PASS** Workflow DAG execution — sequential and parallel steps
+- [ ] **PASS** Pause, resume, cancel operations
+- [ ] **PASS** State machine: valid transitions enforced
+- [ ] **PASS** Child workflow execution
+- [ ] **PASS** Step approval mechanism
 
-## Section 3: Error Handling
-
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 3.1 | Zero `except Exception: pass` in production code | `grep -rn "except.*:.*pass" src/eaip/` returns empty | ☐ |
-| 3.2 | `audit/store.py` uses `asyncio.create_task()` not `ensure_future()` | Read `audit/store.py` | ☐ |
-| 3.3 | Event error classes have distinct `ErrorCode` values | Read `events/errors.py` | ☐ |
-
----
-
-## Section 4: Async Correctness
-
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 4.1 | `gateway/rate_limiter.py` uses `asyncio.Lock()` | Read `gateway/rate_limiter.py` | ☐ |
-| 4.2 | `schema/registry.py` uses `asyncio.Lock()` | Read `schema/registry.py` | ☐ |
-| 4.3 | `sdk/clients.py` no longer uses `anyio.from_thread.run()` | Read `sdk/clients.py` | ☐ |
-| 4.4 | `sdk/manager.py` no longer uses `anyio.from_thread.run()` | Read `sdk/manager.py` | ☐ |
+### Data Pipeline
+- [ ] **FAIL** `croniter` dependency optional — crashes at import if not installed
+- [ ] **PASS** Pipeline scheduler tests pass — 5 of 10 fail due to missing dep
+- [ ] **WARN** Consider making `croniter` a core dependency or wrapping import
 
 ---
 
-## Section 5: Time & Data Hygiene
+## 2. Frontend
 
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 5.1 | Zero `datetime.now()` (naive) in collaboration packages | `grep -rn "datetime.now()" src/eaip/collaboration/` returns empty | ☐ |
-| 5.2 | Token storage has TTL-based eviction | Read `auth/tokens.py` for eviction logic | ☐ |
-| 5.3 | `shared/types.py:Bytes` alias renamed or removed | Read `shared/types.py` | ☐ |
-| 5.4 | `compliance/framework.py:108` dead code removed | Read `compliance/framework.py` | ☐ |
-| 5.5 | `events/dispatcher.py` accesses bus via public API | Read `events/dispatcher.py:150` | ☐ |
+### Build
+- [ ] **FAIL** `pnpm build` succeeds — **FAILED**: TypeScript error + ESLint crash
+- [ ] **FAIL** `pnpm typecheck` passes — 1 error in `@eaip/auth`
+- [ ] **FAIL** `pnpm lint` passes — crashes with missing `@eslint/eslintrc`
+- [ ] **PASS** `pnpm build:packages` succeeds — all 50 packages compile
 
----
+### Test
+- [ ] **FAIL** `pnpm test` passes — 1 vitest test fails (redirect test)
+- [ ] **FAIL** Coverage thresholds met — no coverage report generated
+- [ ] **WARN** Only 1 vitest test exists for enterprise-console app — insufficient coverage
+- [ ] **WARN** 18 Playwright e2e spec files exist but were not executed
 
-## Section 6: Stub Implementation
+### TypeScript
+- [ ] **FAIL** Strict mode enforced — root `tsconfig.json` has `strict: true`
+- [ ] **FAIL** `noUncheckedIndexedAccess` — catches `base64Url` but error prevents build
+- [ ] **PASS** 56 tsconfig files, all packages typed
+- [ ] **PASS** Path aliases configured for all 48 `@eaip/*` packages
 
-| # | Check | Verification Method | Status |
-|---|-------|---------------------|--------|
-| 6.1 | `S3ArchiveStore` is implemented or removed | Read `archive/store.py` | ☐ |
-| 6.2 | At least one deployment strategy has implementation | Read `deploy/deployer.py` | ☐ |
-| 6.3 | CLI `run_forever()` reads and executes input | Read `cli/shell.py` | ☐ |
-
----
-
-## Section 7: Quality Gates
-
-| # | Check | Command | Status |
-|---|-------|---------|--------|
-| 7.1 | All tests pass | `pytest tests/ -q` exits 0 | ☐ |
-| 7.2 | Test coverage ≥ 85% | `pytest --cov=src --cov-report=term` | ☐ |
-| 7.3 | mypy strict passes | `mypy --strict src/` exits 0 | ☐ |
-| 7.4 | ruff check passes | `ruff check src/` exits 0 | ☐ |
-| 7.5 | ruff format check passes | `ruff format --check src/` exits 0 | ☐ |
-| 7.6 | Bandit passes | `bandit -c pyproject.toml -r src/` exits 0 | ☐ |
-| 7.7 | pip-audit passes | `pip-audit --strict` exits 0 | ☐ |
-| 7.8 | Pre-commit passes | `pre-commit run --all-files` exits 0 | ☐ |
-| 7.9 | Package builds cleanly | `python -m build` succeeds | ☐ |
-| 7.10 | Docker image builds | `docker build .` succeeds | ☐ |
+### Dependencies
+- [ ] **FAIL** ESLint `@eslint/eslintrc` missing — blocks all lint checks
+- [ ] **PASS** pnpm lockfile frozen — `pnpm-lock.yaml` present
+- [ ] **PASS** Workspace protocol (`workspace:*`) used for internal deps
 
 ---
 
-## Section 8: Documentation
+## 3. Docker
 
-| # | Check | Status |
-|---|-------|--------|
-| 8.1 | `MASTER_AUDIT.md` — verified findings up to date | ☐ |
-| 8.2 | `ALPHA_BACKLOG.md` — all completed items marked done | ☐ |
-| 8.3 | `ALPHA_ROADMAP.md` — status updated | ☐ |
-| 8.4 | `SPRINT_PLAN.md` — retrospectives captured | ☐ |
-| 8.5 | `CHANGELOG.md` — Alpha release entry added | ☐ |
-| 8.6 | `RISK_REGISTER.md` — any new risks documented | ☐ |
-| 8.7 | `DECISION_REGISTER.md` — any new decisions captured | ☐ |
-| 8.8 | `SECURITY.md` — updated with known Alpha limitations | ☐ |
+### Backend Image
+- [ ] **PASS** Dockerfile exists — Python 3.13-slim-bookworm
+- [ ] **PASS** Multi-stage not needed for Python (single stage sufficient)
+- [ ] **PASS** `docker-compose.yml` includes PostgreSQL, Redis, Qdrant
+- [ ] **PASS** Healthcheck configured at `/health`
+- [ ] **PASS** Persistent volumes for all data stores
 
----
-
-## Final Sign-off
-
-| Role | Name | Date | Signature |
-|------|------|------|-----------|
-| Engineering Lead | Subham Panigrahi | | ☐ |
-| Security Reviewer | | | ☐ |
-| QA Lead | | | ☐ |
+### Frontend Image
+- [ ] **PASS** Dockerfile exists — Node 20 Alpine
+- [ ] **PASS** Multi-stage build (deps → builder → runner)
+- [ ] **PASS** All 5 apps built in single image
+- [ ] **PASS** Non-root `nextjs` user in production
+- [ ] **PASS** `docker-compose.yml` for development
 
 ---
 
-*When all checkboxes are checked, the platform is **Alpha Ready**.*
+## 4. CI/CD
+
+- [ ] **FAIL** CI pipeline defined — **NOT CONFIGURED** (no `.github/` directory)
+- [ ] **FAIL** PR checks (lint, typecheck, test) — not configured
+- [ ] **FAIL** Build validation — not configured
+- [ ] **FAIL** E2E test execution — not configured
+- [ ] **FAIL** Deployment pipeline — not configured
+- [ ] **WARN** `Makefile` present with comprehensive targets — usable locally but not in CI
+- [ ] **WARN** GitHub Actions `ci.yml` exists in frontend but NOT in platform repo
+
+---
+
+## 5. Environment
+
+### Backend
+- [ ] **PASS** `.env` template present — development defaults
+- [ ] **PASS** `.env.local` for secrets (gitignored)
+- [ ] **FAIL** `EAIP_AUTH_SECRET` documented — not present in `.env` comments
+- [ ] **PASS** `.dockerignore` present
+- [ ] **WARN** `pyproject.toml` specifies `Development Status :: 2 - Pre-Alpha`
+
+### Frontend
+- [ ] **PASS** `.env.example` present — all variables documented
+- [ ] **PASS** `.env` and `.env.local` present
+- [ ] **FAIL** Auth issuer and client ID empty — `NEXT_PUBLIC_AUTH_ISSUER` and `NEXT_PUBLIC_AUTH_CLIENT_ID` not populated
+- [ ] **PASS** Telemetry disabled by default
+
+---
+
+## 6. Documentation
+
+- [ ] **PASS** `README.md` exists — project description and links
+- [ ] **FAIL** API documentation — no Swagger/OpenAPI docs accessible (FastAPI auto-docs may work)
+- [ ] **PASS** Architecture docs — 15 files in `docs/`
+- [ ] **PASS** `CHANGELOG.md` exists
+- [ ] **PASS** `LICENSE` (Apache 2.0) exists
+- [ ] **PASS** `SECURITY.md` referenced
+- [ ] **WARN** No `CONTRIBUTING.md`
+- [ ] **FAIL** No Storybook build for frontend — `pnpm storybook:build` not tested
+
+---
+
+## 7. Testing
+
+### Backend
+- [ ] **PASS** `pytest` configured — `pyproject.toml` with all options
+- [ ] **PASS** Unit tests: 8926 passed, 18 failed, 10 skipped, 3 errors
+- [ ] **PASS** Integration tests: 131 passed, 0 failed
+- [ ] **PASS** E2E tests: 14 passed, 0 failed
+- [ ] **FAIL** `pytest-cov` configured but coverage report not verified
+- [ ] **FAIL** Auth integration tests need `EAIP_AUTH_SECRET` env var
+- [ ] **WARN** Skipped tests: openpyxl, reportlab, scipy not installed
+
+### Frontend
+- [ ] **FAIL** `vitest` configured — 1 test fails
+- [ ] **FAIL** Coverage thresholds not verified
+- [ ] **FAIL** Playwright e2e not executed — 18 spec files, but no run attempted
+- [ ] **WARN** Only 1 vitest test for entire enterprise-console app
+
+---
+
+## 8. Deployment
+
+- [ ] **PASS** Docker Compose production stack defined
+- [ ] **PASS** PostgreSQL + Redis + Qdrant backing services configured
+- [ ] **PASS** Healthcheck at `/health`
+- [ ] **PASS** Volume mounts for data persistence
+- [ ] **FAIL** No Kubernetes manifests
+- [ ] **FAIL** No Terraform/Pulumi/Bicep infrastructure-as-code
+- [ ] **FAIL** No deployment guide or runbook
+- [ ] **WARN** No migration strategy for database schema
+- [ ] **FAIL** No CI/CD pipeline for automated deployment
+
+---
+
+## 9. Monitoring
+
+- [ ] **PASS** Health check framework — `eaip/health/` with per-module reporters
+- [ ] **PASS** OpenTelemetry integration — API, SDK, OTLP exporter configured
+- [ ] **PASS** Structured logging — `structlog` configured
+- [ ] **PASS** Prometheus metrics likely auto-configured via OpenTelemetry
+- [ ] **WARN** No dashboards or alerting rules defined
+- [ ] **WARN** No log aggregation (ELK/Loki/DataDog) configuration
+- [ ] **FAIL** No uptime monitoring or synthetic checks
+
+---
+
+## Overall Status
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Backend Core | ⚠️ PASS | Stable, well-tested; minor test env config gap |
+| Authentication | ❌ FAIL | Secret config issue in tests; JWT parsing gap in frontend |
+| WebSocket/Realtime | ⚠️ PASS | Infrastructure solid; frontend protocol incomplete |
+| Frontend Build | ❌ FAIL | Blocked by type error and ESLint dependency |
+| Frontend Tests | ❌ FAIL | Insufficient coverage; 1 test fails |
+| Docker | ✅ PASS | Production and dev stacks defined |
+| CI/CD | ❌ FAIL | Not configured |
+| Documentation | ⚠️ PASS | Good architecture docs; missing operational docs |
+| Security | ❌ FAIL | Hardcoded dev secret, no CSP/headers, missing auth config |
+
+**Alpha Release Verdict: NOT RECOMMENDED**
+
+The following must be resolved before Alpha release:
+1. Frontend build — fix `base64Url` type error (B-01)
+2. Frontend ESLint — install missing `@eslint/eslintrc` (B-02)
+3. Auth test env — set `EAIP_AUTH_SECRET` in test fixtures (B-03)
+4. mypy — handle migration filename in config (B-04)
+5. CI/CD — define at minimum a CI pipeline (B-05)

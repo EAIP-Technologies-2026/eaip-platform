@@ -66,12 +66,28 @@ async def websocket_endpoint(websocket: WebSocket):
         if not running:
             return
         try:
+            module = type(event).__module__
+            if "agents" in module:
+                event_channel = "agent"
+            elif "workflow" in module:
+                event_channel = "workflow"
+            elif "mission" in module:
+                event_channel = "mission"
+            elif "knowledge" in module:
+                event_channel = "knowledge"
+            elif "auth" in module:
+                event_channel = "auth"
+            else:
+                event_channel = "system"
+
+            if subscribed_channels and event_channel not in subscribed_channels and "all" not in subscribed_channels:
+                return
+
             data = {
-                "type": "event",
                 "event_type": type(event).__name__,
                 "event_data": event.model_dump() if hasattr(event, "model_dump") else str(event),
             }
-            await websocket.send_json(data)
+            await websocket.send_json({"channel": event_channel, "data": data})
         except Exception:
             pass
 
