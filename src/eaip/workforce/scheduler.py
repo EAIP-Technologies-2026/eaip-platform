@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from eaip.jobs.scheduler import JobScheduler
@@ -118,7 +119,7 @@ class WorkforceScheduler:
     def _publish(self, event: Any) -> None:
         if self._event_bus is not None:
             try:
-                self._event_bus.publish(event)
+                asyncio.create_task(self._event_bus.publish(event))
             except Exception:
                 self._log.warning("event.publish.failed", event_type=type(event).__name__)
 

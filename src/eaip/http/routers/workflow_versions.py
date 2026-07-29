@@ -4,12 +4,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 
-router = APIRouter(prefix="/workflows/{workflow_id}/versions", tags=["workflows"])
+router = APIRouter(prefix="/workflows/{workflow_id}/versions", tags=["workflows"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.workflow_versions")
 
 

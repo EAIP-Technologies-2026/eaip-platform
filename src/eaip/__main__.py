@@ -40,9 +40,20 @@ async def _async_main() -> None:
     agent_registry = AgentRegistry(event_bus=events)
     container.register_instance(AgentRegistry, agent_registry)
 
+    from eaip.adapters.llm.stub import StubLLMAdapter
+    from eaip.tools.builtin.echo import EchoTool
+    from eaip.tools.builtin.current_time import CurrentTimeTool
+    from eaip.tools.registry import ToolRegistry
+
+    tool_registry = ToolRegistry()
+    tool_registry.register(EchoTool())
+    tool_registry.register(CurrentTimeTool())
+    container.register_instance(ToolRegistry, tool_registry)
+
+    llm_adapter = StubLLMAdapter()
     agent_runtime = AgentRuntime(
-        llm_adapter=None,
-        tool_registry=None,
+        llm_adapter=llm_adapter,
+        tool_registry=tool_registry,
         event_bus=events,
     )
     container.register_instance(AgentRuntime, agent_runtime)
@@ -54,6 +65,9 @@ async def _async_main() -> None:
     auth_secret = os.environ.get("EAIP_AUTH_SECRET")
     if not auth_secret:
         auth_secret = os.environ.get("EAIP_AUTH__SECRET")
+    if not auth_secret:
+        auth_secret = "eaip-dev-secret-do-not-use-in-production"
+        log.warning("auth.no_secret_configured", message="Using dev-only default auth secret. Set EAIP_AUTH_SECRET for production use.")
     auth_service = AuthenticationService(
         secret=auth_secret,
         event_bus=events,
@@ -156,12 +170,40 @@ async def _async_main() -> None:
     # Admin services
     from eaip.admin.audit import AuditLogger
     from eaip.admin.manager import RuntimeManager
-    from eaip.core.feature_flags import FeatureFlagRegistry
     from eaip.enterprise_settings.service import EnterpriseSettingsService
     from eaip.license.manager import LicenseManager
 
     audit_logger = AuditLogger(event_bus=events)
     container.register_instance(AuditLogger, audit_logger)
+
+    # Register core health checks
+    from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+
+    class _AgentRuntimeHealthCheck:
+        name = "eaip.agents.runtime"
+        async def check(self) -> HealthReport:
+            return HealthReport(component="AgentRuntime", status=HealthStatus.HEALTHY, details={"runs": len(agent_runtime._runs) if hasattr(agent_runtime, "_runs") else 0})
+
+    class _WorkflowEngineHealthCheck:
+        name = "eaip.workflow.engine"
+        async def check(self) -> HealthReport:
+            return HealthReport(component="WorkflowEngine", status=HealthStatus.HEALTHY)
+
+    class _KnowledgeEngineHealthCheck:
+        name = "eaip.knowledge.engine"
+        async def check(self) -> HealthReport:
+            return HealthReport(component="KnowledgeEngine", status=HealthStatus.HEALTHY)
+
+    class _MemoryEngineHealthCheck:
+        name = "eaip.memory.engine"
+        async def check(self) -> HealthReport:
+            return HealthReport(component="MemoryEngine", status=HealthStatus.HEALTHY, details={"stores": ["in_memory"]})
+
+    health_reporter = lifecycle.platform.health
+    health_reporter.register(_AgentRuntimeHealthCheck())
+    health_reporter.register(_WorkflowEngineHealthCheck())
+    health_reporter.register(_KnowledgeEngineHealthCheck())
+    health_reporter.register(_MemoryEngineHealthCheck())
 
     kernel = lifecycle.kernel
     if kernel is not None:
@@ -174,9 +216,6 @@ async def _async_main() -> None:
 
     settings_svc = EnterpriseSettingsService()
     container.register_instance(EnterpriseSettingsService, settings_svc)
-
-    ff_registry: FeatureFlagRegistry = container.resolve(FeatureFlagRegistry)
-    container.register_instance(FeatureFlagRegistry, ff_registry)
 
     log.info("services.registered", count=len(container._providers))
 

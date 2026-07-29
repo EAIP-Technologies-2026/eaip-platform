@@ -4,12 +4,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 
-router = APIRouter(prefix="/deployments", tags=["deployments"])
+router = APIRouter(prefix="/deployments", tags=["deployments"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.deployments")
 
 

@@ -148,14 +148,14 @@ class TestWebSocketBridge:
 
 
 class TestEventBusPublish:
-    async def test_event_publish_via_api(self, client):
-        r = await client.post("/api/events/publish", json={"type": "test", "payload": {"msg": "hello"}})
+    async def test_event_publish_via_api(self, authenticated_client):
+        r = await authenticated_client.post("/api/events/publish", json={"type": "test", "payload": {"msg": "hello"}})
         assert r.status_code == 200
         data = r.json()
         assert "eventId" in data
 
-    async def test_event_subscribe_via_api(self, client):
-        r = await client.post("/api/events/subscribe", json={"type": "test"})
+    async def test_event_subscribe_via_api(self, authenticated_client):
+        r = await authenticated_client.post("/api/events/subscribe", json={"type": "test"})
         assert r.status_code == 200
         data = r.json()
         assert "subscriptionId" in data
@@ -231,49 +231,49 @@ class TestAdminEndpoints:
 
 
 class TestMonitoringEndpoints:
-    async def test_monitoring_metrics(self, client):
-        r = await client.get("/api/monitoring/metrics")
+    async def test_monitoring_metrics(self, authenticated_client):
+        r = await authenticated_client.get("/api/monitoring/metrics")
         assert r.status_code == 200
         data = r.json()
         assert isinstance(data, list)
 
-    async def test_monitoring_diagnostics(self, client):
-        r = await client.get("/api/monitoring/diagnostics")
+    async def test_monitoring_diagnostics(self, authenticated_client):
+        r = await authenticated_client.get("/api/monitoring/diagnostics")
         assert r.status_code == 200
         assert "checks" in r.json()
 
 
 class TestSearchEndpoints:
-    async def test_search(self, client):
-        r = await client.get("/api/search?q=test")
+    async def test_search(self, authenticated_client):
+        r = await authenticated_client.get("/api/search?q=test")
         assert r.status_code == 200
         assert "results" in r.json()
 
-    async def test_search_suggestions(self, client):
-        r = await client.get("/api/search/suggestions?q=test")
+    async def test_search_suggestions(self, authenticated_client):
+        r = await authenticated_client.get("/api/search/suggestions?q=test")
         assert r.status_code == 200
 
-    async def test_search_recent(self, client):
-        r = await client.get("/api/search/recent")
+    async def test_search_recent(self, authenticated_client):
+        r = await authenticated_client.get("/api/search/recent")
         assert r.status_code == 200
 
-    async def test_search_saved(self, client):
-        r = await client.get("/api/search/saved")
+    async def test_search_saved(self, authenticated_client):
+        r = await authenticated_client.get("/api/search/saved")
         assert r.status_code == 200
 
 
 class TestMarketplaceEndpoints:
-    async def test_marketplace_packages(self, client):
-        r = await client.get("/api/marketplace/packages")
+    async def test_marketplace_packages(self, authenticated_client):
+        r = await authenticated_client.get("/api/marketplace/packages")
         assert r.status_code == 200
 
-    async def test_marketplace_categories(self, client):
-        r = await client.get("/api/marketplace/categories")
+    async def test_marketplace_categories(self, authenticated_client):
+        r = await authenticated_client.get("/api/marketplace/categories")
         assert r.status_code == 200
         assert "categories" in r.json()
 
-    async def test_marketplace_featured(self, client):
-        r = await client.get("/api/marketplace/packages/featured")
+    async def test_marketplace_featured(self, authenticated_client):
+        r = await authenticated_client.get("/api/marketplace/packages/featured")
         assert r.status_code == 200
 
 

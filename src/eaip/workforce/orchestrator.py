@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from datetime import datetime
@@ -338,7 +339,7 @@ class WorkforceOrchestrator:
     def _publish(self, event: Any) -> None:
         if self._event_bus is not None:
             try:
-                self._event_bus.publish(event)
+                asyncio.create_task(self._event_bus.publish(event))
             except Exception:
                 self._log.warning("event.publish.failed", event_type=type(event).__name__)
 

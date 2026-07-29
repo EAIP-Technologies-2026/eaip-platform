@@ -4,14 +4,15 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.workflow.models import WorkflowDefinition, WorkflowEdge, WorkflowStep
 from eaip.workflow.registry import WorkflowRegistry
 
-router = APIRouter(prefix="/designer", tags=["workflows"])
+router = APIRouter(prefix="/designer", tags=["workflows"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.workflow_designer")
 
 # In-memory autosave store (replace with PostgreSQL in production)

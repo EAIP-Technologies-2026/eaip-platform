@@ -6,6 +6,7 @@ from eaip.adapters.llm.exceptions import LLMAdapterError, MaxToolRoundsError, To
 from eaip.adapters.llm.models import LLMRequest, LLMResponse, RunContext
 from eaip.adapters.llm.openai_adapter import OpenAIAdapter
 from eaip.adapters.llm.orchestration import ToolCallOrchestrator
+from eaip.adapters.llm.stub import StubLLMAdapter
 
 __all__ = [
     "AnthropicAdapter",
@@ -16,6 +17,7 @@ __all__ = [
     "MaxToolRoundsError",
     "OpenAIAdapter",
     "RunContext",
+    "StubLLMAdapter",
     "ToolCallOrchestrator",
     "ToolExecutionError",
 ]

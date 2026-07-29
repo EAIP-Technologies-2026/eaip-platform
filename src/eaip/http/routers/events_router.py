@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from eaip.events.event import DomainEvent
+from eaip.http.dependencies import get_current_user
 from eaip.events.store import EventStore
 from eaip.logging.context import get_logger
 
-router = APIRouter(prefix="/events", tags=["events"])
+router = APIRouter(prefix="/events", tags=["events"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.events")
 
 

@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.memory.engine import MemoryEngine
 from eaip.memory.exceptions import MemoryValidationError
 from eaip.memory.models import MemoryItem, MemoryQuery, MemoryScope, MemoryType
 from eaip.shared.time import utc_now
 
-router = APIRouter(prefix="/memory", tags=["memory"])
+router = APIRouter(prefix="/memory", tags=["memory"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.memory")
 
 _DEFAULT_SCOPE = MemoryScope(tenant_id="default")

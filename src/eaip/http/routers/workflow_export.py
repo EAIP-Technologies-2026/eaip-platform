@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.workflow.registry import WorkflowRegistry
 
-router = APIRouter(prefix="/workflows/{workflow_id}/export", tags=["workflows"])
+router = APIRouter(prefix="/workflows/{workflow_id}/export", tags=["workflows"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.workflow_export")
 
 

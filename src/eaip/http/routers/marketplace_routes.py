@@ -4,11 +4,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 
-router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+router = APIRouter(prefix="/marketplace", tags=["marketplace"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.marketplace")
 
 

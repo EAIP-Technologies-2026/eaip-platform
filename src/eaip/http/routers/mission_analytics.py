@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
+from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.runtime.mission import MissionRegistry, MissionStatus
 
-router = APIRouter(prefix="/missions/{mission_id}/analytics", tags=["missions"])
+router = APIRouter(prefix="/missions/{mission_id}/analytics", tags=["missions"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.mission_analytics")
 
 
@@ -19,7 +20,7 @@ def _get_registry(request: Request) -> MissionRegistry | None:
 
 @router.get("/timeline")
 async def mission_timeline(request: Request, mission_id: str):
-    return []
+    raise HTTPException(status_code=501, detail="Not implemented")
 
 
 @router.get("/metrics")
@@ -43,9 +44,9 @@ async def mission_metrics(request: Request, mission_id: str):
 
 @router.get("/history")
 async def mission_execution_history(request: Request, mission_id: str):
-    return []
+    raise HTTPException(status_code=501, detail="Not implemented")
 
 
 @router.get("/events")
 async def mission_events(request: Request, mission_id: str):
-    return []
+    raise HTTPException(status_code=501, detail="Not implemented")

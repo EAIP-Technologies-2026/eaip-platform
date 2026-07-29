@@ -4,16 +4,17 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from eaip.agents.registry import AgentRegistry
+from eaip.http.dependencies import get_current_user
 from eaip.events.store import EventStore
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.logging.context import get_logger
 from eaip.workflow.registry import WorkflowRegistry
 from eaip.runtime.mission import MissionRegistry
 
-router = APIRouter(prefix="/monitoring", tags=["monitoring"])
+router = APIRouter(prefix="/monitoring", tags=["monitoring"], dependencies=[Depends(get_current_user)])
 log = get_logger("eaip.http.routers.monitoring_routes")
 
 
