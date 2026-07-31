@@ -71,6 +71,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0,<1",
     "psutil>=6.0.0,<8",
     "cryptography>=49.0.0",
+    "sentry-sdk[fastapi]>=2.0.0,<3",
 ]
 
 [project.optional-dependencies]
@@ -248,6 +249,10 @@ disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
 module = ["opentelemetry.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sentry_sdk.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

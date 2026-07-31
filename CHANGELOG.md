@@ -11,6 +11,25 @@ Section legend: **Added** · **Changed** · **Deprecated** · **Removed** · **F
 
 ---
 
+## [0.2.0-alpha.1] - 2026-07-31
+
+### Added
+
+- **Database module:** `src/eaip/db/` with settings and `DatabaseConnection`, wired into runtime startup
+- **Observability manager:** `src/eaip/observability/manager.py` centralized entrypoint and `src/eaip/ports/observability.py` port contract
+- **Integrations namespace:** `src/eaip/integrations/` boundary for external system adapters
+- **Seed tooling:** `scripts/seed_alpha_demo.py` for alpha demo data
+- **Unit tests:** `test_db_provider`, `test_db_settings`, `test_infrastructure_health`, `test_infrastructure_startup`, `test_observability_manager`, `test_release_settings`
+
+### Changed
+
+- Startup now fails fast when `EAIP_AUTH_SECRET` is missing (no dev-only default secret)
+- Database health check and connection registered through the DI container at boot
+- Health reporting standardized on `healthy / skipped / degraded / unhealthy` statuses; `/ready` and `/live` return `"healthy"` when green
+- Hardened settings (`core_settings`, `db_settings`), observability initialization, mission runtime, HTTP auth router, and health checks/reporter
+
+---
+
 ## [0.1.0-rc.1] — 2026-07-11
 
 ### Added

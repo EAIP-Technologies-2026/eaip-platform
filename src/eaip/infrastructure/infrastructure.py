@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import time
 from typing import Any
 
+from eaip.db.provider import resolve_provider
 from eaip.dependency_injection.container import Container
-from eaip.dependency_injection.scope import Scope
 from eaip.events.bus import EventBus
-from eaip.health.checks import HealthCheck, HealthReport, HealthStatus, callable_check
-from eaip.health.reporter import HealthReporter
+from eaip.health.checks import (
+    DependencyClass,
+    HealthReport,
+    HealthStatus,
+)
 from eaip.infrastructure.db.connection import DatabaseConnection
 from eaip.infrastructure.db.migrations import MigrationEngine
 from eaip.logging.context import get_logger
@@ -22,6 +26,8 @@ log = get_logger("eaip.infrastructure.infrastructure")
 
 class InfrastructureHealthCheck:
     name: str = "infrastructure"
+    criticality: DependencyClass = DependencyClass.CRITICAL
+    configured: bool = True
 
     def __init__(self) -> None:
         self._checks: list[tuple[str, Any]] = []
@@ -35,10 +41,12 @@ class InfrastructureHealthCheck:
         for name, checker in self._checks:
             try:
                 if hasattr(checker, "ping") and callable(checker.ping):
-                    ok = await checker.ping()
+                    result = checker.ping()
+                    ok = await result if inspect.isawaitable(result) else result
                 elif hasattr(checker, "health") and callable(checker.health):
-                    h = await checker.health()
-                    ok = h.get("status") == "healthy" if isinstance(h, dict) else True
+                    result = checker.health()
+                    result = await result if inspect.isawaitable(result) else result
+                    ok = result.get("status") == "healthy" if isinstance(result, dict) else True
                 else:
                     ok = True
                 details[name] = "healthy" if ok else "unhealthy"
@@ -164,37 +172,42 @@ class PlatformInfrastructure:
         self._log.info("infrastructure.stopped")
 
     async def _init_database(self) -> None:
-        db_settings = self._settings.db
-        self._log.info("infrastructure.connecting_db", host=db_settings.host, port=db_settings.port)
+        provider = resolve_provider(
+            self._settings.database_provider.provider,
+            self._settings.database_provider.resolve(),
+        )
+        kwargs = provider.connection_kwargs()
+        self._log.info("infrastructure.connecting_db", provider=provider.name())
 
         retries = 3
         last_error = None
         for attempt in range(1, retries + 1):
             try:
-                await DatabaseConnection.initialize(db_settings)
+                await DatabaseConnection.initialize(provider.name(), **kwargs)
                 self._db = DatabaseConnection
-                self._log.info("infrastructure.db_connected")
+                self._log.info("infrastructure.db_connected", provider=provider.name())
                 break
             except Exception as e:
                 last_error = e
                 self._log.warning("infrastructure.db_retry", attempt=attempt, error=str(e))
                 if attempt < retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
 
         if self._db is None:
             self._log.error("infrastructure.db_failed", error=str(last_error))
             return
 
-        self._container.register_instance(DatabaseConnection, self._db)
+        self._container.register_factory(DatabaseConnection, lambda _c: DatabaseConnection)
         self._infra_health.register("postgresql", self._db)
 
-        if db_settings.enable_migrations:
+        if self._settings.database_provider.resolve().enable_migrations:
             await self._run_migrations()
 
     async def _run_migrations(self) -> None:
         from eaip.infrastructure.migrations import load_all_migrations
 
-        engine = MigrationEngine(DatabaseConnection, table_name=self._settings.db.migration_table)
+        db_settings = self._settings.database_provider.resolve()
+        engine = MigrationEngine(DatabaseConnection, table_name=db_settings.migration_table)
         await engine.initialize()
 
         for migration in load_all_migrations():
@@ -205,7 +218,17 @@ class PlatformInfrastructure:
         self._migrations = engine
 
     def _register_infra_health(self) -> None:
-        self._infra_health.register("background_tasks", type("_", (), {"ping": lambda: True, "health": lambda: {"status": "healthy"}})())
+        self._infra_health.register(
+            "background_tasks",
+            type(
+                "_",
+                (),
+                {
+                    "ping": staticmethod(lambda: True),
+                    "health": staticmethod(lambda: {"status": "healthy"}),
+                },
+            )(),
+        )
 
     def _register_background_tasks(self) -> None:
         self._bg_tasks.register("heartbeat", _heartbeat_task, interval_seconds=30.0)
@@ -220,4 +243,4 @@ class PlatformInfrastructure:
         return self._duration if self._started else 0.0
 
 
-__all__ = ["PlatformInfrastructure", "BackgroundTaskRegistry", "InfrastructureHealthCheck"]
+__all__ = ["BackgroundTaskRegistry", "InfrastructureHealthCheck", "PlatformInfrastructure"]

@@ -141,7 +141,32 @@ The `NoOpTracingProvider` discards all spans. A future `OpenTelemetryTracingProv
 | Service | Endpoint | Description |
 |---------|----------|-------------|
 | `HealthReporter` | Internal | Aggregates per-component health checks |
+| `GET /live` | HTTP | Liveness probe — 200 while the process is alive |
+| `GET /ready` | HTTP | Readiness probe — 200 when critical/required deps are healthy or skipped |
+| `GET /health` | HTTP | Full dependency report — 200 when healthy/skipped/degraded, 503 when unhealthy |
 | `RuntimeDiagnosticsService` | Internal | Collects system-wide metrics snapshot |
+
+### Dependency Classification
+
+Each health check declares a `criticality` (`critical`, `required`, or
+`optional`) and a `configured` flag. The `HealthReporter` copies these onto
+the produced `HealthReport` and uses them for readiness gating:
+
+- **Critical** — core platform components (application process, agent runtime,
+  workflow engine, knowledge engine, memory engine, infrastructure).
+- **Required** — the configured database provider, event bus. These gate
+  readiness; an unhealthy required dependency fails `/ready`.
+- **Optional** — Sentry, Better Stack, analytics, telemetry. These may report
+  `degraded` without ever failing `/ready`.
+
+A dependency that has no external component to check — such as the `local`
+database provider — reports status `skipped` instead of `unhealthy`, so local
+development never fails readiness because of an intentionally absent external
+service.
+
+`HealthStatus` is ordered `healthy < skipped < degraded < unhealthy`, and the
+reporter's rollup picks the worst child status. `/ready` fails (503) only when
+a critical or required dependency is unhealthy.
 
 ### Runtime Diagnostics
 
@@ -278,3 +303,49 @@ service = MyService(metrics=PrometheusMetricsProvider())
 ```
 
 No changes to `MyService` or any platform code are required.
+
+---
+
+## 9. Sentry Error Tracking & Performance Monitoring
+
+EAIP integrates with **Sentry** for error tracking and performance monitoring via the `eaip.integrations.sentry` module.
+
+### Configuration
+
+All Sentry settings are driven by environment variables under the `EAIP_SENTRY_` prefix (read by `SentrySettings` in `eaip.settings.core_settings`):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `EAIP_SENTRY_DSN` | Sentry DSN. When unset or empty, Sentry is disabled. | (none) |
+| `EAIP_SENTRY_ENVIRONMENT` | Environment name (e.g. `staging`, `production`). | `core.environment_name` |
+| `EAIP_SENTRY_RELEASE` | Release version string. | `eaip._version.__version__` |
+| `EAIP_SENTRY_TRACES_SAMPLE_RATE` | Rate for performance traces (0.0–1.0). | `0.0` |
+| `EAIP_SENTRY_SEND_DEFAULT_PII` | Whether to send PII in events. | `false` |
+| `EAIP_SENTRY_ATTACH_STACKTRACE` | Attach stack traces to messages. | `true` |
+| `EAIP_SENTRY_PROFILE_LIFE_CYCLE` | Profile lifecycle mode. | `auto` |
+
+### Production-Safe Defaults
+
+Sentry is fully disabled by default. It must be explicitly enabled by setting `EAIP_SENTRY_DSN`. Performance tracing and session replays default to zero sampling, and `send_default_pii` is `false`, ensuring no sensitive data is collected unless intentionally configured.
+
+### Backend Integration
+
+Sentry is initialised in `create_app()` when building the FastAPI application and adds a Sentry error-capture middleware:
+
+```python
+# In eaip.http.api.create_app():
+init_sentry(lifecycle.platform.settings)
+add_sentry_middleware(app)
+```
+
+A `SentryHealthCheck` is registered with the platform health reporter, so Sentry availability is reflected in `/health` and `/ready` endpoints.
+
+### Frontend Integration
+
+Both the `enterprise-console` and `administration` Next.js apps include Sentry via `@sentry/nextjs`. Initialisation is in `src/lib/sentry.ts` and `src/instrumentation.ts`, reading from `NEXT_PUBLIC_SENTRY_*` environment variables with the same production-safe defaults.
+
+Client-side errors are reported in the existing `src/app/error.tsx` error boundary via `Sentry.Sentry.captureException(error)`.
+
+### Release Tracking
+
+Release versions are automatically derived from `eaip._version.__version__` when `EAIP_SENTRY_RELEASE` is not set. On the frontend, set `NEXT_PUBLIC_SENTRY_RELEASE` to pin a release version.

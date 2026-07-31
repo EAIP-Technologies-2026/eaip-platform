@@ -1,33 +1,32 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 from eaip.logging.context import get_logger
-from eaip.settings.db_settings import DatabaseSettings
 
 log = get_logger("eaip.infrastructure.db.connection")
 
 
 class DatabaseConnection:
     _pool: Any = None
-    _settings: DatabaseSettings | None = None
+    _provider_name: str = "local"
 
     @classmethod
-    async def initialize(cls, settings: DatabaseSettings) -> None:
+    async def initialize(cls, provider_name: str, **kwargs: Any) -> None:
         import asyncpg
 
-        cls._settings = settings
+        cls._provider_name = provider_name
         if cls._pool is not None:
             return
-        cls._pool = await asyncpg.create_pool(
-            dsn=settings.dsn,
-            min_size=settings.min_pool_size,
-            max_size=settings.max_pool_size,
-            statement_cache_size=settings.statement_cache_size,
-            max_inactive_connection_lifetime=settings.max_inactive_connection_lifetime,
+        cls._pool = await asyncpg.create_pool(**kwargs)
+        log.info(
+            "db.pool.initialized",
+            provider=provider_name,
+            min_size=kwargs.get("min_size"),
+            max_size=kwargs.get("max_size"),
         )
-        log.info("db.pool.initialized", min_size=settings.min_pool_size, max_size=settings.max_pool_size)
 
     @classmethod
     async def close(cls) -> None:
@@ -49,9 +48,8 @@ class DatabaseConnection:
     async def transaction(cls) -> AsyncIterator[Any]:
         if cls._pool is None:
             raise RuntimeError("DatabaseConnection pool not initialized.")
-        async with cls._pool.acquire() as conn:
-            async with conn.transaction():
-                yield conn
+        async with cls._pool.acquire() as conn, conn.transaction():
+            yield conn
 
     @classmethod
     async def execute(cls, query: str, *args: Any) -> str:
@@ -80,13 +78,13 @@ class DatabaseConnection:
     @classmethod
     async def health(cls) -> dict[str, Any]:
         if cls._pool is None:
-            return {"status": "not_initialized"}
+            return {"status": "not_initialized", "provider": cls._provider_name}
         try:
             async with cls.connection() as conn:
                 val = await conn.fetchval("SELECT 1")
-                return {"status": "healthy", "ping": val == 1}
+                return {"status": "healthy", "provider": cls._provider_name, "ping": val == 1}
         except Exception as e:
-            return {"status": "unhealthy", "error": str(e)}
+            return {"status": "unhealthy", "provider": cls._provider_name, "error": str(e)}
 
 
 async def get_db() -> DatabaseConnection:

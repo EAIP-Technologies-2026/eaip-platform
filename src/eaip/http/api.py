@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 import time
 
 from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -28,16 +30,21 @@ from eaip.http.routers import (
     search_persistence,
     search_router,
     websocket,
-    workforce,
     workflow_designer,
     workflow_export,
     workflow_versions,
     workflows,
+    workforce,
     workspaces,
 )
+from eaip.integrations.sentry import add_sentry_middleware, init_sentry
 from eaip.logging.context import get_logger
 
 log = get_logger("eaip.http.api")
+
+
+def _status_text(status: HealthStatus) -> str:
+    return status.value if hasattr(status, "value") else str(status)
 
 
 def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
@@ -47,13 +54,45 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
         lifespan=None,
     )
 
+    # Initialise Sentry error tracking if configured.
+    init_sentry(lifecycle.platform.settings)
+
+    # Add Sentry middleware for error capture.
+    add_sentry_middleware(app)
+
+    # CORS: restrict to configured origins; development defaults to localhost
+    cors_origins = os.environ.get(
+        "EAIP_CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004",
+    ).split(",")
+    cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
     )
+
+    # Security headers middleware
+    class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            response = await call_next(request)
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            response.headers["Permissions-Policy"] = (
+                "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+            )
+            if os.environ.get("EAIP_ENVIRONMENT") == "production":
+                response.headers["Strict-Transport-Security"] = (
+                    "max-age=63072000; includeSubDomains; preload"
+                )
+            return response
+
+    app.add_middleware(SecurityHeadersMiddleware)
 
     app.state.lifecycle = lifecycle
     app.state._start_time = time.time()
@@ -67,12 +106,14 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
         if lifecycle._infrastructure and lifecycle._infrastructure._infra_health:
             try:
                 infra_report = await lifecycle._infrastructure._infra_health.check()
-                infra_checks = [{
-                    "component": "infrastructure",
-                    "status": infra_report.status.value,
-                    "message": infra_report.message,
-                    "details": infra_report.details,
-                }]
+                infra_checks = [
+                    {
+                        "component": "infrastructure",
+                        "status": infra_report.status.value,
+                        "message": infra_report.message,
+                        "details": infra_report.details,
+                    }
+                ]
             except Exception:
                 pass
 
@@ -80,18 +121,25 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
         if lifecycle._infrastructure:
             bg_tasks = lifecycle._infrastructure.background_tasks.status()
 
-        healthy = report.status in (HealthStatus.HEALTHY, HealthStatus.DEGRADED)
+        healthy = report.status in (
+            HealthStatus.HEALTHY,
+            HealthStatus.SKIPPED,
+            HealthStatus.DEGRADED,
+        )
         body = {
-            "status": report.status.value if hasattr(report.status, "value") else str(report.status),
+            "status": _status_text(report.status),
             "message": report.message,
             "checks": [
                 {
                     "component": c.component,
-                    "status": c.status.value if hasattr(c.status, "value") else str(c.status),
+                    "status": _status_text(c.status),
                     "message": c.message,
+                    "criticality": c.criticality.value if c.criticality else None,
+                    "configured": c.configured,
                 }
                 for c in report.children
-            ] + infra_checks,
+            ]
+            + infra_checks,
             "background_tasks": bg_tasks,
         }
         status_code = 200 if healthy else 503
@@ -99,11 +147,35 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
 
     @app.get("/ready")
     async def ready():
-        return {"status": "ready"}
+        reporter: HealthReporter = lifecycle.platform.health
+        report = await reporter.readiness()
+        ready = report.status is HealthStatus.HEALTHY
+        body = {
+            "status": _status_text(report.status),
+            "message": report.message,
+            "checks": [
+                {
+                    "component": c.component,
+                    "status": _status_text(c.status),
+                    "message": c.message,
+                    "criticality": c.criticality.value if c.criticality else None,
+                    "configured": c.configured,
+                }
+                for c in report.children
+            ],
+        }
+        status_code = 200 if ready else 503
+        return JSONResponse(content=body, status_code=status_code)
 
     @app.get("/live")
     async def live():
-        return {"status": "alive"}
+        reporter: HealthReporter = lifecycle.platform.health
+        report = await reporter.liveness()
+        body = {
+            "status": _status_text(report.status),
+            "message": report.message,
+        }
+        return JSONResponse(content=body, status_code=200)
 
     @app.get("/version")
     async def version():

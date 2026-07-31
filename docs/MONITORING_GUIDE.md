@@ -24,10 +24,9 @@ The Monitoring platform provides real-time observability into all EAIP services,
 - Active sessions, agents, knowledge, workflows, missions
 - Historical trend analysis
 
-### Alert Management
-- Alert rule configuration (critical/warning/info)
-- Alert silencing, acknowledgement, resolution
-- Alert history and notification channels
+### Alerts & Error Tracking
+- Custom alert rules (critical/warning/info) with silencing, acknowledgement, and resolution.
+- **Sentry** integration for error tracking and performance monitoring — configured via `EAIP_SENTRY_*` environment variables.
 
 ### Diagnostics
 - Health reports with dependency graph
@@ -37,6 +36,9 @@ The Monitoring platform provides real-time observability into all EAIP services,
 
 ## API Endpoints
 
+- `GET /live` - Liveness probe, 200 while the process is alive
+- `GET /ready` - Readiness probe, 200 when critical/required dependencies are healthy or skipped
+- `GET /health` - Full dependency report (healthy/skipped/degraded -> 200, unhealthy -> 503)
 - `GET /monitoring/health` - Service health status with version info
 - `GET /monitoring/metrics` - Aggregated platform metrics
 - `GET /monitoring/logs` - Filtered log entries

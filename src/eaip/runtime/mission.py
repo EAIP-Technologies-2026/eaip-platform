@@ -21,9 +21,7 @@ from eaip.runtime.events import (
 )
 
 if TYPE_CHECKING:
-    from eaip.agents.runtime import AgentRuntime
-    from eaip.workflow.executor import WorkflowEngine
-    from eaip.workflow.registry import WorkflowRegistry
+    pass
 
 
 class MissionStatus(StrEnum):
@@ -83,14 +81,14 @@ class Mission:
     async def start(self) -> None:
         """Start mission execution."""
         self.status = MissionStatus.RUNNING
-        self._started_at = time.monotonic()
+        self._started_at = time.time()
         await self._publish(MissionStarted(mission_id=self.mission_id))
         self._log.info("mission.started", mission_id=self.mission_id)
 
     async def complete(self, result: str = "") -> None:
         """Mark mission as completed successfully."""
         self.status = MissionStatus.COMPLETED
-        self._completed_at = time.monotonic()
+        self._completed_at = time.time()
         self._result = result
         duration_ms = self.duration_ms
         await self._publish(
@@ -101,7 +99,7 @@ class Mission:
     async def fail(self, error: str) -> None:
         """Mark mission as failed."""
         self.status = MissionStatus.FAILED
-        self._completed_at = time.monotonic()
+        self._completed_at = time.time()
         self._error = error
         await self._publish(MissionFailed(mission_id=self.mission_id, error=error))
         self._log.error("mission.failed", mission_id=self.mission_id, error=error)
@@ -109,7 +107,7 @@ class Mission:
     async def cancel(self) -> None:
         """Cancel mission execution."""
         self.status = MissionStatus.CANCELLED
-        self._completed_at = time.monotonic()
+        self._completed_at = time.time()
         await self._publish(MissionCancelled(mission_id=self.mission_id))
         self._log.info("mission.cancelled", mission_id=self.mission_id)
 
@@ -151,7 +149,9 @@ class Mission:
                         results.append(f"workflow:{workflow_id} -> not found")
                 except Exception as exc:
                     results.append(f"workflow:{workflow_id} -> error: {exc}")
-                    self._log.warning("mission.workflow.failed", workflow_id=workflow_id, error=str(exc))
+                    self._log.warning(
+                        "mission.workflow.failed", workflow_id=workflow_id, error=str(exc)
+                    )
 
         combined = "; ".join(results) if results else "no agents or workflows to execute"
         await self.complete(result=combined)
@@ -162,7 +162,7 @@ class Mission:
     def duration_ms(self) -> float:
         if self._started_at is None:
             return 0.0
-        end = self._completed_at or time.monotonic()
+        end = self._completed_at or time.time()
         return (end - self._started_at) * 1000
 
     @property
@@ -237,9 +237,7 @@ class MissionRegistry:
         )
         self._missions[mission_id] = mission
         if self._event_bus is not None:
-            await self._event_bus.publish(
-                MissionCreated(mission_id=mission_id, name=name)
-            )
+            await self._event_bus.publish(MissionCreated(mission_id=mission_id, name=name))
         self._log.info("mission.created", mission_id=mission_id)
         return mission
 
@@ -253,9 +251,7 @@ class MissionRegistry:
         self._log.info("mission.deleted", mission_id=mission_id)
         return True
 
-    async def list_missions(
-        self, status: MissionStatus | None = None
-    ) -> list[Mission]:
+    async def list_missions(self, status: MissionStatus | None = None) -> list[Mission]:
         results = list(self._missions.values())
         if status is not None:
             results = [m for m in results if m.status == status]
@@ -272,9 +268,7 @@ class MissionRegistry:
             "running": len(running),
             "completed": len(completed),
             "failed": len(failed),
-            "success_rate": round(
-                len(completed) / max(len(completed) + len(failed), 1) * 100, 1
-            ),
+            "success_rate": round(len(completed) / max(len(completed) + len(failed), 1) * 100, 1),
         }
 
 

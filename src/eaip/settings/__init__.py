@@ -11,12 +11,20 @@ from eaip.settings.core_settings import (
     TelemetrySettings,
     load_platform_settings,
 )
+from eaip.settings.db_settings import (
+    DatabaseProviderSettings,
+    DatabaseSettings,
+    NeonDatabaseSettings,
+)
 
 __all__ = [
     "CoreSettings",
+    "DatabaseProviderSettings",
+    "DatabaseSettings",
     "EAIPSettingsBase",
     "FeatureFlagSettings",
     "LoggingSettings",
+    "NeonDatabaseSettings",
     "PlatformSettings",
     "TelemetrySettings",
     "load_platform_settings",

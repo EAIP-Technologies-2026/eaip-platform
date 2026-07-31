@@ -29,19 +29,15 @@ def _extract_token(request: Request) -> str:
 
 
 def _set_session_cookie(response: Response, token: str) -> None:
+    import os
+
+    secure = os.environ.get("EAIP_ENVIRONMENT") == "production"
     response.set_cookie(
         key="eaip_session",
         value=token,
         httponly=True,
         samesite="lax",
-        max_age=86400,
-        path="/",
-    )
-    response.set_cookie(
-        key="eaip_roles",
-        value='["admin","user"]',
-        httponly=False,
-        samesite="lax",
+        secure=secure,
         max_age=86400,
         path="/",
     )
@@ -92,7 +88,6 @@ async def logout(request: Request, response: Response, body: dict[str, Any] | No
     if token:
         await auth.logout(token)
     response.delete_cookie("eaip_session", path="/")
-    response.delete_cookie("eaip_roles", path="/")
     return {"status": "ok"}
 
 

@@ -9,6 +9,8 @@ import uvicorn
 from eaip._version import __version__
 from eaip.app.builder import ApplicationBuilder
 from eaip.http.api import create_app
+from eaip.infrastructure.db.connection import DatabaseConnection
+from eaip.infrastructure.health import DatabaseHealthCheck
 from eaip.logging.context import get_logger
 
 _asyncio_loop: asyncio.AbstractEventLoop | None = None
@@ -41,8 +43,8 @@ async def _async_main() -> None:
     container.register_instance(AgentRegistry, agent_registry)
 
     from eaip.adapters.llm.stub import StubLLMAdapter
-    from eaip.tools.builtin.echo import EchoTool
     from eaip.tools.builtin.current_time import CurrentTimeTool
+    from eaip.tools.builtin.echo import EchoTool
     from eaip.tools.registry import ToolRegistry
 
     tool_registry = ToolRegistry()
@@ -60,14 +62,14 @@ async def _async_main() -> None:
 
     # Auth services
     from eaip.auth.auth_providers import AuthenticationService
-    from eaip.auth.tokens import TokenService
 
     auth_secret = os.environ.get("EAIP_AUTH_SECRET")
     if not auth_secret:
         auth_secret = os.environ.get("EAIP_AUTH__SECRET")
     if not auth_secret:
-        auth_secret = "eaip-dev-secret-do-not-use-in-production"
-        log.warning("auth.no_secret_configured", message="Using dev-only default auth secret. Set EAIP_AUTH_SECRET for production use.")
+        raise RuntimeError(
+            "EAIP_AUTH_SECRET is required. Set a strong random secret via environment variable."
+        )
     auth_service = AuthenticationService(
         secret=auth_secret,
         event_bus=events,
@@ -90,6 +92,13 @@ async def _async_main() -> None:
 
     memory_engine = MemoryEngine(InMemoryStore())
     container.register_instance(MemoryEngine, memory_engine)
+
+    # Sentry integration
+    from eaip.integrations.sentry import SentryHealthCheck
+
+    sentry_health = SentryHealthCheck()
+    if lifecycle.platform.settings.sentry.dsn:
+        sentry_health.mark_healthy()
 
     # Mission services
     from eaip.runtime.mission import MissionRegistry
@@ -165,7 +174,9 @@ async def _async_main() -> None:
     )
     container.register_instance(WorkforceRuntimeModule, workforce_module)
     container.register_instance(workforce_module.registry.__class__, workforce_module.registry)
-    container.register_instance(workforce_module.orchestrator.__class__, workforce_module.orchestrator)
+    container.register_instance(
+        workforce_module.orchestrator.__class__, workforce_module.orchestrator
+    )
 
     # Admin services
     from eaip.admin.audit import AuditLogger
@@ -177,27 +188,53 @@ async def _async_main() -> None:
     container.register_instance(AuditLogger, audit_logger)
 
     # Register core health checks
-    from eaip.health.checks import HealthCheck, HealthReport, HealthStatus
+    from eaip.health.checks import (
+        DependencyClass,
+        HealthReport,
+        HealthStatus,
+    )
 
     class _AgentRuntimeHealthCheck:
         name = "eaip.agents.runtime"
+        criticality = DependencyClass.CRITICAL
+        configured = True
+
         async def check(self) -> HealthReport:
-            return HealthReport(component="AgentRuntime", status=HealthStatus.HEALTHY, details={"runs": len(agent_runtime._runs) if hasattr(agent_runtime, "_runs") else 0})
+            return HealthReport(
+                component="AgentRuntime",
+                status=HealthStatus.HEALTHY,
+                details={
+                    "runs": len(agent_runtime._runs) if hasattr(agent_runtime, "_runs") else 0
+                },
+            )
 
     class _WorkflowEngineHealthCheck:
         name = "eaip.workflow.engine"
+        criticality = DependencyClass.CRITICAL
+        configured = True
+
         async def check(self) -> HealthReport:
             return HealthReport(component="WorkflowEngine", status=HealthStatus.HEALTHY)
 
     class _KnowledgeEngineHealthCheck:
         name = "eaip.knowledge.engine"
+        criticality = DependencyClass.CRITICAL
+        configured = True
+
         async def check(self) -> HealthReport:
             return HealthReport(component="KnowledgeEngine", status=HealthStatus.HEALTHY)
 
     class _MemoryEngineHealthCheck:
         name = "eaip.memory.engine"
+        criticality = DependencyClass.CRITICAL
+        configured = True
+
         async def check(self) -> HealthReport:
-            return HealthReport(component="MemoryEngine", status=HealthStatus.HEALTHY, details={"stores": ["in_memory"]})
+            return HealthReport(
+                component="MemoryEngine",
+                status=HealthStatus.HEALTHY,
+                details={"stores": ["in_memory"]},
+            )
 
     health_reporter = lifecycle.platform.health
     health_reporter.register(_AgentRuntimeHealthCheck())
@@ -205,13 +242,26 @@ async def _async_main() -> None:
     health_reporter.register(_KnowledgeEngineHealthCheck())
     health_reporter.register(_MemoryEngineHealthCheck())
 
+    # Database health check
+    db_provider_name = lifecycle.platform.settings.database_provider.provider
+    db_health_check = DatabaseHealthCheck(
+        provider_name=db_provider_name,
+        db_health_fn=DatabaseConnection.health,
+    )
+    health_reporter.register(db_health_check)
+    health_reporter.register(sentry_health)
+
     kernel = lifecycle.kernel
     if kernel is not None:
         runtime_mgr = RuntimeManager(kernel=kernel, event_bus=events)
         container.register_instance(RuntimeManager, runtime_mgr)
         await workforce_module.start(kernel)
 
-    license_mgr = LicenseManager(event_callback=lambda e: asyncio.ensure_future(events.publish(e)) if hasattr(events, 'publish') else None)
+    license_mgr = LicenseManager(
+        event_callback=lambda e: (
+            asyncio.ensure_future(events.publish(e)) if hasattr(events, "publish") else None
+        )
+    )
     container.register_instance(LicenseManager, license_mgr)
 
     settings_svc = EnterpriseSettingsService()
