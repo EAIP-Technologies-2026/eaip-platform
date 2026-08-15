@@ -28,6 +28,18 @@ The frontend (`eaip-frontend`) was not re-designed; it consumes the stages via t
 
 - Backend repo: `C:\GitHub\EAIP Technologies\eaip-platform` (git repo lives in the project subdirectories, not the workspace root)
 - Branch: `alpha-integration`; HEAD: `fcb0941 feat(runtime): release Alpha Foundation v1.0`
+
+## 5a. A1008 Checkpoint Freeze
+
+- **Checkpoint commit**: `0ab73ed feat(intelligence): complete A1001-A1008 intelligence foundation`
+- **Checkpoint tag**: `alpha-intelligence-a1008`
+- **Working tree**: clean (247 files staged/committed; 24,922 insertions, 756 deletions)
+- **Post-freeze status**: A1001-A1008 verified against real PostgreSQL (Docker `eaip-postgres`, `eaip_dev_password`). The A1004-A1008 scope is mypy-clean (83 source files) and the full test suite is green with DB env vars set: `9715 passed, 10 skipped`.
+- **Test-harness fixes committed with the checkpoint**:
+  - `tests/unit/test_infrastructure_startup.py`: `test_local_env_skips_db` -> `test_local_env_initializes_db` (LOCAL now connects to PostgreSQL)
+  - `tests/integration/test_runtime_integration.py` + `tests/smoke/test_runtime_bootstrap.py`: runner tests poll for the running phase instead of a fixed 0.1s cancel (removes the cold-pool DB-init race)
+  - `tests/conftest.py`: `_reset_database_pool` tolerates module-scoped pools (cross-loop teardown suppressed)
+- **Forensics**: no secrets in committed files; `backend.err`/`backend.recovery.err` (benign uvicorn startup logs) added to `.gitignore`; stray `test_proj/main.py` scratch edit reverted.
 - Working tree at start: 154 modified + 48 untracked files; all of `src/eaip/copilot/` and the A1001-A1008 test files were untracked (partial in-progress implementation)
 - Runtime: `.venv\Scripts\python.exe` (Python 3.13.14)
 - Foundation (frozen, present in the working tree): `src/eaip/capabilities/` (20 canonical capabilities, `load_canonical_inventory`), `src/eaip/context/` (IdentityScope, PermissionAwareContext, PermissionContextResolver), `src/eaip/kgraph/platform_graph.py` (build_platform_knowledge_graph, PlatformKnowledgeService)
