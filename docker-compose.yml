@@ -11,6 +11,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: eaip-platform:${EAIP_VERSION:-latest}
+    pull_policy: build
     container_name: eaip-api
     restart: unless-stopped
     ports:

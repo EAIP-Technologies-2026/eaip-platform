@@ -22,7 +22,7 @@ class PackageManager:
     """Manages package installation lifecycle."""
 
     def __init__(self, registry: MarketplaceRegistry | None = None) -> None:
-        self._registry = registry or MarketplaceRegistry()
+        self._registry = registry if registry is not None else MarketplaceRegistry()
         self._installations: dict[str, PackageInstallation] = {}
         self._log = get_logger("eaip.marketplace.manager")
 

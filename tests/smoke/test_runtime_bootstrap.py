@@ -128,7 +128,10 @@ class TestRuntimeBootstrap:
             started = True
 
         task = asyncio.create_task(runner.run(on_running=on_running))
-        await asyncio.sleep(0.1)
+        for _ in range(100):
+            if started:
+                break
+            await asyncio.sleep(0.05)
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task

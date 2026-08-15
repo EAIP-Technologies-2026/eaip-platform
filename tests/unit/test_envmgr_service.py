@@ -6,7 +6,7 @@ import pytest
 
 from eaip.envmgr.exceptions import VariableNotFoundError
 from eaip.envmgr.manager import EnvironmentVariableManager
-from eaip.envmgr.models import EnvMgrConfig, EnvironmentVariable, VariableGroup
+from eaip.envmgr.models import EnvironmentVariable, EnvMgrConfig, VariableGroup
 
 
 class TestEnvironmentVariableManager:

@@ -43,11 +43,20 @@ from eaip.context.models import (
     PromptTemplate,
     PromptVersion,
 )
+from eaip.context.permission_context import (
+    CapabilityAccessLevel,
+    CapabilityPermissionContext,
+    IdentityScope,
+    PermissionAwareContext,
+)
+from eaip.context.permission_resolver import PermissionContextResolver
 from eaip.context.registry import Observer, PromptRegistry
 from eaip.context.templates import PromptManager
 
 __all__ = [
     "AssembledContext",
+    "CapabilityAccessLevel",
+    "CapabilityPermissionContext",
     "CompressionConfig",
     "CompressionError",
     "CompressionStrategy",
@@ -63,7 +72,10 @@ __all__ = [
     "ContextEvent",
     "ContextHealthCheck",
     "ContextRuntimeModule",
+    "IdentityScope",
     "Observer",
+    "PermissionAwareContext",
+    "PermissionContextResolver",
     "PromptCreated",
     "PromptManager",
     "PromptNotFoundError",

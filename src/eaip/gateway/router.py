@@ -27,7 +27,9 @@ class ApiRouter:
         response = await router.dispatch(request)
     """
 
-    def __init__(self, pipeline: MiddlewarePipeline | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, pipeline: MiddlewarePipeline | None = None, event_bus: EventBus | None = None
+    ) -> None:
         """Initialize the router with an empty endpoint map."""
         self._endpoints: dict[tuple[str, HttpMethod], Endpoint] = {}
         self._pipeline = pipeline or MiddlewarePipeline()
@@ -54,7 +56,9 @@ class ApiRouter:
         )
         if self._event_bus is not None:
             asyncio.ensure_future(
-                self._event_bus.publish(EndpointRegistered(path=endpoint.path, method=endpoint.method.value))
+                self._event_bus.publish(
+                    EndpointRegistered(path=endpoint.path, method=endpoint.method.value)
+                )
             )
 
     def unregister_endpoint(self, path: str, method: HttpMethod) -> None:

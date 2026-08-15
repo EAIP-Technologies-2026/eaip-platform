@@ -26,7 +26,9 @@ from eaip.xbridge.models import (
 class ConnectorBridge:
     """Central service for managing connectors and routing messages between them."""
 
-    def __init__(self, config: BridgeConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: BridgeConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or BridgeConfig()
         self._connectors: dict[str, ConnectorConfig] = {}
         self._routes: dict[str, BridgeRoute] = {}

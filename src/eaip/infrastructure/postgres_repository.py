@@ -66,7 +66,7 @@ class PostgresRepository(AbstractRepository[ID, T]):
         pool = await self._ensure_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                f'SELECT data FROM {self._table_name} WHERE id = $1',
+                f"SELECT data FROM {self._table_name} WHERE id = $1",
                 str(identifier),
             )
             if row is None:
@@ -113,9 +113,7 @@ class PostgresRepository(AbstractRepository[ID, T]):
     async def cleanup_expired(self) -> int:
         pool = await self._ensure_pool()
         async with pool.acquire() as conn:
-            result = await conn.execute(
-                f"DELETE FROM {self._table_name} WHERE expires_at < NOW()"
-            )
+            result = await conn.execute(f"DELETE FROM {self._table_name} WHERE expires_at < NOW()")
             return int(result.split()[-1]) if result else 0
 
     async def close(self) -> None:

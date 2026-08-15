@@ -303,8 +303,10 @@ class ProviderRoutingService:
             RoutingStrategy.PRIORITY: self._priority,
             RoutingStrategy.HEALTH_FIRST: self._health_first,
             RoutingStrategy.RANDOM: self._random,
+            RoutingStrategy.SEMANTIC: self._semantic,
         }
         handler = strategy_map.get(strategy, self._round_robin)
+
         return handler(route_id, endpoints)
 
     def _round_robin(self, route_id: str, endpoints: list[ProviderEndpoint]) -> ProviderEndpoint:
@@ -349,6 +351,18 @@ class ProviderRoutingService:
             ).healthy
         ]
         return healthy[0] if healthy else endpoints[0]
+
+    def _semantic(self, _route_id: str, endpoints: list[ProviderEndpoint]) -> ProviderEndpoint:
+        return min(
+            endpoints,
+            key=lambda ep: (
+                self._health.get(
+                    ep.endpoint_id, EndpointHealth(endpoint_id=ep.endpoint_id, healthy=True)
+                ).latency_ms,
+                ep.priority,
+            ),
+        )
+
 
     # ------------------------------------------------------------------
     # Failover

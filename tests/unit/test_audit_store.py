@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
-import pytest
+from datetime import UTC, datetime, timedelta
 
 from eaip.audit.models import ActorType, AuditEvent
 from eaip.audit.store import AuditStoreConfig, ImmutableAuditStore
@@ -11,7 +9,7 @@ from eaip.audit.store import AuditStoreConfig, ImmutableAuditStore
 def _make_event(
     event_id: str, actor_id: str = "user1", action: str = "login", **kw: object
 ) -> AuditEvent:
-    ts = kw.get("timestamp", datetime.now(timezone.utc))
+    ts = kw.get("timestamp", datetime.now(UTC))
     assert isinstance(ts, datetime)
     return AuditEvent(
         id=event_id,
@@ -36,7 +34,7 @@ class TestImmutableAuditStore:
 
     def test_query_with_filters(self) -> None:
         store = ImmutableAuditStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(5):
             store.append(
                 _make_event(
@@ -49,7 +47,7 @@ class TestImmutableAuditStore:
 
     def test_query_with_limit_and_offset(self) -> None:
         store = ImmutableAuditStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(10):
             store.append(_make_event(f"e{i}", timestamp=now + timedelta(hours=i)))
         results = store.query(limit=3)
@@ -75,7 +73,7 @@ class TestImmutableAuditStore:
         config = AuditStoreConfig()
         config.retention_days = 30
         store = ImmutableAuditStore(config)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         store.append(_make_event("old", timestamp=now - timedelta(days=60)))
         store.append(_make_event("new", timestamp=now))
         removed = store.cleanup()
@@ -87,7 +85,7 @@ class TestImmutableAuditStore:
         config = AuditStoreConfig()
         config.snapshot_interval = 3
         store = ImmutableAuditStore(config)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(10):
             store.append(_make_event(f"e{i}", timestamp=now))
         assert store.get_snapshot_count() >= 3
@@ -96,7 +94,7 @@ class TestImmutableAuditStore:
         config = AuditStoreConfig()
         config.snapshot_interval = 5
         store = ImmutableAuditStore(config)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(10):
             store.append(_make_event(f"e{i}", timestamp=now))
         snapshot = store.get_snapshot(5)

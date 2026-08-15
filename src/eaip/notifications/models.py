@@ -17,6 +17,8 @@ class NotificationStatus(StrEnum):
     DELIVERED = "delivered"
     FAILED = "failed"
     READ = "read"
+    ACKNOWLEDGED = "acknowledged"
+    DISMISSED = "dismissed"
 
 
 class NotificationChannel(StrEnum):
@@ -34,6 +36,26 @@ class NotificationPriority(StrEnum):
     URGENT = "urgent"
 
 
+class NotificationSeverity(StrEnum):
+    INFO = "info"
+    SUCCESS = "success"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+class NotificationCategory(StrEnum):
+    SYSTEM = "system"
+    SECURITY = "security"
+    OPERATIONS = "operations"
+    APPROVALS = "approvals"
+    AUTOMATION = "automation"
+    WORKFLOW = "workflow"
+    DEPLOYMENT = "deployment"
+    KNOWLEDGE = "knowledge"
+    CONDUCTOR = "conductor"
+
+
 class Notification(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -41,9 +63,12 @@ class Notification(BaseModel):
     type: str
     channel: NotificationChannel
     priority: NotificationPriority = NotificationPriority.NORMAL
+    severity: NotificationSeverity = NotificationSeverity.INFO
+    category: NotificationCategory = NotificationCategory.SYSTEM
     recipients: tuple[str, ...]
     subject: str
     body: str = ""
+    summary: str = ""
     template_id: str | None = None
     template_variables: dict[str, Any] = Field(default_factory=dict)
     status: NotificationStatus = NotificationStatus.PENDING
@@ -51,8 +76,17 @@ class Notification(BaseModel):
     sent_at: datetime | None = None
     delivered_at: datetime | None = None
     read_at: datetime | None = None
+    acknowledged_at: datetime | None = None
+    dismissed_at: datetime | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     correlation_id: str | None = None
+    tenant_id: str | None = None
+    organization_id: str | None = None
+    source: str = ""
+    deep_link: str | None = None
+    related_entity_id: str | None = None
+    related_entity_type: str | None = None
+    group_key: str | None = None
 
 
 class NotificationTemplate(BaseModel):
@@ -107,10 +141,12 @@ class NotificationConfig(BaseModel):
 __all__ = [
     "DeliveryRecord",
     "Notification",
+    "NotificationCategory",
     "NotificationChannel",
     "NotificationConfig",
     "NotificationPreference",
     "NotificationPriority",
+    "NotificationSeverity",
     "NotificationStatus",
     "NotificationTemplate",
 ]

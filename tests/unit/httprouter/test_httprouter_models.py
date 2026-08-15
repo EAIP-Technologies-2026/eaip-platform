@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from eaip.httprouter.models import Route, RouteMatch, RouteStatus, RouterConfig
+from eaip.httprouter.models import Route, RouteMatch, RouterConfig, RouteStatus
 
 
 class TestRoute:

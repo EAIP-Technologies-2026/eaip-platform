@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from eaip.exportcheck.exceptions import ComplianceCheckError, PartyNotFoundError
 from eaip.exceptions.base import ErrorCode
+from eaip.exportcheck.exceptions import ComplianceCheckError, PartyNotFoundError
 
 
 class TestComplianceCheckError:

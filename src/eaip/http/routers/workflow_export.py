@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.workflow.registry import WorkflowRegistry
 
-router = APIRouter(prefix="/workflows/{workflow_id}/export", tags=["workflows"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/workflows/{workflow_id}/export",
+    tags=["workflows"],
+    dependencies=[Depends(get_current_user)],
+)
 log = get_logger("eaip.http.routers.workflow_export")
 
 
@@ -30,7 +33,7 @@ async def export_workflow_json(request: Request, workflow_id: str):
 
     export_data = {
         "format": "eaip-workflow-v1",
-        "exportedAt": datetime.now(timezone.utc).isoformat(),
+        "exportedAt": datetime.now(UTC).isoformat(),
         "workflow": {
             "id": wf.id,
             "name": wf.name,
@@ -72,7 +75,7 @@ async def import_workflow(request: Request, workflow_id: str, body: dict):
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Workflow not found")
 
     import_data = body.get("workflow", body)
-    from eaip.workflow.models import WorkflowDefinition, WorkflowEdge, WorkflowStep
+    from eaip.workflow.models import WorkflowEdge, WorkflowStep
 
     steps_data = import_data.get("steps", [])
     edges_data = import_data.get("edges", [])

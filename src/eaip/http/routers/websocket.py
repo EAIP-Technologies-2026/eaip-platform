@@ -80,7 +80,11 @@ async def websocket_endpoint(websocket: WebSocket):
             else:
                 event_channel = "system"
 
-            if subscribed_channels and event_channel not in subscribed_channels and "all" not in subscribed_channels:
+            if (
+                subscribed_channels
+                and event_channel not in subscribed_channels
+                and "all" not in subscribed_channels
+            ):
                 return
 
             data = {
@@ -117,7 +121,7 @@ async def websocket_endpoint(websocket: WebSocket):
         while running:
             try:
                 raw = await asyncio.wait_for(websocket.receive_text(), timeout=60)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
 
             try:

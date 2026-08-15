@@ -302,12 +302,15 @@ class IngestionPipeline:
             }
             size_bytes = len(content)
 
-            _publish(self._event_publisher, KnowledgeUploaded(
-                document_id=document_id,
-                collection=self._config.collection,
-                size_bytes=size_bytes,
-                format=fmt_name,
-            ))
+            _publish(
+                self._event_publisher,
+                KnowledgeUploaded(
+                    document_id=document_id,
+                    collection=self._config.collection,
+                    size_bytes=size_bytes,
+                    format=fmt_name,
+                ),
+            )
 
             chunks = await self._chunker.chunk(
                 text,
@@ -317,11 +320,14 @@ class IngestionPipeline:
             )
             chunk_duration = (time.monotonic() - t0) * 1000
 
-            _publish(self._event_publisher, ChunkingCompleted(
-                document_id=document_id,
-                chunk_count=len(chunks),
-                duration_ms=chunk_duration,
-            ))
+            _publish(
+                self._event_publisher,
+                ChunkingCompleted(
+                    document_id=document_id,
+                    chunk_count=len(chunks),
+                    duration_ms=chunk_duration,
+                ),
+            )
 
             if self._config.embedding.provider or self._config.embedding.model:
                 embed_t0 = time.monotonic()
@@ -342,12 +348,15 @@ class IngestionPipeline:
                     )
                     for i, c in enumerate(chunks)
                 ]
-                _publish(self._event_publisher, EmbeddingCreated(
-                    document_id=document_id,
-                    chunk_count=len(embeddings),
-                    dimensions=len(embeddings[0]) if embeddings else 0,
-                    duration_ms=embed_duration,
-                ))
+                _publish(
+                    self._event_publisher,
+                    EmbeddingCreated(
+                        document_id=document_id,
+                        chunk_count=len(embeddings),
+                        dimensions=len(embeddings[0]) if embeddings else 0,
+                        duration_ms=embed_duration,
+                    ),
+                )
 
             await self._vector_store.upsert_points(self._config.collection, chunks)
 
@@ -368,19 +377,25 @@ class IngestionPipeline:
 
             duration_ms = (time.monotonic() - t0) * 1000
 
-            _publish(self._event_publisher, KnowledgeIndexed(
-                document_id=document_id,
-                collection=self._config.collection,
-                chunk_count=len(chunks),
-                duration_ms=duration_ms,
-            ))
+            _publish(
+                self._event_publisher,
+                KnowledgeIndexed(
+                    document_id=document_id,
+                    collection=self._config.collection,
+                    chunk_count=len(chunks),
+                    duration_ms=duration_ms,
+                ),
+            )
 
-            _publish(self._event_publisher, DocumentIngested(
-                document_id=document_id,
-                collection=self._config.collection,
-                chunk_count=len(chunks),
-                duration_ms=duration_ms,
-            ))
+            _publish(
+                self._event_publisher,
+                DocumentIngested(
+                    document_id=document_id,
+                    collection=self._config.collection,
+                    chunk_count=len(chunks),
+                    duration_ms=duration_ms,
+                ),
+            )
 
             self._log.info(
                 "ingestion.complete",

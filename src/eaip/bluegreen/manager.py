@@ -9,7 +9,6 @@ from eaip.bluegreen.events import (
     SwitchStarted,
 )
 from eaip.bluegreen.exceptions import BlueGreenError, SwitchError
-from eaip.events.bus import EventBus
 from eaip.bluegreen.models import (
     BlueGreenConfig,
     DeploymentSwitch,
@@ -17,6 +16,7 @@ from eaip.bluegreen.models import (
     EnvironmentStatus,
     SwitchStrategy,
 )
+from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
 from eaip.shared.time import utc_now
 
@@ -24,7 +24,9 @@ from eaip.shared.time import utc_now
 class BlueGreenManager:
     """Central service for managing blue-green deployments."""
 
-    def __init__(self, config: BlueGreenConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: BlueGreenConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or BlueGreenConfig()
         self._environments: dict[str, Environment] = {}
         self._switches: dict[str, DeploymentSwitch] = {}

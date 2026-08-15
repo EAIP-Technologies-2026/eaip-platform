@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import psutil
@@ -53,13 +53,15 @@ def _agent_to_summary(agent: AgentSpec, status: str | None = None) -> dict[str, 
         "labels": list(agent.tools),
         "tags": [],
         "owner": "",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": datetime.now(UTC).isoformat(),
+        "updatedAt": datetime.now(UTC).isoformat(),
         "metrics": {"totalRuns": 0, "successRate": 0, "avgDurationMs": 0},
     }
 
 
-def _agent_to_detail(agent: AgentSpec, status: str | None = None, metadata: dict | None = None) -> dict[str, Any]:
+def _agent_to_detail(
+    agent: AgentSpec, status: str | None = None, metadata: dict | None = None
+) -> dict[str, Any]:
     return {
         "id": agent.id,
         "name": agent.name,
@@ -67,16 +69,25 @@ def _agent_to_detail(agent: AgentSpec, status: str | None = None, metadata: dict
         "status": status or "idle",
         "model": agent.llm_adapter or "default",
         "systemPrompt": (metadata or {}).get("system_prompt", ""),
-        "tools": [{"id": t, "name": t, "description": "", "enabled": True, "type": "tool"} for t in agent.tools],
+        "tools": [
+            {"id": t, "name": t, "description": "", "enabled": True, "type": "tool"}
+            for t in agent.tools
+        ],
         "knowledge": [],
         "memory": [],
         "config": {},
         "labels": list(agent.tools),
         "tags": [],
         "owner": (metadata or {}).get("owner", ""),
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
-        "metrics": {"totalRuns": 0, "successRate": 0, "avgDurationMs": 0, "totalTokens": 0, "totalLatencyMs": 0},
+        "createdAt": datetime.now(UTC).isoformat(),
+        "updatedAt": datetime.now(UTC).isoformat(),
+        "metrics": {
+            "totalRuns": 0,
+            "successRate": 0,
+            "avgDurationMs": 0,
+            "totalTokens": 0,
+            "totalLatencyMs": 0,
+        },
     }
 
 
@@ -84,12 +95,21 @@ def _agent_to_detail(agent: AgentSpec, status: str | None = None, metadata: dict
 async def agent_health(request: Request, _user: dict = Depends(get_current_user)):
     runtime = _get_runtime(request)
     if runtime is None:
-        return {"status": "healthy", "uptime": "0s", "activeAgents": 0, "totalAgents": 0, "avgLatencyMs": 0, "throughputPerMin": 0, "tokensUsedTotal": 0, "memoryUsagePercent": 0}
+        return {
+            "status": "healthy",
+            "uptime": "0s",
+            "activeAgents": 0,
+            "totalAgents": 0,
+            "avgLatencyMs": 0,
+            "throughputPerMin": 0,
+            "tokensUsedTotal": 0,
+            "memoryUsagePercent": 0,
+        }
     health = await runtime.health()
     all_runs = runtime.list_runs()
     durations = [r.duration_ms for r in all_runs if r.duration_ms > 0]
     avg_latency = sum(durations) / len(durations) if durations else 0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exec_today = sum(1 for r in all_runs if r.created_at.date() == now.date())
     start = getattr(request.app.state, "_start_time", None)
     uptime_str = _fmt_uptime(time.time() - start) if start else "0s"
@@ -134,7 +154,7 @@ async def agent_stats(request: Request, _user: dict = Depends(get_current_user))
     failed = sum(1 for r in all_runs if r.status == RunStatus.FAILED)
     total_completed_failed = completed + failed
     success_rate = (completed / total_completed_failed * 100) if total_completed_failed > 0 else 0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exec_today = sum(1 for r in all_runs if r.created_at.date() == now.date())
     return {
         "totalAgents": total,
@@ -163,7 +183,9 @@ async def list_agents(request: Request, _user: dict = Depends(get_current_user))
 
 
 @router.post("")
-async def create_agent(request: Request, body: dict[str, Any], _user: dict = Depends(get_current_user)):
+async def create_agent(
+    request: Request, body: dict[str, Any], _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     agent_id = body.get("id", f"agent-{uuid.uuid4().hex[:8]}")
     agent = AgentSpec(
@@ -189,7 +211,9 @@ async def get_agent(request: Request, agent_id: str, _user: dict = Depends(get_c
 
 
 @router.put("/{agent_id}")
-async def update_agent(request: Request, agent_id: str, body: dict[str, Any], _user: dict = Depends(get_current_user)):
+async def update_agent(
+    request: Request, agent_id: str, body: dict[str, Any], _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     updates = {}
     for field in ("name", "description", "tools", "llm_adapter", "version", "max_steps"):
@@ -236,14 +260,25 @@ async def duplicate_agent(request: Request, agent_id: str, _user: dict = Depends
 
 
 @router.post("/{agent_id}/execute")
-async def execute_agent(request: Request, agent_id: str, body: dict[str, Any], _user: dict = Depends(get_current_user)):
+async def execute_agent(
+    request: Request, agent_id: str, body: dict[str, Any], _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     runtime = _get_runtime(request)
     agent = await registry.get(agent_id)
     if agent is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Agent {agent_id} not found")
     if runtime is None:
-        return {"id": f"run-{uuid.uuid4().hex[:8]}", "agentId": agent_id, "status": "completed", "input": body.get("input", ""), "output": "Execution simulated (no runtime configured)", "startedAt": datetime.now(timezone.utc).isoformat(), "completedAt": datetime.now(timezone.utc).isoformat(), "duration": 0}
+        return {
+            "id": f"run-{uuid.uuid4().hex[:8]}",
+            "agentId": agent_id,
+            "status": "completed",
+            "input": body.get("input", ""),
+            "output": "Execution simulated (no runtime configured)",
+            "startedAt": datetime.now(UTC).isoformat(),
+            "completedAt": datetime.now(UTC).isoformat(),
+            "duration": 0,
+        }
     await registry.transition_to(agent_id, AgentStatus.RUNNING)
     goal = Goal(text=body.get("input", ""))
     run = await runtime.create_run(agent, goal)
@@ -262,7 +297,9 @@ async def execute_agent(request: Request, agent_id: str, body: dict[str, Any], _
 
 
 @router.get("/{agent_id}/executions")
-async def list_agent_executions(request: Request, agent_id: str, _user: dict = Depends(get_current_user)):
+async def list_agent_executions(
+    request: Request, agent_id: str, _user: dict = Depends(get_current_user)
+):
     runtime = _get_runtime(request)
     if runtime is None:
         return []
@@ -283,14 +320,19 @@ async def list_agent_executions(request: Request, agent_id: str, _user: dict = D
 
 
 @router.get("/{agent_id}/events")
-async def list_agent_events(request: Request, agent_id: str, limit: int = 50, _user: dict = Depends(get_current_user)):
+async def list_agent_events(
+    request: Request, agent_id: str, limit: int = 50, _user: dict = Depends(get_current_user)
+):
     store = request.app.state.lifecycle.platform.container.try_resolve(EventStore)
     if store is not None:
         return store.recent_by(agent_id=agent_id, limit=limit)
     return []
 
+
 @router.post("/{agent_id}/executions/{execution_id}/pause")
-async def pause_agent_execution(request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)):
+async def pause_agent_execution(
+    request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     runtime = _get_runtime(request)
     if runtime:
@@ -300,14 +342,18 @@ async def pause_agent_execution(request: Request, agent_id: str, execution_id: s
 
 
 @router.post("/{agent_id}/executions/{execution_id}/resume")
-async def resume_agent_execution(request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)):
+async def resume_agent_execution(
+    request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     await registry.transition_to(agent_id, AgentStatus.READY)
     return {"status": "ok"}
 
 
 @router.post("/{agent_id}/executions/{execution_id}/stop")
-async def stop_agent_execution(request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)):
+async def stop_agent_execution(
+    request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     runtime = _get_runtime(request)
     if runtime:
@@ -317,14 +363,25 @@ async def stop_agent_execution(request: Request, agent_id: str, execution_id: st
 
 
 @router.post("/{agent_id}/executions/{execution_id}/retry")
-async def retry_agent_execution(request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)):
+async def retry_agent_execution(
+    request: Request, agent_id: str, execution_id: str, _user: dict = Depends(get_current_user)
+):
     registry = _get_registry(request)
     runtime = _get_runtime(request)
     agent = await registry.get(agent_id)
     if agent is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Agent {agent_id} not found")
     if runtime is None:
-        return {"id": f"run-{uuid.uuid4().hex[:8]}", "agentId": agent_id, "status": "completed", "input": "", "output": "Retry simulated", "startedAt": datetime.now(timezone.utc).isoformat(), "completedAt": datetime.now(timezone.utc).isoformat(), "duration": 0}
+        return {
+            "id": f"run-{uuid.uuid4().hex[:8]}",
+            "agentId": agent_id,
+            "status": "completed",
+            "input": "",
+            "output": "Retry simulated",
+            "startedAt": datetime.now(UTC).isoformat(),
+            "completedAt": datetime.now(UTC).isoformat(),
+            "duration": 0,
+        }
     goal = Goal(text="retry")
     run = await runtime.create_run(agent, goal)
     completed = await runtime.start_run(run.id)

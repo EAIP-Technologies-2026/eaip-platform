@@ -54,9 +54,7 @@ class AgentRegistry:
         self._statuses[agent.id] = AgentStatus.DRAFT
         if metadata:
             self._metadata[agent.id] = metadata
-        await self._publish(
-            AgentCreated(agent_id=agent.id, name=agent.name, version=agent.version)
-        )
+        await self._publish(AgentCreated(agent_id=agent.id, name=agent.name, version=agent.version))
         self._log.info("agent.created", agent_id=agent.id, name=agent.name)
         return agent
 
@@ -134,18 +132,12 @@ class AgentRegistry:
         if status is not None:
             results = [a for a in results if self._statuses.get(a.id) == status]
         if tag is not None:
-            results = [
-                a
-                for a in results
-                if tag in self._metadata.get(a.id, {}).get("tags", [])
-            ]
+            results = [a for a in results if tag in self._metadata.get(a.id, {}).get("tags", [])]
         return results
 
     # ── Lifecycle transitions ───────────────────────────────────────
 
-    async def transition_to(
-        self, agent_id: str, new_status: AgentStatus
-    ) -> AgentSpec:
+    async def transition_to(self, agent_id: str, new_status: AgentStatus) -> AgentSpec:
         """Transition an agent to a new lifecycle state.
 
         Args:

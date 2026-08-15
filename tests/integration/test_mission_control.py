@@ -5,8 +5,6 @@ Covers Mission lifecycle, RuntimeRegistry, and event publishing.
 
 from __future__ import annotations
 
-import pytest
-
 from eaip.events.bus import EventBus
 from eaip.runtime.events import (
     MissionCancelled,
@@ -195,7 +193,8 @@ class TestRuntimeRegistry:
     async def test_mission_to_dict(self) -> None:
         registry = MissionRegistry()
         mission = await registry.create(
-            "d1", "Dict Mission",
+            "d1",
+            "Dict Mission",
             agent_ids=("a1",),
             workflow_ids=("w1",),
         )

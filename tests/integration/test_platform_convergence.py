@@ -38,7 +38,8 @@ class TestPlatformConvergence:
         # ── 1. Login ─────────────────────────────────────────────────
         auth = AuthenticationService(secret="convergence-secret", event_bus=event_bus)
         req = AuthenticationRequest(
-            id="conv1", provider="mock",
+            id="conv1",
+            provider="mock",
             credentials={"username": "admin", "password": "pass"},
         )
         login = await auth.authenticate(req)
@@ -65,16 +66,25 @@ class TestPlatformConvergence:
             async def search(self, collection, query):
                 return [{"content": "result"}] if collection in self._collections else []
 
-            async def delete_points(self, collection, point_ids): pass
-            async def delete_collection(self, name): self._collections.pop(name, None)
-            async def list_collections(self): return list(self._collections.keys())
-            async def collection_info(self, name): return {"points_count": len(self._collections.get(name, []))}
+            async def delete_points(self, collection, point_ids):
+                pass
+
+            async def delete_collection(self, name):
+                self._collections.pop(name, None)
+
+            async def list_collections(self):
+                return list(self._collections.keys())
+
+            async def collection_info(self, name):
+                return {"points_count": len(self._collections.get(name, []))}
 
         class _MockEmbed:
             async def embed(self, texts, **kw):
                 return [(0.1,) * 384 for _ in texts]
+
             @property
-            def dimensions(self): return 384
+            def dimensions(self):
+                return 384
 
         store = _MemoryStore()
         embed = _MockEmbed()
@@ -82,6 +92,7 @@ class TestPlatformConvergence:
         config = IngestionConfig(collection="convergence_test")
 
         from eaip.knowledge.ingestion import IngestionPipeline
+
         pipeline = IngestionPipeline(
             config=config,
             vector_store=store,
@@ -97,7 +108,9 @@ class TestPlatformConvergence:
 
         # ── 3. Knowledge Search ─────────────────────────────────────
         retriever = KnowledgeRetriever(vector_store=store, embedding_provider=embed)
-        search = await retriever.search("convergence_test", RetrievalQuery(query="knowledge", top_k=5))
+        search = await retriever.search(
+            "convergence_test", RetrievalQuery(query="knowledge", top_k=5)
+        )
         assert len(search.chunks) >= 0
 
         # ── 4. Agent Registration ───────────────────────────────────
@@ -202,5 +215,3 @@ class TestInfrastructureHealth:
         report = await reporter.report()
         assert report.component == "platform"
         assert report.status.value in ("healthy", "unhealthy")
-
-

@@ -199,20 +199,17 @@ def _validate_ast(tree: ast.AST) -> None:
             )
         if isinstance(node, ast.Attribute) and node.attr in _DANGEROUS_ATTR_NAMES:
             raise _UnsafeCodeError(
-                f"access to dangerous attribute '{node.attr}' is not allowed "
-                f"(line {node.lineno})"
+                f"access to dangerous attribute '{node.attr}' is not allowed (line {node.lineno})"
             )
         if isinstance(node, ast.Call):
             func = node.func
             if isinstance(func, ast.Name) and func.id in _UNSAFE_CALL_NAMES:
                 raise _UnsafeCodeError(
-                    f"call to unsafe function '{func.id}' is not allowed "
-                    f"(line {func.lineno})"
+                    f"call to unsafe function '{func.id}' is not allowed (line {func.lineno})"
                 )
             if isinstance(func, ast.Attribute) and func.attr in _UNSAFE_CALL_NAMES:
                 raise _UnsafeCodeError(
-                    f"call to unsafe method '{func.attr}' is not allowed "
-                    f"(line {func.lineno})"
+                    f"call to unsafe method '{func.attr}' is not allowed (line {func.lineno})"
                 )
 
 

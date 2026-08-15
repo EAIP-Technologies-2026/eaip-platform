@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.agents.conversation import ConversationRuntime, ConversationTurn, TurnStatus
+from eaip.agents.conversation import ConversationRuntime
 
 
 class TestConversationRuntime:

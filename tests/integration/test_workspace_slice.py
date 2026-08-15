@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from eaip.app.builder import ApplicationBuilder
 from eaip.http.api import create_app
@@ -29,10 +30,10 @@ async def app():
     from eaip.agents.registry import AgentRegistry
     from eaip.agents.runtime import AgentRuntime
     from eaip.auth.auth_providers import AuthenticationService
-    from eaip.workflow.registry import WorkflowRegistry
-    from eaip.workflow.executor import WorkflowEngine
     from eaip.runtime.mission import MissionRegistry
     from eaip.session.workspace import WorkspaceManager
+    from eaip.workflow.executor import WorkflowEngine
+    from eaip.workflow.registry import WorkflowRegistry
 
     for t, inst in [
         (AgentRegistry, AgentRegistry(event_bus=e)),
@@ -118,7 +119,9 @@ class TestWorkspaceResources:
     async def test_add_resource(self, auth_client):
         r = await auth_client.post("/api/workspaces", json={"name": "Resource Test"})
         ws_id = r.json()["id"]
-        r = await auth_client.post(f"/api/workspaces/{ws_id}/resources", json={"resourceId": "agent-1"})
+        r = await auth_client.post(
+            f"/api/workspaces/{ws_id}/resources", json={"resourceId": "agent-1"}
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "added"
         r = await auth_client.get(f"/api/workspaces/{ws_id}")

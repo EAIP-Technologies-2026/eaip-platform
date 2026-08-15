@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -39,7 +39,15 @@ class EventStore:
         events.reverse()
         return [self._strip_internal(e) for e in events[:limit]]
 
-    def recent_by(self, *, agent_id: str | None = None, workflow_id: str | None = None, mission_id: str | None = None, type: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    def recent_by(
+        self,
+        *,
+        agent_id: str | None = None,
+        workflow_id: str | None = None,
+        mission_id: str | None = None,
+        type: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
         matching = list(self._events)
         if agent_id is not None:
             matching = [e for e in matching if e.get("_agent_id") == agent_id]
@@ -105,7 +113,7 @@ class EventStore:
         timestamp = (
             occurred.isoformat()
             if isinstance(occurred, datetime)
-            else datetime.now(timezone.utc).isoformat()
+            else datetime.now(UTC).isoformat()
         )
         return {
             "id": str(uuid4()),

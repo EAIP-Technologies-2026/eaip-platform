@@ -9,7 +9,8 @@ Usage::
     from eaip.shared.repository import InMemoryRepository
 
     repo: InMemoryRepository[str, MyModel] = InMemoryRepository(
-        max_size=1000, default_ttl_seconds=3600,
+        max_size=1000,
+        default_ttl_seconds=3600,
     )
     await repo.add(my_model, ttl_seconds=300)
     found = await repo.get(my_model.id)

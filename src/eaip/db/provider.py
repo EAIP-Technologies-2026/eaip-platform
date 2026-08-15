@@ -1,27 +1,23 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator
+from typing import Any
 
 from eaip.settings.db_settings import DatabaseSettings, NeonDatabaseSettings
 
 
 class DatabaseProvider(ABC):
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @abstractmethod
-    def settings(self) -> DatabaseSettings:
-        ...
+    def settings(self) -> DatabaseSettings: ...
 
     @abstractmethod
-    def connection_kwargs(self) -> dict[str, Any]:
-        ...
+    def connection_kwargs(self) -> dict[str, Any]: ...
 
     @abstractmethod
-    async def health(self) -> dict[str, Any]:
-        ...
+    async def health(self) -> dict[str, Any]: ...
 
 
 class LocalPostgresProvider(DatabaseProvider):

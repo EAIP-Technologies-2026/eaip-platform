@@ -42,7 +42,9 @@ class TestWorkflowRegistry:
 
     async def test_create_with_metadata(self, registry: WorkflowRegistry) -> None:
         wf = WorkflowDefinition(id="w2", name="Workflow Two")
-        await registry.create(wf, metadata={"owner": "team-workflow", "tags": ["production", "etl"]})
+        await registry.create(
+            wf, metadata={"owner": "team-workflow", "tags": ["production", "etl"]}
+        )
         meta = await registry.get_metadata("w2")
         assert meta["owner"] == "team-workflow"
         assert "production" in meta["tags"]

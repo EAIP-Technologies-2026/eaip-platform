@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import psutil
 from fastapi import APIRouter, Depends, Request
@@ -11,7 +11,6 @@ from eaip.agents.runtime import AgentRuntime
 from eaip.http.dependencies import get_current_user
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.logging.context import get_logger
-from eaip.metrics.metrics import Meter
 from eaip.runtime.mission import MissionRegistry, MissionStatus
 from eaip.workflow.registry import WorkflowRegistry
 
@@ -123,18 +122,20 @@ async def runtime_health(request: Request, _user: dict = Depends(get_current_use
                 "uptime": uptime_str,
                 "version": "0.0.2",
                 "message": c.message,
-                "lastChecked": datetime.now(timezone.utc).isoformat(),
+                "lastChecked": datetime.now(UTC).isoformat(),
             }
             for c in report.children
         ]
     return [
         {
             "service": "platform",
-            "status": report.status.value if hasattr(report.status, "value") else str(report.status),
+            "status": report.status.value
+            if hasattr(report.status, "value")
+            else str(report.status),
             "uptime": uptime_str,
             "version": "0.0.2",
             "message": report.message,
-            "lastChecked": datetime.now(timezone.utc).isoformat(),
+            "lastChecked": datetime.now(UTC).isoformat(),
         }
     ]
 
@@ -151,17 +152,21 @@ async def runtime_status(request: Request, _user: dict = Depends(get_current_use
         if key.__module__.startswith("eaip") and key.__name__ not in skip_types:
             try:
                 instance = container.try_resolve(key)
-                services_status.append({
-                    "service": key.__name__,
-                    "status": "healthy" if instance is not None else "unhealthy",
-                    "uptime": uptime_str,
-                    "version": "0.0.2",
-                })
+                services_status.append(
+                    {
+                        "service": key.__name__,
+                        "status": "healthy" if instance is not None else "unhealthy",
+                        "uptime": uptime_str,
+                        "version": "0.0.2",
+                    }
+                )
             except Exception:
-                services_status.append({
-                    "service": key.__name__,
-                    "status": "unknown",
-                    "uptime": uptime_str,
-                    "version": "0.0.2",
-                })
+                services_status.append(
+                    {
+                        "service": key.__name__,
+                        "status": "unknown",
+                        "uptime": uptime_str,
+                        "version": "0.0.2",
+                    }
+                )
     return services_status[:50]

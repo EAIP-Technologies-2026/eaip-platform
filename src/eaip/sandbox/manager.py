@@ -27,7 +27,9 @@ from eaip.shared.time import utc_now
 
 
 class SandboxManager:
-    def __init__(self, config: SandboxConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: SandboxConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or SandboxConfig()
         self._environments: dict[str, Environment] = {}
         self._sandboxes: dict[str, Sandbox] = {}

@@ -13,11 +13,10 @@ from eaip.settings.core_settings import PlatformSettings, load_platform_settings
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
-    from eaip.app.lifecycle import ApplicationLifecycle
 
 __all__ = [
-    "init_sentry",
     "add_sentry_middleware",
+    "init_sentry",
 ]
 
 logger = logging.getLogger(__name__)
@@ -83,11 +82,8 @@ def init_sentry(settings: PlatformSettings | None = None) -> bool:
         environment=_resolve_environment(settings),
         release=_resolve_release(settings),
         traces_sample_rate=settings.sentry.traces_sample_rate,
-        traces_sampler_debug_enabled=settings.sentry.traces_sampler_debug_enabled,
         send_default_pii=settings.sentry.send_default_pii,
         attach_stacktrace=settings.sentry.attach_stacktrace,
-        profile_life_cycle=settings.sentry.profile_life_cycle,
-        send_reports=settings.sentry.send_reports,
         _experiments={"record_sql_params": True},
     )
 

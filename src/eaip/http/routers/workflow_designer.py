@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -9,7 +8,7 @@ from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
-from eaip.workflow.models import WorkflowDefinition, WorkflowEdge, WorkflowStep
+from eaip.workflow.models import WorkflowEdge, WorkflowStep
 from eaip.workflow.registry import WorkflowRegistry
 
 router = APIRouter(prefix="/designer", tags=["workflows"], dependencies=[Depends(get_current_user)])
@@ -28,7 +27,9 @@ async def save_designer_state(request: Request, workflow_id: str, body: dict[str
     registry = _get_registry(request)
     wf = await registry.get(workflow_id)
     if wf is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Workflow {workflow_id} not found")
+        raise HTTPException(
+            status_code=HTTP_404_NOT_FOUND, detail=f"Workflow {workflow_id} not found"
+        )
 
     steps_data = body.get("nodes", [])
     edges_data = body.get("edges", [])
@@ -62,7 +63,7 @@ async def save_designer_state(request: Request, workflow_id: str, body: dict[str
         "workflowId": workflow_id,
         "nodeCount": len(new_steps),
         "edgeCount": len(new_edges),
-        "savedAt": datetime.now(timezone.utc).isoformat(),
+        "savedAt": datetime.now(UTC).isoformat(),
     }
 
 
@@ -71,7 +72,9 @@ async def load_designer_state(request: Request, workflow_id: str):
     registry = _get_registry(request)
     wf = await registry.get(workflow_id)
     if wf is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Workflow {workflow_id} not found")
+        raise HTTPException(
+            status_code=HTTP_404_NOT_FOUND, detail=f"Workflow {workflow_id} not found"
+        )
 
     return {
         "id": wf.id,
@@ -110,7 +113,7 @@ async def autosave_designer_state(request: Request, workflow_id: str, body: dict
         "nodes": body.get("nodes", []),
         "edges": body.get("edges", []),
         "viewport": body.get("viewport", {}),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
     return {"status": "autosaved", "workflowId": workflow_id}
 

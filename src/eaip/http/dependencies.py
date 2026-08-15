@@ -9,7 +9,9 @@ from eaip.auth.auth_providers import AuthenticationService
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
-    auth: AuthenticationService = request.app.state.lifecycle.platform.container.resolve(AuthenticationService)
+    auth: AuthenticationService = request.app.state.lifecycle.platform.container.resolve(
+        AuthenticationService
+    )
     token = _extract_token(request)
     user = await auth.get_current_user(token)
     if user is None:

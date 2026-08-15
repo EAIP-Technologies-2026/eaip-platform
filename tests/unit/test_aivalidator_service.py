@@ -7,7 +7,6 @@ import pytest
 from eaip.aivalidator.exceptions import AIValidationError, RuleNotFoundError
 from eaip.aivalidator.models import (
     RuleCategory,
-    ValidationResult,
     ValidationRule,
     ValidationRunStatus,
     ValidatorConfig,

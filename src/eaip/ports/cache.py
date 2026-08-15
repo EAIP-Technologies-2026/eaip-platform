@@ -8,6 +8,7 @@ Usage::
 
     from eaip.ports.cache import CacheProvider
 
+
     class RedisCache:
         async def get(self, key: str) -> CachedResponse | None: ...
         async def set(self, key: str, value: CachedResponse, ttl: float) -> None: ...

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Self
 
 from pydantic import Field
+from pydantic_settings import SettingsConfigDict
 
 from eaip.logging.config import LogFormat, LoggingConfig
 from eaip.settings.base import EAIPSettingsBase
@@ -14,6 +15,10 @@ from eaip.types import Environment, EnvName, NonEmptyStr
 
 class LoggingSettings(EAIPSettingsBase):
     """Settings nested under ``EAIP_LOGGING_*`` (mapped from :class:`LoggingConfig`)."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="EAIP_LOGGING_", case_sensitive=False, extra="forbid"
+    )
 
     level: str = Field(default="INFO")
     format: LogFormat = Field(default="json")
@@ -51,6 +56,10 @@ class TelemetrySettings(EAIPSettingsBase):
     Read from ``EAIP_TELEMETRY_*`` environment variables.
     """
 
+    model_config = SettingsConfigDict(
+        env_prefix="EAIP_TELEMETRY_", case_sensitive=False, extra="forbid"
+    )
+
     service_name: str = Field(default="eaip")
     otlp_endpoint: str = Field(default="http://localhost:4318")
     otlp_protocol: str = Field(default="http/protobuf")
@@ -65,14 +74,16 @@ class SentrySettings(EAIPSettingsBase):
     Read from ``EAIP_SENTRY_*`` environment variables.
     """
 
+    model_config = SettingsConfigDict(
+        env_prefix="EAIP_SENTRY_", case_sensitive=False, extra="forbid"
+    )
+
     dsn: str | None = Field(default=None)
     environment: str | None = Field(default=None)
     release: str | None = Field(default=None)
     traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
-    traces_sampler_debug_enabled: bool = Field(default=False)
     send_default_pii: bool = Field(default=False)
     attach_stacktrace: bool = Field(default=True)
-    profile_life_cycle: str = Field(default="auto")
     send_reports: bool = Field(default=True)
 
 
@@ -81,6 +92,10 @@ class BetterStackSettings(EAIPSettingsBase):
 
     Read from ``EAIP_BESTACK_*`` environment variables.
     """
+
+    model_config = SettingsConfigDict(
+        env_prefix="EAIP_BESTACK_", case_sensitive=False, extra="forbid"
+    )
 
     api_key: str | None = Field(default=None)
     organization: str | None = Field(default=None)
@@ -94,6 +109,10 @@ class ReleaseSettings(EAIPSettingsBase):
 
     Read from ``EAIP_RELEASE_*`` environment variables.
     """
+
+    model_config = SettingsConfigDict(
+        env_prefix="EAIP_RELEASE_", case_sensitive=False, extra="forbid"
+    )
 
     version: str | None = Field(default=None)
     environment: str | None = Field(default=None)

@@ -21,7 +21,7 @@ class Publisher:
     """Service for publishing and managing packages in the marketplace."""
 
     def __init__(self, registry: MarketplaceRegistry | None = None) -> None:
-        self._registry = registry or MarketplaceRegistry()
+        self._registry = registry if registry is not None else MarketplaceRegistry()
         self._log = get_logger("eaip.marketplace.publisher")
 
     @property

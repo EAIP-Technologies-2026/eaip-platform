@@ -8,15 +8,6 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.knowledge.chunker import FixedSizeChunker
-from eaip.knowledge.events import (
-    ChunkingCompleted,
-    DocumentIngested,
-    EmbeddingCreated,
-    KnowledgeIndexed,
-    KnowledgeUploaded,
-    SearchExecuted,
-)
 from eaip.knowledge.ingestion import IngestionPipeline
 from eaip.knowledge.models import (
     ChunkingConfig,
@@ -44,13 +35,15 @@ class _MemoryVectorStore:
         if collection not in self._collections:
             self._collections[collection] = []
         for c in chunks:
-            self._collections[collection].append({
-                "id": c.chunk_id,
-                "document_id": c.document_id,
-                "content": c.content,
-                "embedding": c.embedding,
-                "metadata": c.metadata,
-            })
+            self._collections[collection].append(
+                {
+                    "id": c.chunk_id,
+                    "document_id": c.document_id,
+                    "content": c.content,
+                    "embedding": c.embedding,
+                    "metadata": c.metadata,
+                }
+            )
 
     async def delete_points(self, collection: str, point_ids: list[str]) -> None:
         if collection in self._collections:
@@ -71,7 +64,7 @@ class _MemoryVectorStore:
                 if isinstance(meta, dict) and isinstance(query.filters, dict):
                     if all(meta.get(k) == v for k, v in query.filters.items()):
                         results.append(p)
-        return results[:query.top_k]
+        return results[: query.top_k]
 
     async def delete_collection(self, name: str) -> None:
         self._collections.pop(name, None)
@@ -178,28 +171,30 @@ class TestKnowledgeSearch:
 
     @pytest.fixture
     def retriever(self, vector_store) -> KnowledgeRetriever:
-        return KnowledgeRetriever(vector_store=vector_store, embedding_provider=_MockEmbeddingProvider())
+        return KnowledgeRetriever(
+            vector_store=vector_store, embedding_provider=_MockEmbeddingProvider()
+        )
 
-    async def test_semantic_search(self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline) -> None:
+    async def test_semantic_search(
+        self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline
+    ) -> None:
         """Semantic search should return matching documents."""
         await pipeline.ingest(
             document_id="search1",
             content=b"The quick brown fox jumps over the lazy dog.",
             doc_format=DocumentFormat.TXT,
         )
-        results = await retriever.search(
-            "test_collection", RetrievalQuery(query="fox", top_k=5)
-        )
+        results = await retriever.search("test_collection", RetrievalQuery(query="fox", top_k=5))
         assert len(results.chunks) > 0
 
     async def test_search_empty_collection(self, retriever: KnowledgeRetriever) -> None:
         """Search on empty collection returns empty results."""
-        results = await retriever.search(
-            "nonexistent", RetrievalQuery(query="anything", top_k=5)
-        )
+        results = await retriever.search("nonexistent", RetrievalQuery(query="anything", top_k=5))
         assert len(results.chunks) == 0
 
-    async def test_search_with_metadata_filters(self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline) -> None:
+    async def test_search_with_metadata_filters(
+        self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline
+    ) -> None:
         """Search with metadata filters should respect filters."""
         await pipeline.ingest(
             document_id="filter1",
@@ -223,7 +218,9 @@ class TestKnowledgeSearch:
         )
         assert len(results.chunks) > 0
 
-    async def test_pagination(self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline) -> None:
+    async def test_pagination(
+        self, retriever: KnowledgeRetriever, pipeline: IngestionPipeline
+    ) -> None:
         """Search pagination limits results."""
         content = b"Pageable document content for searching."
         for i in range(3):
@@ -297,12 +294,22 @@ class TestWorkspaceIsolation:
         pipe_a = IngestionPipeline(config=cfg_a, vector_store=vector_store, embedding_provider=emb)
         pipe_b = IngestionPipeline(config=cfg_b, vector_store=vector_store, embedding_provider=emb)
 
-        await pipe_a.ingest(document_id="wa1", content=b"Workspace A data.", doc_format=DocumentFormat.TXT)
-        await pipe_b.ingest(document_id="wb1", content=b"Workspace B data.", doc_format=DocumentFormat.TXT)
+        await pipe_a.ingest(
+            document_id="wa1", content=b"Workspace A data.", doc_format=DocumentFormat.TXT
+        )
+        await pipe_b.ingest(
+            document_id="wb1", content=b"Workspace B data.", doc_format=DocumentFormat.TXT
+        )
 
-        retriever = KnowledgeRetriever(vector_store=vector_store, embedding_provider=_MockEmbeddingProvider())
-        results_a = await retriever.search("workspace_a", RetrievalQuery(query="Workspace", top_k=5))
-        results_b = await retriever.search("workspace_b", RetrievalQuery(query="Workspace", top_k=5))
+        retriever = KnowledgeRetriever(
+            vector_store=vector_store, embedding_provider=_MockEmbeddingProvider()
+        )
+        results_a = await retriever.search(
+            "workspace_a", RetrievalQuery(query="Workspace", top_k=5)
+        )
+        results_b = await retriever.search(
+            "workspace_b", RetrievalQuery(query="Workspace", top_k=5)
+        )
 
         assert len(results_a.chunks) > 0
         assert len(results_b.chunks) > 0

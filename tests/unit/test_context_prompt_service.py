@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from eaip.context.exceptions import PromptNotFoundError
-from eaip.context.models import PromptTemplate, PromptVersion
 from eaip.context.prompt_service import PromptService
 from eaip.context.registry import PromptRegistry
 

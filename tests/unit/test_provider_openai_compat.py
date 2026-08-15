@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
+
 
 from eaip.providers.models import ChatMessage, ChatRequest
 from eaip.providers.openai_compat import OpenAICompatProvider
@@ -86,3 +89,30 @@ class TestOpenAICompatProvider:
         models = await provider.list_models()
         assert len(models) == 1
         assert models[0].model_id == "gpt-4"
+
+    @pytest.mark.asyncio
+    async def test_chat_structured_output(self) -> None:
+        request_sent: list[httpx.Request] = []
+
+        class _CaptureTransport(httpx.AsyncBaseTransport):
+            async def handle_async_request(self, r: httpx.Request) -> httpx.Response:
+                request_sent.append(r)
+                return httpx.Response(200, content=_CHAT_RESP, request=r)
+
+        provider = OpenAICompatProvider(
+            name="test", endpoint="http://test-api/v1", api_key="sk-secret"
+        )
+        provider._client = httpx.AsyncClient(transport=_CaptureTransport())
+
+        msg = ChatMessage(role="user", content="hi")
+        req = ChatRequest(
+            model="gpt-4",
+            messages=(msg,),
+            response_format={"type": "json_object"},
+        )
+        await provider.chat(req)
+
+        assert len(request_sent) == 1
+        body = json.loads(request_sent[0].content)
+        assert body.get("response_format") == {"type": "json_object"}
+

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
@@ -9,7 +8,9 @@ from fastapi import APIRouter, Depends, Request
 from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 
-router = APIRouter(prefix="/organizations", tags=["organizations"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/organizations", tags=["organizations"], dependencies=[Depends(get_current_user)]
+)
 log = get_logger("eaip.http.routers.organizations")
 
 

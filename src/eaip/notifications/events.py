@@ -68,8 +68,26 @@ class PreferenceUpdated(DomainEvent):
     enabled: bool
 
 
+class NotificationAcknowledged(DomainEvent):
+    event_type: ClassVar[str] = "notification.acknowledged"
+    notification_id: str
+    channel: str
+    recipient: str
+    acknowledged_at: datetime
+
+
+class NotificationDismissed(DomainEvent):
+    event_type: ClassVar[str] = "notification.dismissed"
+    notification_id: str
+    channel: str
+    recipient: str
+    dismissed_at: datetime
+
+
 __all__ = [
+    "NotificationAcknowledged",
     "NotificationDelivered",
+    "NotificationDismissed",
     "NotificationFailed",
     "NotificationRead",
     "NotificationReadAll",

@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from eaip.health.checks import HealthStatus
-from eaip.healthrpt.exceptions import ComponentNotFoundError, ReporterError
+from eaip.healthrpt.exceptions import ComponentNotFoundError
 from eaip.healthrpt.models import (
     ComponentSummary,
-    HealthReport,
     ReporterConfig,
-    SLAResult,
 )
 from eaip.healthrpt.reporter import HealthReporter
 from eaip.shared.time import utc_now

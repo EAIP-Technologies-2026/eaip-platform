@@ -116,11 +116,7 @@ class WorkflowRegistry:
         if status is not None:
             results = [d for d in results if self._statuses.get(d.id) == status]
         if tag is not None:
-            results = [
-                d
-                for d in results
-                if tag in self._metadata.get(d.id, {}).get("tags", [])
-            ]
+            results = [d for d in results if tag in self._metadata.get(d.id, {}).get("tags", [])]
         return results
 
     async def archive(self, workflow_id: str) -> WorkflowDefinition:
@@ -133,9 +129,7 @@ class WorkflowRegistry:
         if definition is None:
             raise WorkflowNotFoundError(f"Workflow {workflow_id!r} not found")
         self._statuses[workflow_id] = WorkflowStatus.ARCHIVED
-        await self._publish(
-            WorkflowArchived(workflow_id=workflow_id, name=definition.name)
-        )
+        await self._publish(WorkflowArchived(workflow_id=workflow_id, name=definition.name))
         self._log.info("workflow.archived", workflow_id=workflow_id)
         return definition
 

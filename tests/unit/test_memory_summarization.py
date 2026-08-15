@@ -124,3 +124,33 @@ class TestExtractiveMemorySummarizer:
         ]
         result = await summarizer.summarize(memories, max_length=200)
         assert "short summary" in result
+
+
+class TestSlidingWindowTokenCompressor:
+    def test_compress_messages_within_budget(self) -> None:
+        from eaip.memory.summarization import SlidingWindowTokenCompressor
+
+        compressor = SlidingWindowTokenCompressor(target_max_tokens=100)
+        messages = [
+            {"role": "system", "content": "System directive"},
+            {"role": "user", "content": "Hello world"},
+            {"role": "assistant", "content": "Hi there"},
+        ]
+        result = compressor.compress_messages(messages)
+        assert len(result) == 3
+
+    def test_compress_messages_exceeding_budget(self) -> None:
+        from eaip.memory.summarization import SlidingWindowTokenCompressor
+
+        compressor = SlidingWindowTokenCompressor(target_max_tokens=10)
+        messages = [
+            {"role": "system", "content": "Sys"},
+            {"role": "user", "content": "Old message " * 10},
+            {"role": "assistant", "content": "Old reply " * 10},
+            {"role": "user", "content": "Recent short query"},
+        ]
+        result = compressor.compress_messages(messages)
+        assert len(result) == 2
+        assert result[0]["role"] == "system"
+        assert result[1]["content"] == "Recent short query"
+

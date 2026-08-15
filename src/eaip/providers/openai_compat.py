@@ -75,7 +75,10 @@ class OpenAICompatProvider:
         }
         if request.max_tokens is not None:
             payload["max_tokens"] = request.max_tokens
+        if request.response_format is not None:
+            payload["response_format"] = request.response_format
         if request.tools:
+
             payload["tools"] = [
                 {
                     "type": "function",

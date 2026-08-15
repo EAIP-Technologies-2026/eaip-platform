@@ -12,7 +12,7 @@ class DiscoveryService:
 
     def __init__(self, registry: MarketplaceRegistry | None = None) -> None:
         """Initialize the discovery service."""
-        self._registry = registry or MarketplaceRegistry()
+        self._registry = registry if registry is not None else MarketplaceRegistry()
 
     @property
     def registry(self) -> MarketplaceRegistry:

@@ -24,9 +24,7 @@ class StubLLMAdapter:
     ) -> LLMResponse:
         purpose = (request.metadata or {}).get("purpose", "")
         if purpose == "planning":
-            content = (
-                "STEP 1: llm_completion | respond | Respond to the query based on the goal."
-            )
+            content = "STEP 1: llm_completion | respond | Respond to the query based on the goal."
         else:
             last = request.messages[-1] if request.messages else None
             user_text = last.content if last else ""

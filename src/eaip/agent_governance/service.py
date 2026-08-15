@@ -35,7 +35,6 @@ from eaip.agent_governance.exceptions import (
     AgentRestrictionError,
     AgentSopError,
 )
-from eaip.events.bus import EventBus
 from eaip.agent_governance.models import (
     AgentActivityLog,
     AgentApprovalConfig,
@@ -53,13 +52,16 @@ from eaip.agent_governance.models import (
     AgentSopStatus,
     AgentUsagePolicy,
 )
+from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
 
 
 class AgentGovernanceService:
     """Central service for agent governance operations."""
 
-    def __init__(self, config: AgentGovernanceConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: AgentGovernanceConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or AgentGovernanceConfig(
             id="default", name="Default Governance Config"
         )
@@ -92,6 +94,7 @@ class AgentGovernanceService:
                 self._log.exception("agent_governance.event_dispatch.failed")
         if self._event_bus is not None:
             import asyncio
+
             asyncio.ensure_future(self._event_bus.publish(event))
 
     # ── config ──────────────────────────────────────────────────────────────

@@ -30,7 +30,9 @@ class LLMRequest(BaseModel):
         default_factory=tuple,
         description="Tool names to make available to the LLM.",
     )
+    response_format: dict[str, Any] | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+
 
 
 class LLMResponse(BaseModel):

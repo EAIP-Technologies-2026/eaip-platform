@@ -33,6 +33,25 @@ class MemoryType(StrEnum):
     """Factual knowledge extracted and generalized from experiences."""
 
 
+class MemoryDomain(StrEnum):
+    """The governed ownership domain of a memory item."""
+
+    PERSONAL = "personal"
+    ORGANIZATION = "organization"
+    OPERATIONAL = "operational"
+    CONVERSATION = "conversation"
+    INVESTIGATION = "investigation"
+
+
+class MemorySensitivity(StrEnum):
+    """Server-derived sensitivity classification for stored memory."""
+
+    INFORMATIONAL = "informational"
+    SENSITIVE = "sensitive"
+    RESTRICTED = "restricted"
+    NEVER_STORE = "never_store"
+
+
 class MemoryStatus(StrEnum):
     """Lifecycle status of a memory item."""
 
@@ -97,9 +116,15 @@ class MemoryItem(BaseModel):
     memory_id: str
     memory_type: MemoryType
     scope: MemoryScope
+    domain: MemoryDomain = MemoryDomain.PERSONAL
     content: str
     content_summary: str = ""
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    sensitivity: MemorySensitivity = MemorySensitivity.INFORMATIONAL
+    source: str = "conductor"
+    provenance: str = "user_explicit"
+    retention_policy: str = "standard"
     status: MemoryStatus = MemoryStatus.ACTIVE
     parent_id: str | None = None
     related_ids: tuple[str, ...] = ()
@@ -241,12 +266,14 @@ __all__ = [
     "ConsolidationReport",
     "IndexingConfig",
     "MemoryConfig",
+    "MemoryDomain",
     "MemoryItem",
     "MemoryQuery",
     "MemoryRelation",
     "MemoryResult",
     "MemoryScope",
     "MemorySearchResult",
+    "MemorySensitivity",
     "MemoryStatus",
     "MemoryType",
     "RetentionConfig",

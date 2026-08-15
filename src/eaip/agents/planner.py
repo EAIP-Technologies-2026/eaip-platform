@@ -150,4 +150,34 @@ class SimpleLLMPlanner:
         return tuple(steps)
 
 
-__all__ = ["FixedPlanner", "SimpleLLMPlanner"]
+class SelfReflectionPlanner:
+    """A planner that incorporates self-reflection before returning a plan."""
+
+    name: str = "self_reflection"
+
+    def __init__(self, inner_planner: SimpleLLMPlanner | None = None) -> None:
+        self._inner = inner_planner or SimpleLLMPlanner()
+
+    async def create_plan(
+        self,
+        goal: Goal,
+        context: AgentRunContext,
+    ) -> Plan:
+        initial_plan = await self._inner.create_plan(goal, context)
+        # Self-reflection validation: ensures at least one verification step is appended
+        verified_steps = list(initial_plan.steps) + [
+            Step(
+                id=f"step_{len(initial_plan.steps) + 1}",
+                name="verify_and_reflect",
+                type=StepType.LLM_COMPLETION,
+                prompt=f"Verify outputs against initial goal: {goal.text}",
+            )
+        ]
+        return Plan(
+            goal_id=goal.id,
+            steps=tuple(verified_steps),
+        )
+
+
+__all__ = ["FixedPlanner", "SelfReflectionPlanner", "SimpleLLMPlanner"]
+

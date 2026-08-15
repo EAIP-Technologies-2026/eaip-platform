@@ -6,7 +6,6 @@ import pytest
 
 from eaip.xbridge.bridge import ConnectorBridge
 from eaip.xbridge.exceptions import (
-    BridgeError,
     ConnectorNotFoundError,
     MessageRoutingError,
 )

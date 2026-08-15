@@ -5,6 +5,7 @@ import os
 import sys
 
 import uvicorn
+from dotenv import load_dotenv
 
 from eaip._version import __version__
 from eaip.app.builder import ApplicationBuilder
@@ -132,9 +133,11 @@ async def _async_main() -> None:
     # Knowledge services
     from eaip.knowledge.embedding import MockEmbeddingProvider
     from eaip.knowledge.engine import KnowledgeEngine
+    from eaip.knowledge.in_memory_store import InMemoryVectorStore
     from eaip.knowledge.registry import KnowledgeRegistry as KR
 
     knowledge_registry = KR()
+    knowledge_vector_store = InMemoryVectorStore()
 
     async def _publish_event(event):
         if _asyncio_loop and not _asyncio_loop.is_closed():
@@ -145,19 +148,68 @@ async def _async_main() -> None:
 
     knowledge_engine = KnowledgeEngine(
         knowledge_registry,
-        knowledge_registry,
+        knowledge_vector_store,
         MockEmbeddingProvider(),
         event_publisher=_publish_event,
     )
     container.register_instance(KR, knowledge_registry)
     container.register_instance(KnowledgeEngine, knowledge_engine)
 
+    # Enterprise search — wire the existing EnterpriseSearchEngine with the
+    # existing KnowledgeSearchProvider over the shared retrieval stack.
+    from eaip.knowledge.retrieval_engine import RetrievalEngine
+    from eaip.search.engine import EnterpriseSearchEngine
+    from eaip.search.providers import KnowledgeSearchProvider
+
+    retrieval_engine = RetrievalEngine(
+        vector_store=knowledge_vector_store,
+        embedding_provider=MockEmbeddingProvider(),
+    )
+    container.register_instance(RetrievalEngine, retrieval_engine)
+
+    search_engine = EnterpriseSearchEngine()
+    search_engine.register_provider(
+        KnowledgeSearchProvider(retrieval_engine=retrieval_engine)
+    )
+    container.register_instance(EnterpriseSearchEngine, search_engine)
+
     # Event store for activity feed
     from eaip.events.event import DomainEvent
     from eaip.events.store import EventStore
+    from eaip.brain.enterprise_brain import EnterpriseBrain
 
     event_store = EventStore(maxlen=1000)
     container.register_instance(EventStore, event_store)
+    container.register_instance(
+        EnterpriseBrain,
+        EnterpriseBrain(
+            knowledge_engine=knowledge_engine,
+            memory_engine=memory_engine,
+            event_publisher=lambda event: None,
+        ),
+    )
+
+    # Reporting — surface the existing ExportEngine in the DI container so the
+    # /reports router can run and track export jobs.
+    from eaip.export.engine import ExportEngine
+
+    export_engine = ExportEngine()
+    container.register_instance(ExportEngine, export_engine)
+
+    # Marketplace — register the existing marketplace services so the
+    # /marketplace router browses, publishes, and installs real packages.
+    from eaip.marketplace.registry import MarketplaceRegistry
+    from eaip.marketplace.discovery import DiscoveryService
+    from eaip.marketplace.manager import PackageManager
+    from eaip.marketplace.publisher import Publisher
+
+    marketplace_registry = MarketplaceRegistry()
+    container.register_instance(MarketplaceRegistry, marketplace_registry)
+    container.register_instance(DiscoveryService, DiscoveryService(registry=marketplace_registry))
+    container.register_instance(
+        PackageManager, PackageManager(registry=marketplace_registry)
+    )
+    container.register_instance(Publisher, Publisher(registry=marketplace_registry))
 
     async def _record_event(event: DomainEvent) -> None:
         await event_store.record(event)
@@ -181,11 +233,110 @@ async def _async_main() -> None:
     # Admin services
     from eaip.admin.audit import AuditLogger
     from eaip.admin.manager import RuntimeManager
+    from eaip.copilot.governance import GovernancePolicy
+    from eaip.copilot.memory import GovernedMemoryService
     from eaip.enterprise_settings.service import EnterpriseSettingsService
     from eaip.license.manager import LicenseManager
 
     audit_logger = AuditLogger(event_bus=events)
     container.register_instance(AuditLogger, audit_logger)
+    memory_service = GovernedMemoryService(
+        engine=memory_engine,
+        governance=GovernancePolicy(),
+        audit=audit_logger,
+    )
+    container.register_instance(GovernedMemoryService, memory_service)
+
+    # Copilot services — EAIP Conductor (governed assistant)
+    from eaip.copilot.approvals import ApprovalService
+    from eaip.copilot.planner import ConductorPlanner
+    from eaip.copilot.service import ConductorService
+    from eaip.copilot.tools import build_copilot_tools
+
+    copilot_tools = build_copilot_tools(
+        health_reporter=lifecycle.platform.health,
+        agent_registry=agent_registry,
+        workflow_registry=wf_registry,
+        knowledge_engine=knowledge_engine,
+        memory_service=memory_service,
+    )
+    for tool in copilot_tools.values():
+        if tool_registry.try_get(tool.name) is None:
+            tool_registry.register(tool)
+        else:
+            # Conductor's governed wrapper replaces a builtin of the same name
+            # (e.g. current_time) so the governed tool set stays authoritative.
+            tool_registry.unregister(tool.name)
+            tool_registry.register(tool)
+
+    approval_service = ApprovalService(event_bus=events)
+    container.register_instance(ApprovalService, approval_service)
+
+    conductor_service = ConductorService(
+        tool_registry=tool_registry,
+        planner=ConductorPlanner(copilot_tools),
+        governance=GovernancePolicy(),
+        approvals=approval_service,
+        audit=audit_logger,
+        event_bus=events,
+    )
+    container.register_instance(ConductorService, conductor_service)
+
+    # Tour services — EAIP Conductor Phase 8 Guided Tour
+    from eaip.copilot.tour.fixtures import TourFixtureService
+    from eaip.copilot.tour.service import TourService
+
+    tour_fixture_service = TourFixtureService(audit=audit_logger)
+    container.register_instance(TourFixtureService, tour_fixture_service)
+    tour_service = TourService(
+        governance=GovernancePolicy(),
+        audit=audit_logger,
+        fixture_service=tour_fixture_service,
+        memory_service=memory_service,
+    )
+    container.register_instance(TourService, tour_service)
+
+    # Investigation services — EAIP Conductor Phase 9
+    from eaip.copilot.investigation.service import InvestigationService
+    from eaip.copilot.investigation.tools import build_investigation_tools
+
+    investigation_service = InvestigationService(
+        governance=GovernancePolicy(),
+        audit=audit_logger,
+        memory_service=memory_service,
+        event_bus=events,
+    )
+    container.register_instance(InvestigationService, investigation_service)
+
+    investigation_tools = build_investigation_tools(
+        investigation_service=investigation_service,
+        health_reporter=lifecycle.platform.health,
+        agent_registry=agent_registry,
+        workflow_registry=wf_registry,
+        knowledge_engine=knowledge_engine,
+    )
+    for tool in investigation_tools.values():
+        if tool_registry.try_get(tool.name) is None:
+            tool_registry.register(tool)
+
+    # Orchestration services — EAIP Conductor Phase 10
+    from eaip.copilot.orchestration.service import OrchestrationService
+    from eaip.copilot.orchestration.tools import build_orchestration_tools
+
+    orchestration_service = OrchestrationService(
+        governance=GovernancePolicy(),
+        audit=audit_logger,
+        tool_registry=tool_registry,
+        event_bus=events,
+    )
+    container.register_instance(OrchestrationService, orchestration_service)
+
+    orchestration_tools = build_orchestration_tools(
+        orchestration_service=orchestration_service,
+    )
+    for tool in orchestration_tools.values():
+        if tool_registry.try_get(tool.name) is None:
+            tool_registry.register(tool)
 
     # Register core health checks
     from eaip.health.checks import (
@@ -291,6 +442,7 @@ async def _async_main() -> None:
 
 
 def main() -> None:
+    load_dotenv()
     if "--version" in sys.argv or "-V" in sys.argv:
         print(f"eaip {__version__}")
         sys.exit(0)

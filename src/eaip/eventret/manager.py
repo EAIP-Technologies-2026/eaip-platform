@@ -9,13 +9,13 @@ from eaip.eventret.events import (
     RetentionJobFailed,
 )
 from eaip.eventret.exceptions import PolicyNotFoundError
-from eaip.events.bus import EventBus
 from eaip.eventret.models import (
     EventRetentionConfig,
     RetentionJob,
     RetentionJobStatus,
     RetentionPolicy,
 )
+from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
 from eaip.shared.time import utc_now
 
@@ -23,7 +23,9 @@ from eaip.shared.time import utc_now
 class EventRetentionManager:
     """Central service for managing event retention policies and jobs."""
 
-    def __init__(self, config: EventRetentionConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: EventRetentionConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or EventRetentionConfig()
         self._policies: dict[str, RetentionPolicy] = {}
         self._jobs: dict[str, RetentionJob] = {}

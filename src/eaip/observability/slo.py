@@ -28,7 +28,9 @@ class SliService:
         self._log.info("slo.created", id=slo.id, name=slo.name)
         if self._event_bus is not None:
             asyncio.ensure_future(
-                self._event_bus.publish(SloCreated(slo_id=slo.id, slo_name=slo.name, target_percent=slo.target_percent))
+                self._event_bus.publish(
+                    SloCreated(slo_id=slo.id, slo_name=slo.name, target_percent=slo.target_percent)
+                )
             )
         return slo
 

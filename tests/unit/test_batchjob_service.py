@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.batchjob.exceptions import BatchJobError, BatchJobNotFoundError
-from eaip.batchjob.models import BatchJob, BatchJobConfig, BatchJobExecution, BatchJobStatus
+from eaip.batchjob.models import BatchJob, BatchJobConfig, BatchJobStatus
 from eaip.batchjob.scheduler import BatchJobScheduler
 
 

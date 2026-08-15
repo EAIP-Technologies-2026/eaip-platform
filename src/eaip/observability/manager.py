@@ -7,7 +7,7 @@ from eaip.ports.observability import ObservabilityProvider
 from eaip.settings.core_settings import PlatformSettings, load_platform_settings
 
 if TYPE_CHECKING:
-    from eaip.integrations.betterstack import BetterStackProvider
+    pass
 
 __all__ = [
     "ObservabilityManager",
@@ -125,7 +125,9 @@ class ObservabilityManager:
         for name, provider in self._providers.items():
             try:
                 provider.set_tag("db_provider", provider_name)
-                self._log.debug("observability.db_tag_set", provider=name, provider_name=provider_name)
+                self._log.debug(
+                    "observability.db_tag_set", provider=name, provider_name=provider_name
+                )
             except Exception as exc:
                 self._log.warning(
                     "observability.db_tag_failed",
@@ -210,7 +212,9 @@ class _SentryAdapter(ObservabilityProvider):
         self._log.debug("sentry.captured_error", event_id=event_id, error=repr(error))
         return event_id
 
-    def capture_message(self, message: str, level: str = "info", context: dict[str, any] | None = None) -> str | None:
+    def capture_message(
+        self, message: str, level: str = "info", context: dict[str, any] | None = None
+    ) -> str | None:
         from eaip.integrations.sentry import _get_hub
 
         hub = _get_hub()

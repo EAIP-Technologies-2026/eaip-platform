@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_404_NOT_FOUND
 
@@ -10,7 +7,11 @@ from eaip.http.dependencies import get_current_user
 from eaip.logging.context import get_logger
 from eaip.runtime.mission import MissionRegistry, MissionStatus
 
-router = APIRouter(prefix="/missions/{mission_id}/analytics", tags=["missions"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/missions/{mission_id}/analytics",
+    tags=["missions"],
+    dependencies=[Depends(get_current_user)],
+)
 log = get_logger("eaip.http.routers.mission_analytics")
 
 
@@ -38,7 +39,9 @@ async def mission_metrics(request: Request, mission_id: str):
         "error": mission.error if hasattr(mission, "error") else None,
         "agentCount": len(mission.agent_ids),
         "workflowCount": len(mission.workflow_ids),
-        "progress": 100 if mission.status == MissionStatus.COMPLETED else (50 if mission.status == MissionStatus.RUNNING else 0),
+        "progress": 100
+        if mission.status == MissionStatus.COMPLETED
+        else (50 if mission.status == MissionStatus.RUNNING else 0),
     }
 
 

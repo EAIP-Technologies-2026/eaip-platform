@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-import logging
 import uuid
-from typing import TYPE_CHECKING
+
+import httpx
 
 from eaip.health.checks import DependencyClass
-from eaip.ports.observability import ObservabilityProvider
-from eaip.settings.core_settings import BetterStackSettings, PlatformSettings, load_platform_settings
-
-if TYPE_CHECKING:
-    import httpx
+from eaip.logging.context import get_logger
+from eaip.settings.core_settings import (
+    BetterStackSettings,
+)
 
 __all__ = ["BetterStackProvider"]
-
-logger = logging.getLogger(__name__)
 
 
 class BetterStackProvider:
@@ -35,7 +32,7 @@ class BetterStackProvider:
         self._settings = settings or BetterStackSettings()
         self._client: httpx.AsyncClient | None = None
         self._running: bool = False
-        self._log = logging.getLogger("eaip.integrations.betterstack")
+        self._log = get_logger("eaip.integrations.betterstack")
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -99,7 +96,9 @@ class BetterStackProvider:
         )
         return event_id
 
-    def capture_message(self, message: str, level: str = "info", context: dict[str, any] | None = None) -> str | None:
+    def capture_message(
+        self, message: str, level: str = "info", context: dict[str, any] | None = None
+    ) -> str | None:
         if not self._running or self._client is None:
             return None
         event_id = str(uuid.uuid4())

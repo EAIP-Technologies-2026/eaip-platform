@@ -14,7 +14,6 @@ from eaip.auth.events import (
     UserLoggedIn,
     UserLoggedOut,
     UserSessionCreated,
-    UserSessionExpired,
 )
 from eaip.auth.exceptions import AuthenticationError, ProviderNotFoundError
 from eaip.auth.models import (
@@ -278,9 +277,7 @@ class AuthenticationService:
         await self._token_service.revoke_all_user_tokens(user_id)
         after = self._token_service._tokens.size
         count = before - after
-        await self._emit(
-            AllSessionsRevoked(user_id=user_id, count=count)
-        )
+        await self._emit(AllSessionsRevoked(user_id=user_id, count=count))
         return count
 
     async def get_session_token_ids(self, user_id: str) -> list[str]:

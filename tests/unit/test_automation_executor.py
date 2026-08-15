@@ -38,7 +38,7 @@ class TestActionExecutor:
     async def test_dispatch_command_success(self, executor) -> None:
         action = RuleAction(
             type=ActionType.COMMAND,
-            target='python -c "import sys; sys.stdout.write(\'command_ok\')"',
+            target="python -c \"import sys; sys.stdout.write('command_ok')\"",
             timeout_seconds=5.0,
         )
         result = await executor._dispatch(action, {})
@@ -78,7 +78,7 @@ class TestActionExecutor:
     async def test_execute_command_success(self, executor) -> None:
         action = RuleAction(
             type=ActionType.COMMAND,
-            target='python -c "import sys; sys.stdout.write(\'hello\')"',
+            target="python -c \"import sys; sys.stdout.write('hello')\"",
             timeout_seconds=5.0,
         )
         if hasattr(executor, "execute_command"):
@@ -121,7 +121,7 @@ class TestActionExecutor:
             elif atype == ActionType.COMMAND:
                 action = RuleAction(
                     type=atype,
-                    target='python -c "import sys; sys.stdout.write(\'ok\')"',
+                    target="python -c \"import sys; sys.stdout.write('ok')\"",
                     timeout_seconds=5.0,
                 )
                 result = await executor._dispatch(action, {})

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from eaip.workflow.approval_workflow import ApprovalStep, ApprovalStepStatus, ApprovalWorkflow
 
 

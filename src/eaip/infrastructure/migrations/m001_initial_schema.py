@@ -8,7 +8,7 @@ from eaip.infrastructure.db.migrations import Migration
 async def up(conn) -> None:
     # ── Extensions ────────────────────────────────────────────────
     await conn.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
-    await conn.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+    await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
 
     # ── Organizations ─────────────────────────────────────────────
     await conn.execute("""
@@ -26,7 +26,9 @@ async def up(conn) -> None:
         )
     """)
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_organizations_deleted_at ON organizations(deleted_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_organizations_deleted_at ON organizations(deleted_at)"
+    )
 
     # ── Users ─────────────────────────────────────────────────────
     await conn.execute("""
@@ -71,7 +73,9 @@ async def up(conn) -> None:
     """)
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_tokens_subject ON auth_tokens(subject)")
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_tokens_status ON auth_tokens(status)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires ON auth_tokens(expires_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires ON auth_tokens(expires_at)"
+    )
 
     # ── Agents ────────────────────────────────────────────────────
     await conn.execute("""
@@ -118,7 +122,9 @@ async def up(conn) -> None:
     """)
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_agent_runs_agent ON agent_runs(agent_id)")
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON agent_runs(status)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_agent_runs_created ON agent_runs(created_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_agent_runs_created ON agent_runs(created_at)"
+    )
 
     # ── Workflows ────────────────────────────────────────────────
     await conn.execute("""
@@ -147,7 +153,9 @@ async def up(conn) -> None:
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows(status)")
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_org ON workflows(organization_id)")
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_created ON workflows(created_at)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_deleted_at ON workflows(deleted_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workflows_deleted_at ON workflows(deleted_at)"
+    )
 
     # ── Workflow Versions ────────────────────────────────────────
     await conn.execute("""
@@ -175,8 +183,12 @@ async def up(conn) -> None:
             UNIQUE (workflow_id, version)
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_wf_versions_workflow ON workflow_versions(workflow_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_wf_versions_version ON workflow_versions(workflow_id, version)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wf_versions_workflow ON workflow_versions(workflow_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wf_versions_version ON workflow_versions(workflow_id, version)"
+    )
 
     # ── Workflow Runs ────────────────────────────────────────────
     await conn.execute("""
@@ -205,9 +217,13 @@ async def up(conn) -> None:
             completed_at TIMESTAMPTZ
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_wf_runs_workflow ON workflow_runs(workflow_id)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wf_runs_workflow ON workflow_runs(workflow_id)"
+    )
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_wf_runs_status ON workflow_runs(status)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_wf_runs_created ON workflow_runs(created_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wf_runs_created ON workflow_runs(created_at)"
+    )
 
     # ── Missions ─────────────────────────────────────────────────
     await conn.execute("""
@@ -255,8 +271,12 @@ async def up(conn) -> None:
             completed_at TIMESTAMPTZ
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_mission_execs_mission ON mission_executions(mission_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_mission_execs_status ON mission_executions(status)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mission_execs_mission ON mission_executions(mission_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mission_execs_status ON mission_executions(status)"
+    )
 
     # ── Knowledge Collections ────────────────────────────────────
     await conn.execute("""
@@ -275,8 +295,12 @@ async def up(conn) -> None:
             deleted_at TIMESTAMPTZ
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_collections_name ON knowledge_collections(name)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_collections_deleted_at ON knowledge_collections(deleted_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_knowledge_collections_name ON knowledge_collections(name)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_knowledge_collections_deleted_at ON knowledge_collections(deleted_at)"
+    )
 
     # ── Knowledge Documents ─────────────────────────────────────
     await conn.execute("""
@@ -302,9 +326,15 @@ async def up(conn) -> None:
             deleted_at TIMESTAMPTZ
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_docs_collection ON knowledge_documents(collection_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_docs_status ON knowledge_documents(indexing_status)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_docs_deleted_at ON knowledge_documents(deleted_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_knowledge_docs_collection ON knowledge_documents(collection_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_knowledge_docs_status ON knowledge_documents(indexing_status)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_knowledge_docs_deleted_at ON knowledge_documents(deleted_at)"
+    )
 
     # ── Deployments ──────────────────────────────────────────────
     await conn.execute("""
@@ -326,7 +356,9 @@ async def up(conn) -> None:
         )
     """)
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments(status)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_deployments_environment ON deployments(environment)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_deployments_environment ON deployments(environment)"
+    )
 
     # ── Audit Events ─────────────────────────────────────────────
     await conn.execute("""
@@ -346,10 +378,18 @@ async def up(conn) -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_type ON audit_events(event_type)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events(actor_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_resource ON audit_events(resource_type, resource_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events(created_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_events_type ON audit_events(event_type)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events(actor_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_events_resource ON audit_events(resource_type, resource_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events(created_at)"
+    )
 
     # ── Runtime Events ──────────────────────────────────────────
     await conn.execute("""
@@ -364,9 +404,15 @@ async def up(conn) -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_runtime_events_type ON runtime_events(event_type)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_runtime_events_source ON runtime_events(source)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_runtime_events_created ON runtime_events(created_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_events_type ON runtime_events(event_type)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_events_source ON runtime_events(source)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_events_created ON runtime_events(created_at)"
+    )
 
     # ── Notifications ────────────────────────────────────────────
     await conn.execute("""
@@ -384,9 +430,15 @@ async def up(conn) -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, read)")
-    await conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)")
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, read)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)"
+    )
 
     # ── Feature Flags ────────────────────────────────────────────
     await conn.execute("""
@@ -433,12 +485,25 @@ async def up(conn) -> None:
 
 async def down(conn) -> None:
     tables = [
-        "memory_metadata", "platform_settings", "feature_flags",
-        "notifications", "runtime_events", "audit_events",
-        "deployments", "knowledge_documents", "knowledge_collections",
-        "mission_executions", "missions", "workflow_runs",
-        "workflow_versions", "workflows", "agent_runs", "agents",
-        "auth_tokens", "users", "organizations",
+        "memory_metadata",
+        "platform_settings",
+        "feature_flags",
+        "notifications",
+        "runtime_events",
+        "audit_events",
+        "deployments",
+        "knowledge_documents",
+        "knowledge_collections",
+        "mission_executions",
+        "missions",
+        "workflow_runs",
+        "workflow_versions",
+        "workflows",
+        "agent_runs",
+        "agents",
+        "auth_tokens",
+        "users",
+        "organizations",
     ]
     for table in tables:
         await conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")

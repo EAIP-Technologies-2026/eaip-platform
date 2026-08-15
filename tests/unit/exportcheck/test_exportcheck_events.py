@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
+from eaip.events.event import DomainEvent
 from eaip.exportcheck.events import MatchFlagged, PartyScreened, RuleUpdated
 from eaip.exportcheck.models import ScreeningStatus
-from eaip.events.event import DomainEvent
 
 
 class TestPartyScreened:

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from eaip.policy.decision_point import CachedDecision, PDPDecision, PolicyDecisionPoint
+from eaip.policy.decision_point import PolicyDecisionPoint
 
 
 class TestPolicyDecisionPoint:

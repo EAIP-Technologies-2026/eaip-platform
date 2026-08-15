@@ -82,4 +82,49 @@ class CompositeGuardrail:
         return GuardrailResult()
 
 
-__all__ = ["CompositeGuardrail", "NoopGuardrail"]
+class EngineGuardrail:
+    """Agent Guardrail adapter that delegates to GuardrailsEngine."""
+
+    name: str = "engine_guardrail"
+
+    def __init__(self, engine: Any | None = None) -> None:
+        from eaip.guardrails.service import GuardrailsEngine
+
+        self._engine = engine or GuardrailsEngine()
+
+    async def before_step(
+        self,
+        step: Step,
+        _context: AgentRunContext,
+    ) -> GuardrailResult:
+        text_to_check = step.prompt or step.name
+        injection_res = self._engine.check_prompt_injection(text_to_check)
+        if not injection_res.passed:
+            return GuardrailResult(blocked=True, reason=injection_res.message)
+
+        if step.prompt:
+            masked_prompt, _ = self._engine.mask_pii(step.prompt)
+            if masked_prompt != step.prompt:
+                modified = step.model_copy(update={"prompt": masked_prompt})
+                return GuardrailResult(blocked=False, modified_step=modified)
+
+        return GuardrailResult()
+
+    async def after_step(
+        self,
+        step: Step,
+        _context: AgentRunContext,
+    ) -> GuardrailResult:
+        if step.output:
+            rule_results = self._engine.evaluate_text(step.output)
+            failed = [r for r in rule_results if not r.passed]
+            if failed:
+                return GuardrailResult(
+                    blocked=True,
+                    reason=f"Output policy violation: {failed[0].message}",
+                )
+        return GuardrailResult()
+
+
+__all__ = ["CompositeGuardrail", "EngineGuardrail", "NoopGuardrail"]
+

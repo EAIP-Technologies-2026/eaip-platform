@@ -44,7 +44,9 @@ class ObservabilityProvider(Protocol):
         """
         ...
 
-    def capture_message(self, message: str, level: str = "info", context: dict[str, Any] | None = None) -> str | None:
+    def capture_message(
+        self, message: str, level: str = "info", context: dict[str, Any] | None = None
+    ) -> str | None:
         """Report a message event.
 
         Args:

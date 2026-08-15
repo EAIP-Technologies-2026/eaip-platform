@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.maskpolicy.engine import MaskingPolicyEngine
-from eaip.maskpolicy.models import MaskingPolicy, MaskingRule, PolicyStatus
+from eaip.maskpolicy.models import MaskingPolicy, PolicyStatus
 
 
 class TestMaskingPolicyEngine:

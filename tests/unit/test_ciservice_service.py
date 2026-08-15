@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.ciservice.exceptions import BuildNotFoundError, PipelineNotFoundError
-from eaip.ciservice.models import Build, BuildStatus, CIArtifact, CIConfig, Pipeline
+from eaip.ciservice.models import BuildStatus, CIArtifact, CIConfig, Pipeline
 from eaip.ciservice.service import CIService
 
 

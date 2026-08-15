@@ -39,7 +39,9 @@ class ResponseCache:
                 Defaults to :class:`InMemoryCacheProvider`.
         """
         self._default_ttl = default_ttl
-        self._cache = cache_provider or InMemoryCacheProvider(max_size=max_size, default_ttl=default_ttl)
+        self._cache = cache_provider or InMemoryCacheProvider(
+            max_size=max_size, default_ttl=default_ttl
+        )
         self._log = get_logger("eaip.apiext.caching")
         self._event_bus = event_bus
 
@@ -73,8 +75,12 @@ class ResponseCache:
                 expires_at=entry.expires_at,
                 hit_count=entry.hit_count + 1,
             )
-            await self._cache.set(cache_key, updated, ttl=(entry.expires_at - utc_now()).total_seconds())
-            await self._publish_cache_event(CacheHit(cache_key=cache_key, hit_count=updated.hit_count))
+            await self._cache.set(
+                cache_key, updated, ttl=(entry.expires_at - utc_now()).total_seconds()
+            )
+            await self._publish_cache_event(
+                CacheHit(cache_key=cache_key, hit_count=updated.hit_count)
+            )
             return updated
         return entry
 
@@ -131,9 +137,7 @@ class ResponseCache:
         """
         count = await self._cache.invalidate(pattern)
         if count > 0 and self._event_bus is not None:
-            await self._event_bus.publish(
-                CacheInvalidated(cache_key=pattern, pattern=pattern)
-            )
+            await self._event_bus.publish(CacheInvalidated(cache_key=pattern, pattern=pattern))
         return count
 
     async def clear(self) -> None:

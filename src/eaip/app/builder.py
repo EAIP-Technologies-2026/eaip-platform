@@ -15,6 +15,7 @@ from eaip.health.checks import HealthCheck
 from eaip.health.reporter import HealthReporter
 from eaip.infrastructure.clock import SystemClock
 from eaip.infrastructure.id_generator import UuidIdGenerator
+from eaip.infrastructure.infrastructure import PlatformInfrastructure
 from eaip.infrastructure.secret_provider import EnvSecretProvider
 from eaip.lifecycle.manager import LifecycleManager
 from eaip.logging.config import configure_logging
@@ -27,7 +28,6 @@ from eaip.plugins.registry import PluginRegistry
 from eaip.ports.clock import ClockPort
 from eaip.ports.id_generator import IdGeneratorPort
 from eaip.ports.secret_provider import SecretProviderPort
-from eaip.infrastructure.infrastructure import PlatformInfrastructure
 from eaip.runtime.kernel import RuntimeKernel
 from eaip.services.collection import ServiceCollection
 from eaip.services.extensions import add_default_services

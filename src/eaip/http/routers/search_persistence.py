@@ -27,7 +27,9 @@ async def save_recent_search(request: Request, body: dict[str, Any]):
         "id": f"srch-{uuid.uuid4().hex[:8]}",
         "query": body.get("query", ""),
         "category": body.get("category", ""),
-        "timestamp": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+        "timestamp": __import__("datetime")
+        .datetime.now(__import__("datetime").timezone.utc)
+        .isoformat(),
     }
     _recent_searches.append(entry)
     if len(_recent_searches) > 100:

@@ -35,10 +35,12 @@ from eaip.memory.lifecycle import MemoryExpirationService, MemoryLifecycleManage
 from eaip.memory.models import (
     ConsolidationConfig,
     MemoryConfig,
+    MemoryDomain,
     MemoryItem,
     MemoryQuery,
     MemoryResult,
     MemoryScope,
+    MemorySensitivity,
     MemoryStatus,
     MemoryType,
     RetentionConfig,
@@ -145,6 +147,12 @@ class MemoryEngine:
         parent_id: str | None = None,
         expires_at: datetime | None = None,
         embedding: tuple[float, ...] = (),
+        domain: MemoryDomain = MemoryDomain.PERSONAL,
+        confidence: float = 1.0,
+        sensitivity: MemorySensitivity = MemorySensitivity.INFORMATIONAL,
+        source: str = "memory_engine",
+        provenance: str = "system",
+        retention_policy: str = "standard",
     ) -> MemoryItem:
         """Create a new memory item.
 
@@ -158,6 +166,12 @@ class MemoryEngine:
             parent_id: Optional parent memory ID.
             expires_at: Optional expiration time.
             embedding: Optional embedding vector.
+            domain: Governed ownership domain.
+            confidence: Confidence score for the stored context.
+            sensitivity: Server-derived sensitivity classification.
+            source: Source system for the memory.
+            provenance: Provenance label for the memory.
+            retention_policy: Retention policy identifier.
 
         Returns:
             The created MemoryItem.
@@ -185,6 +199,12 @@ class MemoryEngine:
             parent_id=parent_id,
             expires_at=expires_at,
             embedding=embedding,
+            domain=domain,
+            confidence=max(0.0, min(1.0, confidence)),
+            sensitivity=sensitivity,
+            source=source,
+            provenance=provenance,
+            retention_policy=retention_policy,
             status=MemoryStatus.ACTIVE,
             version=1,
             created_at=utc_now(),

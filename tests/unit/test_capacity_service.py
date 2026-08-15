@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 
 from eaip.capacity.analyzer import CapacityAnalyzer
-from eaip.capacity.exceptions import CapacityError, ResourceNotFoundError
-from eaip.capacity.models import CapacityConfig, CapacityReport, ResourceMetric
+from eaip.capacity.exceptions import ResourceNotFoundError
+from eaip.capacity.models import CapacityConfig, ResourceMetric
 
 
 class TestCapacityAnalyzer:

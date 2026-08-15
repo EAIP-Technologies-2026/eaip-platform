@@ -103,9 +103,7 @@ class PrometheusMetricsProvider(MetricsProvider):
 
         registry = self._get_registry()
         label_names = list(labels.keys()) if labels else []
-        prom_counter = PromCounter(
-            self._make_name(name), "", label_names, registry=registry
-        )
+        prom_counter = PromCounter(self._make_name(name), "", label_names, registry=registry)
         if labels:
             prom_counter = prom_counter.labels(**labels)
         return _PrometheusCounter(prom_counter)
@@ -115,9 +113,7 @@ class PrometheusMetricsProvider(MetricsProvider):
 
         registry = self._get_registry()
         label_names = list(labels.keys()) if labels else []
-        prom_gauge = PromGauge(
-            self._make_name(name), "", label_names, registry=registry
-        )
+        prom_gauge = PromGauge(self._make_name(name), "", label_names, registry=registry)
         if labels:
             prom_gauge = prom_gauge.labels(**labels)
         return _PrometheusGauge(prom_gauge)
@@ -132,7 +128,12 @@ class PrometheusMetricsProvider(MetricsProvider):
 
         registry = self._get_registry()
         label_names = list(labels.keys()) if labels else []
-        kwargs: dict[str, Any] = {"name": self._make_name(name), "documentation": "", "labelnames": label_names, "registry": registry}
+        kwargs: dict[str, Any] = {
+            "name": self._make_name(name),
+            "documentation": "",
+            "labelnames": label_names,
+            "registry": registry,
+        }
         if buckets:
             kwargs["buckets"] = buckets
         prom_histogram = PromHistogram(**kwargs)

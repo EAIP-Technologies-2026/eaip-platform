@@ -30,7 +30,9 @@ class RoutingStrategy(StrEnum):
     PRIORITY = "priority"
     HEALTH_FIRST = "health_first"
     RANDOM = "random"
+    SEMANTIC = "semantic"
     CUSTOM = "custom"
+
 
 
 class RouteWeight(BaseModel):

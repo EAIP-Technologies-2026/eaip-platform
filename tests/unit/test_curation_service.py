@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.curation.curator import CurationService
-from eaip.curation.exceptions import CurationError, SubmissionNotFoundError
+from eaip.curation.exceptions import SubmissionNotFoundError
 from eaip.curation.models import (
     ContentStatus,
     ContentSubmission,

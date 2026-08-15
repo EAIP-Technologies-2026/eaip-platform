@@ -17,9 +17,9 @@ class TestReleaseSettingsDefaults:
 
 class TestReleaseSettingsEnvParsing:
     def test_standalone_env_overrides(self, monkeypatch: object) -> None:
-        monkeypatch.setenv("EAIP_VERSION", "1.2.3")  # type: ignore[attr-defined]
-        monkeypatch.setenv("EAIP_COMMIT", "abc123")  # type: ignore[attr-defined]
-        monkeypatch.setenv("EAIP_BRANCH", "main")  # type: ignore[attr-defined]
+        monkeypatch.setenv("EAIP_RELEASE_VERSION", "1.2.3")  # type: ignore[attr-defined]
+        monkeypatch.setenv("EAIP_RELEASE_COMMIT", "abc123")  # type: ignore[attr-defined]
+        monkeypatch.setenv("EAIP_RELEASE_BRANCH", "main")  # type: ignore[attr-defined]
         r = ReleaseSettings()
         assert r.version == "1.2.3"
         assert r.commit == "abc123"

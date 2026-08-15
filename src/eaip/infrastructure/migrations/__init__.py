@@ -10,7 +10,15 @@ def load_all_migrations() -> list[Migration]:
 
     try:
         from eaip.infrastructure.migrations.m001_initial_schema import migration as m001
+
         migrations.append(m001)
+    except (ImportError, ModuleNotFoundError):
+        pass
+
+    try:
+        from eaip.infrastructure.migrations.m002_second_brains import migration as m002
+
+        migrations.append(m002)
     except (ImportError, ModuleNotFoundError):
         pass
 

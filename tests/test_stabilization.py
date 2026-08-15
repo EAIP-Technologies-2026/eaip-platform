@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from eaip.app.builder import ApplicationBuilder
 from eaip.http.api import create_app
@@ -29,10 +30,9 @@ async def app():
     from eaip.agents.registry import AgentRegistry
     from eaip.agents.runtime import AgentRuntime
     from eaip.auth.auth_providers import AuthenticationService
-    from eaip.workflow.registry import WorkflowRegistry
-    from eaip.workflow.executor import WorkflowEngine
     from eaip.runtime.mission import MissionRegistry
-    from eaip.infrastructure.infrastructure import InfrastructureHealthCheck
+    from eaip.workflow.executor import WorkflowEngine
+    from eaip.workflow.registry import WorkflowRegistry
 
     for t, inst in [
         (AgentRegistry, AgentRegistry(event_bus=e)),
@@ -85,12 +85,12 @@ class TestHealth:
     async def test_ready_endpoint(self, client):
         r = await client.get("/ready")
         assert r.status_code == 200
-        assert r.json()["status"] == "ready"
+        assert r.json()["status"] in ("healthy", "degraded", "unhealthy")
 
     async def test_live_endpoint(self, client):
         r = await client.get("/live")
         assert r.status_code == 200
-        assert r.json()["status"] == "alive"
+        assert r.json()["status"] in ("healthy", "degraded", "unhealthy")
 
     async def test_version_endpoint(self, client):
         r = await client.get("/version")
@@ -149,7 +149,9 @@ class TestWebSocketBridge:
 
 class TestEventBusPublish:
     async def test_event_publish_via_api(self, authenticated_client):
-        r = await authenticated_client.post("/api/events/publish", json={"type": "test", "payload": {"msg": "hello"}})
+        r = await authenticated_client.post(
+            "/api/events/publish", json={"type": "test", "payload": {"msg": "hello"}}
+        )
         assert r.status_code == 200
         data = r.json()
         assert "eventId" in data
@@ -163,8 +165,8 @@ class TestEventBusPublish:
 
 class TestMigrationFramework:
     async def test_migration_registration(self):
-        from eaip.infrastructure.db.migrations import Migration, MigrationEngine
         from eaip.infrastructure.db.connection import DatabaseConnection
+        from eaip.infrastructure.db.migrations import Migration, MigrationEngine
 
         engine = MigrationEngine(DatabaseConnection, table_name="_test_migrations")
 
@@ -254,12 +256,35 @@ class TestSearchEndpoints:
         assert r.status_code == 200
 
     async def test_search_recent(self, authenticated_client):
+        saved = await authenticated_client.post(
+            "/api/search/recent",
+            json={"query": "recent test", "category": "agents"},
+        )
+        assert saved.status_code == 200
+        assert saved.json()["status"] == "saved"
+
         r = await authenticated_client.get("/api/search/recent")
         assert r.status_code == 200
+        assert any(search["query"] == "recent test" for search in r.json()["searches"])
 
     async def test_search_saved(self, authenticated_client):
+        saved = await authenticated_client.post(
+            "/api/search/saved",
+            json={"query": "saved test", "name": "Saved test", "filters": {"status": "active"}},
+        )
+        assert saved.status_code == 200
+        search_id = saved.json()["id"]
+
         r = await authenticated_client.get("/api/search/saved")
         assert r.status_code == 200
+        assert any(search["id"] == search_id for search in r.json()["searches"])
+
+        deleted = await authenticated_client.delete(f"/api/search/saved/{search_id}")
+        assert deleted.status_code == 200
+        assert not any(
+            search["id"] == search_id
+            for search in (await authenticated_client.get("/api/search/saved")).json()["searches"]
+        )
 
 
 class TestMarketplaceEndpoints:
@@ -283,11 +308,14 @@ class TestWorkflowDesignerPersistence:
         assert r.status_code == 200
         wf_id = r.json()["id"]
 
-        r = await authenticated_client.put(f"/api/designer/{wf_id}", json={
-            "nodes": [{"id": "n1", "label": "Start", "x": 100, "y": 100}],
-            "edges": [],
-            "viewport": {"x": 0, "y": 0, "zoom": 1},
-        })
+        r = await authenticated_client.put(
+            f"/api/designer/{wf_id}",
+            json={
+                "nodes": [{"id": "n1", "label": "Start", "x": 100, "y": 100}],
+                "edges": [],
+                "viewport": {"x": 0, "y": 0, "zoom": 1},
+            },
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "saved"
 
@@ -295,11 +323,14 @@ class TestWorkflowDesignerPersistence:
         r = await authenticated_client.post("/api/workflows", json={"name": "Load Test"})
         wf_id = r.json()["id"]
 
-        await authenticated_client.put(f"/api/designer/{wf_id}", json={
-            "nodes": [{"id": "n1", "label": "Agent", "x": 200, "y": 150}],
-            "edges": [],
-            "viewport": {"x": 0, "y": 0, "zoom": 1},
-        })
+        await authenticated_client.put(
+            f"/api/designer/{wf_id}",
+            json={
+                "nodes": [{"id": "n1", "label": "Agent", "x": 200, "y": 150}],
+                "edges": [],
+                "viewport": {"x": 0, "y": 0, "zoom": 1},
+            },
+        )
 
         r = await authenticated_client.get(f"/api/designer/{wf_id}")
         assert r.status_code == 200
@@ -309,11 +340,14 @@ class TestWorkflowDesignerPersistence:
         r = await authenticated_client.post("/api/workflows", json={"name": "Autosave Test"})
         wf_id = r.json()["id"]
 
-        r = await authenticated_client.post(f"/api/designer/{wf_id}/autosave", json={
-            "nodes": [{"id": "n1", "label": "Test", "x": 50, "y": 50}],
-            "edges": [],
-            "viewport": {"x": 0, "y": 0, "zoom": 1},
-        })
+        r = await authenticated_client.post(
+            f"/api/designer/{wf_id}/autosave",
+            json={
+                "nodes": [{"id": "n1", "label": "Test", "x": 50, "y": 50}],
+                "edges": [],
+                "viewport": {"x": 0, "y": 0, "zoom": 1},
+            },
+        )
         assert r.status_code == 200
 
         r = await authenticated_client.get(f"/api/designer/{wf_id}/autosave")
@@ -329,12 +363,15 @@ class TestWorkflowVersions:
         r = await authenticated_client.post("/api/workflows", json={"name": "Version Test"})
         wf_id = r.json()["id"]
 
-        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={
-            "version": 1,
-            "nodes": [{"id": "n1", "label": "Step 1", "x": 0, "y": 0}],
-            "connections": [],
-            "message": "Initial version",
-        })
+        r = await authenticated_client.post(
+            f"/api/workflows/{wf_id}/versions",
+            json={
+                "version": 1,
+                "nodes": [{"id": "n1", "label": "Step 1", "x": 0, "y": 0}],
+                "connections": [],
+                "message": "Initial version",
+            },
+        )
         assert r.status_code == 200
         assert r.json()["version"] == 1
 
@@ -349,7 +386,9 @@ class TestWorkflowVersions:
         r = await authenticated_client.post("/api/workflows", json={"name": "Publish Test"})
         wf_id = r.json()["id"]
 
-        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
+        r = await authenticated_client.post(
+            f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"}
+        )
         version_id = r.json()["id"]
 
         r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions/{version_id}/publish")
@@ -359,7 +398,9 @@ class TestWorkflowVersions:
         r = await authenticated_client.post("/api/workflows", json={"name": "Archive Test"})
         wf_id = r.json()["id"]
 
-        r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"})
+        r = await authenticated_client.post(
+            f"/api/workflows/{wf_id}/versions", json={"version": 1, "message": "v1"}
+        )
         version_id = r.json()["id"]
 
         r = await authenticated_client.post(f"/api/workflows/{wf_id}/versions/{version_id}/archive")

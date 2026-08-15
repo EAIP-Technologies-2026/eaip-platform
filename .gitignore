@@ -177,3 +177,7 @@ local.mk
 *.env
 credentials.json
 .credentials
+
+# Uvicorn stderr capture from manual backend launches
+backend.err
+backend.recovery.err

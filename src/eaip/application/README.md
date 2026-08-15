@@ -11,9 +11,11 @@ Convenience entry points for hosts.
 import asyncio
 from eaip.application import build_platform, run_platform
 
+
 async def main() -> None:
     platform = build_platform()
     await run_platform(platform)
+
 
 asyncio.run(main())
 ```

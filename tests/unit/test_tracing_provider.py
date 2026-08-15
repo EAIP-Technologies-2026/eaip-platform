@@ -47,7 +47,7 @@ class TestSetupTelemetry:
         assert meter is not None
 
     def test_otlp_endpoint_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("EAIP_OTLP_ENDPOINT", "http://custom:4318")
+        monkeypatch.setenv("EAIP_TELEMETRY_OTLP_ENDPOINT", "http://custom:4318")
         settings = TelemetrySettings()
         assert settings.otlp_endpoint == "http://custom:4318"
         setup_telemetry(settings)

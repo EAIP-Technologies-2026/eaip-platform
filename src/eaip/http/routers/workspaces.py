@@ -175,7 +175,9 @@ async def remove_resource(
     mgr = _get_manager(request)
     result = mgr.remove_resource(workspace_id, resource_id)
     if not result:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Workspace or resource not found")
+        raise HTTPException(
+            status_code=HTTP_404_NOT_FOUND, detail="Workspace or resource not found"
+        )
     return {"status": "removed", "workspaceId": workspace_id, "resourceId": resource_id}
 
 

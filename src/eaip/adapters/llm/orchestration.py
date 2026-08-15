@@ -88,8 +88,10 @@ class ToolCallOrchestrator:
                 max_tokens=request.max_tokens,
                 stream=False,
                 tools=tool_defs or None,
+                response_format=request.response_format,
                 metadata=request.metadata,
             )
+
 
             start = time.monotonic()
             chat_response = await self._provider.chat(chat_request)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from eaip.credrot.exceptions import CredRotError, CredentialNotFoundError
+from eaip.credrot.exceptions import CredentialNotFoundError, CredRotError
 from eaip.exceptions import ErrorCode
 
 

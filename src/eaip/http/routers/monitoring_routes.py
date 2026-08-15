@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
 
 from eaip.agents.registry import AgentRegistry
-from eaip.http.dependencies import get_current_user
 from eaip.events.store import EventStore
+from eaip.http.dependencies import get_current_user
 from eaip.knowledge.engine import KnowledgeEngine
 from eaip.logging.context import get_logger
-from eaip.workflow.registry import WorkflowRegistry
 from eaip.runtime.mission import MissionRegistry
+from eaip.workflow.registry import WorkflowRegistry
 
-router = APIRouter(prefix="/monitoring", tags=["monitoring"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/monitoring", tags=["monitoring"], dependencies=[Depends(get_current_user)]
+)
 log = get_logger("eaip.http.routers.monitoring_routes")
 
 
@@ -32,7 +33,15 @@ async def monitoring_health(request: Request):
             "version": "0.0.2",
         }
         for c in children
-    ] or [{"name": "platform", "status": "healthy", "uptime": "0s", "responseTime": 0, "version": "0.0.2"}]
+    ] or [
+        {
+            "name": "platform",
+            "status": "healthy",
+            "uptime": "0s",
+            "responseTime": 0,
+            "version": "0.0.2",
+        }
+    ]
 
 
 @router.get("/metrics")
@@ -72,17 +81,44 @@ async def monitoring_metrics(request: Request):
         hours, rem = divmod(rem, 3600)
         minutes, secs = divmod(rem, 60)
         parts = []
-        if days: parts.append(f"{days}d")
-        if hours: parts.append(f"{hours}h")
-        if minutes: parts.append(f"{minutes}m")
+        if days:
+            parts.append(f"{days}d")
+        if hours:
+            parts.append(f"{hours}h")
+        if minutes:
+            parts.append(f"{minutes}m")
         parts.append(f"{secs}s")
         uptime_str = " ".join(parts)
 
     return [
-        {"label": "Active Agents", "value": str(agent_count), "unit": "", "change": 0, "trend": "stable"},
-        {"label": "Workflows", "value": str(workflow_count), "unit": "", "change": 0, "trend": "stable"},
-        {"label": "Missions", "value": str(mission_count), "unit": "", "change": 0, "trend": "stable"},
-        {"label": "Knowledge Collections", "value": str(doc_count), "unit": "", "change": 0, "trend": "stable"},
+        {
+            "label": "Active Agents",
+            "value": str(agent_count),
+            "unit": "",
+            "change": 0,
+            "trend": "stable",
+        },
+        {
+            "label": "Workflows",
+            "value": str(workflow_count),
+            "unit": "",
+            "change": 0,
+            "trend": "stable",
+        },
+        {
+            "label": "Missions",
+            "value": str(mission_count),
+            "unit": "",
+            "change": 0,
+            "trend": "stable",
+        },
+        {
+            "label": "Knowledge Collections",
+            "value": str(doc_count),
+            "unit": "",
+            "change": 0,
+            "trend": "stable",
+        },
         {"label": "Uptime", "value": uptime_str, "unit": "", "change": 0, "trend": "stable"},
     ]
 
@@ -91,7 +127,7 @@ async def monitoring_metrics(request: Request):
 async def monitoring_logs(request: Request, limit: int = 50, level: str = "", source: str = ""):
     return [
         {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": "info",
             "message": "Monitoring endpoint active",
             "source": "eaip.monitoring",
@@ -116,17 +152,26 @@ async def monitoring_diagnostics(request: Request):
     children = list(getattr(report, "children", []))
     checks = []
     for c in children:
-        checks.append({
-            "name": c.component,
-            "status": "passed" if c.status.value in ("healthy",) else "warning",
-            "message": c.message,
-            "duration": 0,
-        })
+        checks.append(
+            {
+                "name": c.component,
+                "status": "passed" if c.status.value in ("healthy",) else "warning",
+                "message": c.message,
+                "duration": 0,
+            }
+        )
     if not checks:
-        checks.append({"name": "platform", "status": "passed", "message": "Platform is running", "duration": 0})
+        checks.append(
+            {
+                "name": "platform",
+                "status": "passed",
+                "message": "Platform is running",
+                "duration": 0,
+            }
+        )
     return {
         "checks": checks,
-        "lastRun": datetime.now(timezone.utc).isoformat(),
+        "lastRun": datetime.now(UTC).isoformat(),
         "passed": sum(1 for c in checks if c["status"] == "passed"),
         "failed": sum(1 for c in checks if c["status"] != "passed"),
     }

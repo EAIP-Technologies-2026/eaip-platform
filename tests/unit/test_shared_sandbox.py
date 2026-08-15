@@ -38,10 +38,9 @@ class TestSafeExecRejectsDangerousAttributes:
         local = {"x": {}}
         with pytest.raises(ValueError) as exc:
             safe_exec("x.__class__.__mro__[1].__subclasses__()", local_scope=local)
-        assert any(
-            d in str(exc.value)
-            for d in ("__class__", "__mro__", "__subclasses__")
-        ), f"expected a dangerous-attribute error, got: {exc.value}"
+        assert any(d in str(exc.value) for d in ("__class__", "__mro__", "__subclasses__")), (
+            f"expected a dangerous-attribute error, got: {exc.value}"
+        )
 
     def test_rejects_attribute_on_constant(self) -> None:
         """Dangerous attribute access on a constant string."""
@@ -76,7 +75,9 @@ class TestSafeExecAcceptsLegitimateScripts:
 
     def test_multiple_statements(self) -> None:
         local = {"data": {"price": 10, "qty": 3}}
-        code = "data['total'] = data['price'] * data['qty']\ndata['after_tax'] = data['total'] * 1.1"
+        code = (
+            "data['total'] = data['price'] * data['qty']\ndata['after_tax'] = data['total'] * 1.1"
+        )
         safe_exec(code, local_scope=local)
         assert local["data"]["total"] == 30
         assert local["data"]["after_tax"] == 33.0

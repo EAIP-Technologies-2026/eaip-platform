@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.alertcorr.correlator import AlertCorrelator
-from eaip.alertcorr.exceptions import CorrelationError, RuleNotFoundError
+from eaip.alertcorr.exceptions import RuleNotFoundError
 from eaip.alertcorr.models import (
     Alert,
     AlertSeverity,

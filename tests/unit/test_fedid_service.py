@@ -6,7 +6,6 @@ import pytest
 
 from eaip.fedid.exceptions import AuthenticationFailedError, FederationError, ProviderNotFoundError
 from eaip.fedid.models import (
-    FederatedUser,
     FederationConfig,
     IdentityProvider,
     IdpType,
@@ -241,7 +240,7 @@ class TestIdentityProviderModel:
 
 class TestSSOSessionModel:
     def test_default_status(self) -> None:
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
 
         session = SSOSession(
             id="s1", user_id="u1", idp_id="idp1", expires_at=datetime.now(UTC) + timedelta(hours=1)

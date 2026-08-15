@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -50,7 +50,9 @@ def _get_feature_flags(request: Request) -> FeatureFlagRegistry:
     return request.app.state.lifecycle.platform.feature_flags
 
 
-def _log_admin_action(request: Request, action: str, resource_type: str, resource_id: str, actor_id: str = "unknown"):
+def _log_admin_action(
+    request: Request, action: str, resource_type: str, resource_id: str, actor_id: str = "unknown"
+):
     logger = _get_audit_logger(request)
     if logger is None:
         return
@@ -76,6 +78,7 @@ async def admin_stats(
     org_count = 0
 
     from eaip.agents.registry import AgentRegistry
+
     registry = container.try_resolve(AgentRegistry)
     if registry is not None and hasattr(registry, "list_agents"):
         try:
@@ -84,6 +87,7 @@ async def admin_stats(
             pass
 
     from eaip.workflow.registry import WorkflowRegistry
+
     wf_registry = container.try_resolve(WorkflowRegistry)
     if wf_registry is not None and hasattr(wf_registry, "list_workflows"):
         try:
@@ -92,6 +96,7 @@ async def admin_stats(
             pass
 
     from eaip.organization.service import OrganizationService
+
     org_svc = container.try_resolve(OrganizationService)
     if org_svc is not None and hasattr(org_svc, "list_organizations"):
         try:
@@ -103,7 +108,7 @@ async def admin_stats(
         "agents": {"total": agent_count},
         "workflows": {"total": workflow_count},
         "organizations": {"total": org_count},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -122,7 +127,9 @@ async def admin_snapshot(
                 "activeModules": snap.active_modules,
                 "activeCapabilities": snap.active_capabilities,
                 "uptimeSeconds": snap.uptime_seconds,
-                "timestamp": snap.collected_at.isoformat() if hasattr(snap.collected_at, 'isoformat') else datetime.now(timezone.utc).isoformat(),
+                "timestamp": snap.collected_at.isoformat()
+                if hasattr(snap.collected_at, "isoformat")
+                else datetime.now(UTC).isoformat(),
             }
         except Exception:
             pass
@@ -132,16 +139,18 @@ async def admin_snapshot(
     for key in container.keys():
         key_str = str(key)
         if key_str.startswith("<class 'eaip."):
-            name = key_str.split(".")[-1].rstrip("'>")
+            name = key_str.rsplit(".", maxsplit=1)[-1].rstrip("'>")
             try:
                 inst = container.try_resolve(key)
-                services.append({"name": name, "status": "healthy" if inst is not None else "unhealthy"})
+                services.append(
+                    {"name": name, "status": "healthy" if inst is not None else "unhealthy"}
+                )
             except Exception:
                 services.append({"name": name, "status": "unknown"})
     return {
         "services": services[:100],
         "health": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -154,6 +163,7 @@ async def admin_users(
     pageSize: int = 20,
 ):
     from eaip.organization.service import OrganizationService
+
     org_svc = request.app.state.lifecycle.platform.container.try_resolve(OrganizationService)
     if org_svc is not None and hasattr(org_svc, "list_members"):
         try:
@@ -165,14 +175,18 @@ async def admin_users(
 
     results = []
     for m in members:
-        results.append({
-            "id": getattr(m, "user_id", getattr(m, "id", "")),
-            "name": getattr(m, "name", getattr(m, "display_name", "")),
-            "email": getattr(m, "email", ""),
-            "roles": [getattr(m, "role", "member")] if hasattr(m, "role") else ["member"],
-            "status": getattr(m, "status", "active"),
-            "createdAt": getattr(m, "created_at", datetime.now(timezone.utc)).isoformat() if hasattr(getattr(m, "created_at", None), "isoformat") else datetime.now(timezone.utc).isoformat(),
-        })
+        results.append(
+            {
+                "id": getattr(m, "user_id", getattr(m, "id", "")),
+                "name": getattr(m, "name", getattr(m, "display_name", "")),
+                "email": getattr(m, "email", ""),
+                "roles": [getattr(m, "role", "member")] if hasattr(m, "role") else ["member"],
+                "status": getattr(m, "status", "active"),
+                "createdAt": getattr(m, "created_at", datetime.now(UTC)).isoformat()
+                if hasattr(getattr(m, "created_at", None), "isoformat")
+                else datetime.now(UTC).isoformat(),
+            }
+        )
 
     return results
 
@@ -185,7 +199,12 @@ async def create_admin_user(
 ):
     user_id = f"user-{uuid.uuid4().hex[:8]}"
     _log_admin_action(request, "user.created", "user", user_id, actor_id=_admin.get("sub", ""))
-    return {"id": user_id, "name": body.get("name", ""), "email": body.get("email", ""), "status": "active"}
+    return {
+        "id": user_id,
+        "name": body.get("name", ""),
+        "email": body.get("email", ""),
+        "status": "active",
+    }
 
 
 @router.get("/users/{user_id}")
@@ -200,7 +219,7 @@ async def get_admin_user(
         "email": "user@example.com",
         "roles": ["user"],
         "status": "active",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": datetime.now(UTC).isoformat(),
     }
 
 
@@ -251,9 +270,27 @@ async def list_roles(
     _admin: dict = Depends(require_admin),
 ):
     return [
-        {"id": "admin", "name": "Administrator", "description": "Full platform access", "permissionCount": 50, "memberCount": 1},
-        {"id": "operator", "name": "Operator", "description": "Operational access", "permissionCount": 30, "memberCount": 3},
-        {"id": "viewer", "name": "Viewer", "description": "Read-only access", "permissionCount": 10, "memberCount": 5},
+        {
+            "id": "admin",
+            "name": "Administrator",
+            "description": "Full platform access",
+            "permissionCount": 50,
+            "memberCount": 1,
+        },
+        {
+            "id": "operator",
+            "name": "Operator",
+            "description": "Operational access",
+            "permissionCount": 30,
+            "memberCount": 3,
+        },
+        {
+            "id": "viewer",
+            "name": "Viewer",
+            "description": "Read-only access",
+            "permissionCount": 10,
+            "memberCount": 5,
+        },
     ]
 
 
@@ -263,13 +300,48 @@ async def list_permissions(
     _admin: dict = Depends(require_admin),
 ):
     return [
-        {"id": "manage:agents", "name": "Manage Agents", "description": "Create, edit, and delete agents", "resource": "agents"},
-        {"id": "view:agents", "name": "View Agents", "description": "View agents", "resource": "agents"},
-        {"id": "manage:workflows", "name": "Manage Workflows", "description": "Create, edit, and delete workflows", "resource": "workflows"},
-        {"id": "view:workflows", "name": "View Workflows", "description": "View workflows", "resource": "workflows"},
-        {"id": "admin:users", "name": "Manage Users", "description": "Manage platform users", "resource": "admin"},
-        {"id": "admin:roles", "name": "Manage Roles", "description": "Manage platform roles", "resource": "admin"},
-        {"id": "admin:permissions", "name": "Manage Permissions", "description": "Manage platform permissions", "resource": "admin"},
+        {
+            "id": "manage:agents",
+            "name": "Manage Agents",
+            "description": "Create, edit, and delete agents",
+            "resource": "agents",
+        },
+        {
+            "id": "view:agents",
+            "name": "View Agents",
+            "description": "View agents",
+            "resource": "agents",
+        },
+        {
+            "id": "manage:workflows",
+            "name": "Manage Workflows",
+            "description": "Create, edit, and delete workflows",
+            "resource": "workflows",
+        },
+        {
+            "id": "view:workflows",
+            "name": "View Workflows",
+            "description": "View workflows",
+            "resource": "workflows",
+        },
+        {
+            "id": "admin:users",
+            "name": "Manage Users",
+            "description": "Manage platform users",
+            "resource": "admin",
+        },
+        {
+            "id": "admin:roles",
+            "name": "Manage Roles",
+            "description": "Manage platform roles",
+            "resource": "admin",
+        },
+        {
+            "id": "admin:permissions",
+            "name": "Manage Permissions",
+            "description": "Manage platform permissions",
+            "resource": "admin",
+        },
     ]
 
 
@@ -293,16 +365,34 @@ async def get_settings(
     if svc is not None:
         try:
             all_settings = await svc.list_settings()
-            return {"settings": [{"key": s.setting_id if hasattr(s, 'setting_id') else s.id if hasattr(s, 'id') else str(s), "value": s.value if hasattr(s, 'value') else str(s)} for s in all_settings]}
+            return {
+                "settings": [
+                    {
+                        "key": s.setting_id
+                        if hasattr(s, "setting_id")
+                        else s.id
+                        if hasattr(s, "id")
+                        else str(s),
+                        "value": s.value if hasattr(s, "value") else str(s),
+                    }
+                    for s in all_settings
+                ]
+            }
         except Exception:
             pass
 
     platform = request.app.state.lifecycle.platform
     settings = platform.settings
     return {
-        "general": {"appName": settings.core.app_name, "environment": settings.core.environment.value},
+        "general": {
+            "appName": settings.core.app_name,
+            "environment": settings.core.environment.value,
+        },
         "logging": {"level": settings.logging.level, "format": settings.logging.format},
-        "telemetry": {"serviceName": settings.telemetry.service_name, "endpoint": settings.telemetry.otlp_endpoint},
+        "telemetry": {
+            "serviceName": settings.telemetry.service_name,
+            "endpoint": settings.telemetry.otlp_endpoint,
+        },
     }
 
 
@@ -312,7 +402,9 @@ async def update_settings(
     body: dict[str, Any],
     _admin: dict = Depends(require_admin),
 ):
-    _log_admin_action(request, "settings.updated", "settings", "global", actor_id=_admin.get("sub", ""))
+    _log_admin_action(
+        request, "settings.updated", "settings", "global", actor_id=_admin.get("sub", "")
+    )
     return {"status": "updated"}
 
 
@@ -345,7 +437,7 @@ async def admin_audit_logs(
     )
     total = len(entries)
     start = (page - 1) * pageSize
-    page_entries = entries[start:start + pageSize]
+    page_entries = entries[start : start + pageSize]
 
     return {
         "entries": [
@@ -431,6 +523,10 @@ async def toggle_feature_flag(
 ):
     registry = _get_feature_flags(request)
     current = registry.is_enabled(flag_name)
-    registry.apply_overrides(enabled=(flag_name,) if not current else (), disabled=(flag_name,) if current else ())
-    _log_admin_action(request, "feature_flag.toggled", "feature_flag", flag_name, actor_id=_admin.get("sub", ""))
+    registry.apply_overrides(
+        enabled=(flag_name,) if not current else (), disabled=(flag_name,) if current else ()
+    )
+    _log_admin_action(
+        request, "feature_flag.toggled", "feature_flag", flag_name, actor_id=_admin.get("sub", "")
+    )
     return {"name": flag_name, "enabled": not current}

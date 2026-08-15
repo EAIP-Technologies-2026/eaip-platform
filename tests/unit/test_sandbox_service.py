@@ -10,7 +10,6 @@ from eaip.sandbox.exceptions import EnvironmentNotFoundError, SandboxNotFoundErr
 from eaip.sandbox.manager import SandboxManager
 from eaip.sandbox.models import (
     Environment,
-    EnvironmentStatus,
     EnvironmentType,
     Sandbox,
     SandboxConfig,

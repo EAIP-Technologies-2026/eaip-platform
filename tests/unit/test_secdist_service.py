@@ -5,9 +5,8 @@ from __future__ import annotations
 import pytest
 
 from eaip.secdist.distributor import SecretDistributor
-from eaip.secdist.exceptions import DistributorError, TargetNotFoundError
+from eaip.secdist.exceptions import TargetNotFoundError
 from eaip.secdist.models import (
-    DistributionResult,
     DistributionTarget,
     DistributorConfig,
     SecretPackage,

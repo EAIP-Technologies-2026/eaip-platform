@@ -60,7 +60,6 @@ __all__ = [
     "SchemaValidated",
     "SchemaValidationError",
     "SchemaValidationResult",
-    "SchemaValidationResult",
     "SchemaValidator",
     "SchemaVersion",
     "SchemaVersionCreated",

@@ -173,7 +173,7 @@ class TestMigrationEngine:
     @pytest.mark.asyncio
     async def test_rollback_migration(self) -> None:
         from eaip.datamigrate.engine import MigrationEngine
-        from eaip.datamigrate.models import StepDirection, MigrationStep
+        from eaip.datamigrate.models import MigrationStep, StepDirection
 
         engine = MigrationEngine()
         rollback_handler_called = False

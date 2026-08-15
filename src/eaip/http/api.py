@@ -14,21 +14,31 @@ from eaip.health.checks import HealthStatus
 from eaip.health.reporter import HealthReporter
 from eaip.http.routers import (
     admin,
+    administration_center,
     agents,
     auth,
+    brains,
+    copilot,
+    cost_intelligence,
     deployments,
     events_router,
+    investigations,
     knowledge,
+    orchestrations,
     marketplace_routes,
     memory,
     mission_analytics,
     missions,
     monitoring_routes,
     notifications_router,
+    operations_analytics,
     organizations,
+    reports,
     runtime,
     search_persistence,
     search_router,
+    system_routes,
+    tour,
     websocket,
     workflow_designer,
     workflow_export,
@@ -187,6 +197,11 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     # Register all routers under the /api prefix (matching the frontend API URL)
     # WebSocket stays at the root so the wsUrl remains ws://host/ws.
     app.include_router(auth.router, prefix="/api")
+    app.include_router(brains.router, prefix="/api")
+    app.include_router(copilot.router, prefix="/api")
+    app.include_router(investigations.router, prefix="/api")
+    app.include_router(orchestrations.router, prefix="/api")
+    app.include_router(tour.router, prefix="/api")
     app.include_router(agents.router, prefix="/api")
     app.include_router(workflows.router, prefix="/api")
     app.include_router(knowledge.router, prefix="/api")
@@ -206,9 +221,14 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app.include_router(workforce.router, prefix="/api")
     app.include_router(marketplace_routes.router, prefix="/api")
     app.include_router(notifications_router.router, prefix="/api")
+    app.include_router(operations_analytics.router, prefix="/api")
+    app.include_router(cost_intelligence.router, prefix="/api")
+    app.include_router(reports.router, prefix="/api")
+    app.include_router(administration_center.router, prefix="/api")
     app.include_router(memory.router, prefix="/api")
     app.include_router(workspaces.router, prefix="/api")
     app.include_router(workflow_export.router, prefix="/api")
+    app.include_router(system_routes.router, prefix="/api")
 
     log.info("http.routes_registered", count=len(app.routes))
 

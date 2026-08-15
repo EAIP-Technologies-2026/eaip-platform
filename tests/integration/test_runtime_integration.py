@@ -123,7 +123,10 @@ class TestRuntimeIntegration:
             phase_log.append(_app.kernel.phase.value)  # type: ignore[union-attr]
 
         task = asyncio.create_task(runner.run(on_running=on_running))
-        await asyncio.sleep(0.1)
+        for _ in range(100):
+            if phase_log:
+                break
+            await asyncio.sleep(0.05)
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task

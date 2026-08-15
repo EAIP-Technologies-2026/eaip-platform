@@ -64,7 +64,9 @@ class ChatRequest(BaseModel):
     max_tokens: int | None = None
     stream: bool = False
     tools: tuple[ToolDefinition, ...] | None = None
+    response_format: dict[str, Any] | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+
 
 
 class ChatResponse(BaseModel):

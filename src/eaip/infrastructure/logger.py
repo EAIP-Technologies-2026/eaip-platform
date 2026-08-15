@@ -56,7 +56,9 @@ class InMemoryLogger(LoggerPort):
 
     def warning(self, event: str, **context: Any) -> None:
         if self.is_enabled_for("WARNING"):
-            self._entries.append(LogEntry("WARNING", event, {**self._bound, **context}, time.time()))
+            self._entries.append(
+                LogEntry("WARNING", event, {**self._bound, **context}, time.time())
+            )
 
     def error(self, event: str, **context: Any) -> None:
         if self.is_enabled_for("ERROR"):
@@ -64,7 +66,9 @@ class InMemoryLogger(LoggerPort):
 
     def critical(self, event: str, **context: Any) -> None:
         if self.is_enabled_for("CRITICAL"):
-            self._entries.append(LogEntry("CRITICAL", event, {**self._bound, **context}, time.time()))
+            self._entries.append(
+                LogEntry("CRITICAL", event, {**self._bound, **context}, time.time())
+            )
 
     def bind(self, **context: Any) -> LoggerPort:
         merged = {**self._bound, **context}

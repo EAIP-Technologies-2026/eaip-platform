@@ -10,7 +10,6 @@ import pytest
 from eaip.infrastructure.logger import InMemoryLogger
 from eaip.infrastructure.metrics import InMemoryMetricsProvider
 from eaip.infrastructure.tracing import NoOpTracingProvider
-from eaip.ports.metrics import Counter, Gauge, Histogram, Timer
 from eaip.runtime.diagnostics import RuntimeDiagnosticsService
 from eaip.shared.background_task_registry import BackgroundTaskRegistry
 

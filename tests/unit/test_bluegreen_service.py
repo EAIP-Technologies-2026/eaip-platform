@@ -8,11 +8,9 @@ from eaip.bluegreen.exceptions import BlueGreenError, SwitchError
 from eaip.bluegreen.manager import BlueGreenManager
 from eaip.bluegreen.models import (
     BlueGreenConfig,
-    DeploymentSwitch,
     Environment,
     EnvironmentStatus,
     EnvironmentType,
-    SwitchStrategy,
 )
 
 

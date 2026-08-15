@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.extidmap.events import IdentityMapped, IdentityUnlinked, MappingUpdated
 from eaip.events.event import DomainEvent
+from eaip.extidmap.events import IdentityMapped, IdentityUnlinked, MappingUpdated
 
 
 class TestIdentityMapped:

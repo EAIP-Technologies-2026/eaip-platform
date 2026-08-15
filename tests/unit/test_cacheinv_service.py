@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.cacheinv.exceptions import InvalidationError, TagNotFoundError
+from eaip.cacheinv.exceptions import TagNotFoundError
 from eaip.cacheinv.invalidator import CacheInvalidator
 from eaip.cacheinv.models import (
     CacheTag,
     InvalidationRequest,
-    InvalidationResult,
     InvalidatorConfig,
 )
 

@@ -145,7 +145,7 @@ class PlatformInfrastructure:
         start = time.monotonic()
 
         env = self._settings.core.environment
-        use_pg = env in (Environment.PRODUCTION, Environment.STAGING)
+        use_pg = env in (Environment.LOCAL, Environment.DEVELOPMENT, Environment.STAGING, Environment.PRODUCTION)
 
         if use_pg:
             await self._init_database()
@@ -172,10 +172,13 @@ class PlatformInfrastructure:
         self._log.info("infrastructure.stopped")
 
     async def _init_database(self) -> None:
-        provider = resolve_provider(
-            self._settings.database_provider.provider,
-            self._settings.database_provider.resolve(),
+        provider_name = self._settings.database_provider.provider
+        provider_settings = (
+            self._settings.db
+            if provider_name == "local"
+            else self._settings.database_provider.resolve()
         )
+        provider = resolve_provider(provider_name, provider_settings)
         kwargs = provider.connection_kwargs()
         self._log.info("infrastructure.connecting_db", provider=provider.name())
 

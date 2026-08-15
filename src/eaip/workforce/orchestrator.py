@@ -29,8 +29,7 @@ from eaip.workforce.models import (
 from eaip.workforce.worker import WorkerRegistry
 
 if TYPE_CHECKING:
-    from eaip.agents.models import AgentSpec, Goal
-    from eaip.workflow.models import WorkflowContext, WorkflowDefinition
+    pass
 
 
 class WorkforceOrchestrator:

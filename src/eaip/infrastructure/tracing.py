@@ -29,7 +29,9 @@ class NoOpTracingProvider(TracingProvider):
         return self._noop
 
     @contextmanager
-    def span(self, name: str, attributes: dict[str, Any] | None = None) -> Generator[Span, None, None]:
+    def span(
+        self, name: str, attributes: dict[str, Any] | None = None
+    ) -> Generator[Span, None, None]:
         yield self._noop
 
     def inject(self, span: Span) -> dict[str, str]:

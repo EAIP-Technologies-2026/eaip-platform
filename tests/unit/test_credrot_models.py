@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from eaip.credrot.models import CredRotConfig, CredRotStatus, Credential, RotationSchedule
+from eaip.credrot.models import Credential, CredRotConfig, CredRotStatus, RotationSchedule
 
 
 class TestCredential:

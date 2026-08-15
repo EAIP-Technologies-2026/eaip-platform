@@ -133,7 +133,12 @@ class InMemoryMetricsProvider(MetricsProvider):
                 self._gauges[k] = _InMemoryGauge()
             return self._gauges[k]
 
-    def histogram(self, name: str, labels: dict[str, str] | None = None, buckets: tuple[float, ...] | None = None) -> Histogram:
+    def histogram(
+        self,
+        name: str,
+        labels: dict[str, str] | None = None,
+        buckets: tuple[float, ...] | None = None,
+    ) -> Histogram:
         k = self._key(name, labels)
         with self._lock:
             if k not in self._histograms:

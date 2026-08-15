@@ -125,9 +125,7 @@ class TokenService:
         self._secret = _resolve_jwt_secret(secret, secret_provider)
         self._tokens = token_repository or InMemoryRepository[str, AuthToken](
             max_size=100_000,
-            default_ttl_seconds=float(
-                (config or TokenConfig()).refresh_token_ttl_seconds * 2
-            ),
+            default_ttl_seconds=float((config or TokenConfig()).refresh_token_ttl_seconds * 2),
         )
         self._token_strings: dict[str, str] = {}
         self._event_bus = event_bus

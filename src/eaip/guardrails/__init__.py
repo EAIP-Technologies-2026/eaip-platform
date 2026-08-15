@@ -20,6 +20,8 @@ from eaip.guardrails.models import (
     GuardrailRule,
 )
 
+from eaip.guardrails.service import GuardrailsEngine
+
 __all__ = [
     "GuardrailConfig",
     "GuardrailConfigError",
@@ -30,6 +32,8 @@ __all__ = [
     "GuardrailRuntimeModule",
     "GuardrailTriggered",
     "GuardrailViolationError",
+    "GuardrailsEngine",
     "InputValidated",
     "OutputChecked",
 ]
+

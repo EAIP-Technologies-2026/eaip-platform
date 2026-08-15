@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.cloudmgr.exceptions import CloudManagerError, ProviderNotFoundError
+from eaip.cloudmgr.exceptions import ProviderNotFoundError
 from eaip.cloudmgr.manager import CloudResourceManager
 from eaip.cloudmgr.models import (
     CloudConfig,

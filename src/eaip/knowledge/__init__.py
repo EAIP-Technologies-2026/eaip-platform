@@ -62,6 +62,7 @@ from eaip.knowledge.exceptions import (
 )
 from eaip.knowledge.federation import KnowledgeFederation
 from eaip.knowledge.health import KnowledgeHealthCheck
+from eaip.knowledge.in_memory_store import InMemoryVectorStore
 from eaip.knowledge.ingestion import (
     DOCXParser,
     HTMLParser,
@@ -139,6 +140,7 @@ __all__ = [
     "HTMLParser",
     "HybridSearchExecuted",
     "HybridSearchStrategy",
+    "InMemoryVectorStore",
     "IndexingStatus",
     "IngestionConfig",
     "IngestionError",

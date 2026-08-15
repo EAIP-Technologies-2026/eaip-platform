@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.reportsched.exceptions import ReportGenerationError, ReportNotFoundError, SchedulerError
+from eaip.reportsched.exceptions import ReportNotFoundError, SchedulerError
 from eaip.reportsched.models import ReportDefinition, ReportFormat, SchedulerConfig
 from eaip.reportsched.scheduler import ReportScheduler
 

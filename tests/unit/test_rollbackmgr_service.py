@@ -9,7 +9,6 @@ from eaip.rollbackmgr.manager import RollbackManager
 from eaip.rollbackmgr.models import (
     Deployment,
     RollbackConfig,
-    RollbackExecution,
     RollbackPlan,
     RollbackStrategy,
 )

@@ -50,6 +50,8 @@ from eaip.model_evaluation.models import (
     ModelPerformanceProfile,
 )
 
+from eaip.model_evaluation.service import ModelEvaluationService
+
 __all__ = [
     "BenchmarkComparison",
     "BenchmarkComparisonComputed",
@@ -89,7 +91,9 @@ __all__ = [
     "ModelEvaluationError",
     "ModelEvaluationHealthCheck",
     "ModelEvaluationRuntimeModule",
+    "ModelEvaluationService",
     "ModelPerformanceProfile",
     "ModelProfileError",
     "ModelProfileUpdated",
 ]
+

@@ -48,6 +48,12 @@ from eaip.kgraph.models import (
     Path,
     Relationship,
 )
+from eaip.kgraph.platform_graph import (
+    PlatformEdgeType,
+    PlatformKnowledgeService,
+    PlatformNodeType,
+    build_platform_knowledge_graph,
+)
 from eaip.kgraph.semantic import SemanticRelationshipService
 from eaip.kgraph.traversal import GraphTraversalService
 
@@ -76,10 +82,14 @@ __all__ = [
     "InferredRelationshipCreated",
     "KnowledgeGraph",
     "Path",
+    "PlatformEdgeType",
+    "PlatformKnowledgeService",
+    "PlatformNodeType",
     "Relationship",
     "RelationshipAdded",
     "RelationshipDeleted",
     "RelationshipNotFoundError",
     "RelationshipUpdated",
     "SemanticRelationshipService",
+    "build_platform_knowledge_graph",
 ]

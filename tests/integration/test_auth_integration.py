@@ -17,7 +17,7 @@ from eaip.auth.events import (
     UserLoggedOut,
     UserSessionCreated,
 )
-from eaip.auth.models import AuthenticationRequest, TokenConfig, TokenStatus
+from eaip.auth.models import AuthenticationRequest, TokenStatus
 from eaip.events.bus import EventBus
 
 
@@ -244,7 +244,9 @@ class TestAuthEvents:
         await svc.logout_all_sessions("judy")
         assert "AllSessionsRevoked" in events
 
-    async def test_get_current_user_missing_token(self, auth_service: AuthenticationService) -> None:
+    async def test_get_current_user_missing_token(
+        self, auth_service: AuthenticationService
+    ) -> None:
         """get_current_user should return None for invalid token."""
         user = await auth_service.get_current_user("invalid-token-string")
         assert user is None

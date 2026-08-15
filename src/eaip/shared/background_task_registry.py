@@ -130,7 +130,9 @@ class BackgroundTaskRegistry:
             "active_count": self.active_count,
             "total_count": self.total_count,
             "failed_count": self.failed_count,
-            "tasks": [{"id": k, "name": v.name, "failed": v.failed} for k, v in self._infos.items()],
+            "tasks": [
+                {"id": k, "name": v.name, "failed": v.failed} for k, v in self._infos.items()
+            ],
         }
 
 

@@ -47,7 +47,11 @@ class RuntimeDiagnosticsService:
                 continue
             try:
                 if hasattr(component, "get_stats"):
-                    snapshot[name] = await component.get_stats() if hasattr(component, "__aenter__") else component.get_stats()
+                    snapshot[name] = (
+                        await component.get_stats()
+                        if hasattr(component, "__aenter__")
+                        else component.get_stats()
+                    )
                 elif hasattr(component, "get_snapshot"):
                     snapshot[name] = component.get_snapshot()
                 elif hasattr(component, "active_count"):

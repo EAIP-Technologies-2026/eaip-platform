@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from eaip.capabilities.capability import (
     Capability,
+    CapabilityCategory,
     CapabilityContract,
     CapabilityDependency,
     CapabilityStatus,
+    OperationType,
 )
 from eaip.capabilities.discovery import CapabilityDiscovery
 from eaip.capabilities.events import (
@@ -19,11 +21,17 @@ from eaip.capabilities.events import (
 )
 from eaip.capabilities.graph import CapabilityGraph
 from eaip.capabilities.health import CapabilityHealthCheck
+from eaip.capabilities.inventory import (
+    CANONICAL_CAPABILITIES,
+    load_canonical_inventory,
+)
 from eaip.capabilities.registry import CapabilityRegistry
 from eaip.capabilities.resolution import CapabilityResolver
 
 __all__ = [
+    "CANONICAL_CAPABILITIES",
     "Capability",
+    "CapabilityCategory",
     "CapabilityContract",
     "CapabilityDependency",
     "CapabilityDeprecated",
@@ -38,4 +46,6 @@ __all__ = [
     "CapabilityResolver",
     "CapabilityStatus",
     "CapabilityUpgraded",
+    "OperationType",
+    "load_canonical_inventory",
 ]

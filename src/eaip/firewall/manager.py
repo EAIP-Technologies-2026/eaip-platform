@@ -19,7 +19,9 @@ from eaip.shared.time import utc_now
 class FirewallRuleManager:
     """Central service for managing firewall rules and rule sets."""
 
-    def __init__(self, config: FirewallConfig | None = None, event_bus: EventBus | None = None) -> None:
+    def __init__(
+        self, config: FirewallConfig | None = None, event_bus: EventBus | None = None
+    ) -> None:
         self._config = config or FirewallConfig()
         self._rules: dict[str, FirewallRule] = {}
         self._rulesets: dict[str, RuleSet] = {}

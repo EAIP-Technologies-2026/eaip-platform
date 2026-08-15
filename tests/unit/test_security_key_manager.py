@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from eaip.security.key_manager import KeyManager, KeyStatus, ManagedKey, RotationSchedule
+from eaip.security.key_manager import KeyManager, KeyStatus, RotationSchedule
 
 
 class TestKeyManager:

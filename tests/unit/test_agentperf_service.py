@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from eaip.agentperf.analyzer import AgentPerfAnalyzer
-from eaip.agentperf.exceptions import AgentNotFoundError, AnalyzerError
+from eaip.agentperf.exceptions import AgentNotFoundError
 from eaip.agentperf.models import AnalyzerConfig, ExecutionRecord
 
 

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 import pytest
 
 from eaip.credrot.exceptions import CredentialNotFoundError
-from eaip.credrot.models import CredRotStatus, Credential, RotationSchedule
+from eaip.credrot.models import Credential, CredRotStatus, RotationSchedule
 from eaip.credrot.rotator import CredentialRotator
 
 
