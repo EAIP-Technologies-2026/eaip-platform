@@ -87,11 +87,19 @@ async def _async_main() -> None:
     wf_engine = WorkflowEngine(event_bus=events)
     container.register_instance(WorkflowEngine, wf_engine)
 
-    # Memory services
+    # Memory services — wire persistent PostgreSQL-backed store with fallback
     from eaip.memory.engine import MemoryEngine
+    from eaip.memory.sql_store import SqlMemoryStore
     from eaip.memory.store import InMemoryStore
 
-    memory_engine = MemoryEngine(InMemoryStore())
+    try:
+        memory_store = SqlMemoryStore()
+        _mem_engine = MemoryEngine(memory_store)
+        log.info("memory.store.sql_backed")
+    except Exception as exc:
+        _mem_engine = MemoryEngine(InMemoryStore())
+        log.warning("memory.store.fallback_in_memory", error=str(exc))
+    memory_engine = _mem_engine
     container.register_instance(MemoryEngine, memory_engine)
 
     # Sentry integration
@@ -130,14 +138,24 @@ async def _async_main() -> None:
     workspace_manager = WorkspaceManager(event_bus=events)
     container.register_instance(WorkspaceManager, workspace_manager)
 
-    # Knowledge services
+    # Knowledge services — Qdrant-backed vector store with graceful fallback
     from eaip.knowledge.embedding import MockEmbeddingProvider
     from eaip.knowledge.engine import KnowledgeEngine
     from eaip.knowledge.in_memory_store import InMemoryVectorStore
+    from eaip.knowledge.qdrant_store import QdrantStore
     from eaip.knowledge.registry import KnowledgeRegistry as KR
 
     knowledge_registry = KR()
-    knowledge_vector_store = InMemoryVectorStore()
+    try:
+        knowledge_vector_store = QdrantStore(
+            host=os.environ.get("QDRANT_HOST", "localhost"),
+            port=int(os.environ.get("QDRANT_PORT", "6333")),
+            api_key=os.environ.get("QDRANT_API_KEY", ""),
+        )
+        log.info("knowledge.store.qdrant")
+    except Exception as exc:
+        knowledge_vector_store = InMemoryVectorStore()
+        log.warning("knowledge.store.fallback_in_memory", error=str(exc))
 
     async def _publish_event(event):
         if _asyncio_loop and not _asyncio_loop.is_closed():
@@ -180,13 +198,52 @@ async def _async_main() -> None:
 
     event_store = EventStore(maxlen=1000)
     container.register_instance(EventStore, event_store)
+
+    def _brain_event_publisher(event):
+        if _asyncio_loop and not _asyncio_loop.is_closed():
+            try:
+                asyncio.ensure_future(events.publish(event), loop=_asyncio_loop)
+            except Exception:
+                pass
+
     container.register_instance(
         EnterpriseBrain,
         EnterpriseBrain(
             knowledge_engine=knowledge_engine,
             memory_engine=memory_engine,
-            event_publisher=lambda event: None,
+            event_publisher=_brain_event_publisher,
         ),
+    )
+
+    # Knowledge Graph — wire the existing platform knowledge graph with
+    # the GraphIndex and SemanticRelationshipService for traversal.
+    from eaip.kgraph.graph import KnowledgeGraph
+    from eaip.kgraph.index import GraphIndex
+    from eaip.kgraph.integration import GraphRuntimeModule
+    from eaip.kgraph.semantic import SemanticRelationshipService
+
+    knowledge_graph = KnowledgeGraph()
+    graph_index = GraphIndex(knowledge_graph)
+    semantic_relationships = SemanticRelationshipService(knowledge_graph)
+    container.register_instance(KnowledgeGraph, knowledge_graph)
+    container.register_instance(GraphIndex, graph_index)
+    container.register_instance(SemanticRelationshipService, semantic_relationships)
+
+    graph_module = GraphRuntimeModule(graph=knowledge_graph)
+    container.register_instance(GraphRuntimeModule, graph_module)
+
+    # Semantic Indexing — wire the existing service for document embedding
+    from eaip.semantic_indexing.integration import SemanticIndexingRuntimeModule
+
+    semantic_indexing_module = SemanticIndexingRuntimeModule()
+    container.register_instance(SemanticIndexingRuntimeModule, semantic_indexing_module)
+
+    # Knowledge Permissions — wire the existing permission service
+    from eaip.knowledge_permissions.integration import KnowledgePermissionRuntimeModule
+
+    knowledge_permissions_module = KnowledgePermissionRuntimeModule()
+    container.register_instance(
+        KnowledgePermissionRuntimeModule, knowledge_permissions_module
     )
 
     # Reporting — surface the existing ExportEngine in the DI container so the
@@ -229,6 +286,77 @@ async def _async_main() -> None:
     container.register_instance(
         workforce_module.orchestrator.__class__, workforce_module.orchestrator
     )
+
+    # Intelligence Pulse & Decision Intelligence (B07)
+    from eaip.pulse.integration import PulseRuntimeModule
+    from eaip.decisions.integration import DecisionRuntimeModule
+    from eaip.recommendations.integration import RecommendationRuntimeModule
+
+    pulse_module = PulseRuntimeModule()
+    pulse_module.register(container)
+    container.register_instance(PulseRuntimeModule, pulse_module)
+
+    decisions_module = DecisionRuntimeModule()
+    decisions_module.register(container)
+    container.register_instance(DecisionRuntimeModule, decisions_module)
+
+    recommendations_module = RecommendationRuntimeModule()
+    recommendations_module.register(container)
+    container.register_instance(RecommendationRuntimeModule, recommendations_module)
+
+    # Governance and Compliance Services (B08)
+    from eaip.policy.integration import PolicyRuntimeModule
+    from eaip.guardrails.integration import GuardrailRuntimeModule
+    from eaip.ai_governance.integration import AiGovernanceRuntimeModule
+    from eaip.agent_governance.integration import AgentGovernanceRuntimeModule
+    from eaip.compliance.integration import ComplianceRuntimeModule
+
+    policy_module = PolicyRuntimeModule()
+    guardrails_module = GuardrailRuntimeModule()
+    ai_governance_module = AiGovernanceRuntimeModule()
+    agent_governance_module = AgentGovernanceRuntimeModule()
+    compliance_module = ComplianceRuntimeModule()
+
+    container.register_instance(PolicyRuntimeModule, policy_module)
+    container.register_instance(GuardrailRuntimeModule, guardrails_module)
+    container.register_instance(AiGovernanceRuntimeModule, ai_governance_module)
+    container.register_instance(AgentGovernanceRuntimeModule, agent_governance_module)
+    container.register_instance(ComplianceRuntimeModule, compliance_module)
+
+    # Observability and Cost Services (B09)
+    from eaip.observability.integration import ObservabilityRuntimeModule
+    from eaip.ai_observability.integration import AiObservabilityRuntimeModule
+    from eaip.cost.integration import CostRuntimeModule
+    from eaip.costalloc.integration import CostAllocRuntimeModule
+    from eaip.metering.integration import MeteringRuntimeModule
+
+    obs_module = ObservabilityRuntimeModule()
+    ai_obs_module = AiObservabilityRuntimeModule()
+    cost_module = CostRuntimeModule()
+    costalloc_module = CostAllocRuntimeModule()
+    metering_module = MeteringRuntimeModule()
+
+    container.register_instance(ObservabilityRuntimeModule, obs_module)
+    container.register_instance(AiObservabilityRuntimeModule, ai_obs_module)
+    container.register_instance(CostRuntimeModule, cost_module)
+    container.register_instance(CostAllocRuntimeModule, costalloc_module)
+    container.register_instance(MeteringRuntimeModule, metering_module)
+
+    # Health & Operations Services (B11)
+    from eaip.healthagg.integration import HealthAggRuntimeModule
+    from eaip.healthrpt.integration import HealthRptRuntimeModule
+    from eaip.diagnostics.integration import DiagnosticsRuntimeModule
+    from eaip.operations.integration import OperationsRuntimeModule
+
+    healthagg_module = HealthAggRuntimeModule()
+    healthrpt_module = HealthRptRuntimeModule()
+    diagnostics_module = DiagnosticsRuntimeModule()
+    operations_module = OperationsRuntimeModule()
+
+    container.register_instance(HealthAggRuntimeModule, healthagg_module)
+    container.register_instance(HealthRptRuntimeModule, healthrpt_module)
+    container.register_instance(DiagnosticsRuntimeModule, diagnostics_module)
+    container.register_instance(OperationsRuntimeModule, operations_module)
 
     # Admin services
     from eaip.admin.audit import AuditLogger

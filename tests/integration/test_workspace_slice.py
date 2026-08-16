@@ -11,14 +11,14 @@ from eaip.app.builder import ApplicationBuilder
 from eaip.http.api import create_app
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 async def app():
     builder = ApplicationBuilder()
     lifecycle = builder.build()
@@ -102,6 +102,7 @@ class TestWorkspaceCRUD:
         assert r.json()["name"] == "After"
 
     async def test_list_workspaces_after_create(self, auth_client):
+        await auth_client.post("/api/workspaces", json={"name": "Test"})
         r = await auth_client.get("/api/workspaces")
         assert r.status_code == 200
         assert isinstance(r.json(), list)

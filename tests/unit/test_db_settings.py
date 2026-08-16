@@ -13,8 +13,14 @@ from eaip.settings.db_settings import (
 )
 
 
+import os
+
 class TestDatabaseSettings:
     def test_defaults(self) -> None:
+        # Clear environment variables that might be set by the test runner
+        if "EAIP_DB_PASSWORD" in os.environ:
+            del os.environ["EAIP_DB_PASSWORD"]
+
         s = DatabaseSettings()
         assert s.host == "localhost"
         assert s.port == 5432

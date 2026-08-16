@@ -11,14 +11,14 @@ from eaip.app.builder import ApplicationBuilder
 from eaip.http.api import create_app
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 async def app():
     builder = ApplicationBuilder()
     lifecycle = builder.build()
