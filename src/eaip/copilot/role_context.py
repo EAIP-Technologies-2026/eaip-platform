@@ -32,6 +32,8 @@ from eaip.copilot.operational_intelligence import (
 from eaip.kgraph.platform_graph import PlatformKnowledgeService
 from eaip.shared.time import utc_now
 
+_MIN_ROUTE_PARTS = 2
+
 
 class AssistantAction(BaseModel):
     """A derived, authorized action available to the identity."""
@@ -44,6 +46,25 @@ class AssistantAction(BaseModel):
         default=False, description="Whether execution requires human approval."
     )
     risk: RiskTier = Field(default=RiskTier.INFORMATIONAL, description="Display risk annotation.")
+
+
+class ActiveEntityContext(BaseModel):
+    """Active entity and view context from the frontend application."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    entity_id: str | None = Field(default=None, description="Active entity ID.")
+    entity_type: str | None = Field(
+        default=None,
+        description="Active entity type (e.g. agent, workflow, brain, mission).",
+    )
+    active_tab: str | None = Field(default=None, description="Active tab in the page view.")
+    selected_ids: tuple[str, ...] = Field(
+        default=(), description="IDs of currently selected items."
+    )
+    page_context: dict[str, Any] = Field(
+        default_factory=dict, description="Arbitrary sanitized page metadata."
+    )
 
 
 class RoleAwareAssistantContext(BaseModel):
@@ -65,6 +86,9 @@ class RoleAwareAssistantContext(BaseModel):
     roles: tuple[str, ...] = Field(default=(), description="Effective roles.")
 
     current_route: str = Field(default="/", description="Active frontend route.")
+    active_entity: ActiveEntityContext = Field(
+        default_factory=ActiveEntityContext, description="Active entity and view context."
+    )
     current_capabilities: tuple[str, ...] = Field(
         default=(), description="Route-matched capability names."
     )
@@ -90,6 +114,9 @@ class RoleAwareAssistantContext(BaseModel):
     )
     platform_entities: tuple[str, ...] = Field(
         default=(), description="Knowledge-graph entities relevant to the current capability."
+    )
+    platform_topology: dict[str, Any] = Field(
+        default_factory=dict, description="Permission-scoped topology slice."
     )
 
     operational: LiveOperationalSnapshot | None = Field(
@@ -199,13 +226,15 @@ class RoleAwareContextBuilder:
             )
         return tuple(actions)
 
-    async def _platform_entities(self, capability_names: tuple[str, ...]) -> tuple[str, ...]:
+    async def _platform_entities(
+        self, capability_names: tuple[str, ...], context: PermissionAwareContext | None = None
+    ) -> tuple[str, ...]:
         if self._knowledge is None or not capability_names:
             return ()
         entities: list[str] = []
         seen: set[str] = set()
         for name in capability_names:
-            topo = await self._knowledge.get_capability_topology(name)
+            topo = await self._knowledge.get_capability_topology(name, context=context)
             if "error" in topo:
                 continue
             for key in ("entities", "services", "dependencies"):
@@ -216,11 +245,58 @@ class RoleAwareContextBuilder:
                         entities.append(label)
         return tuple(entities)
 
+    def _infer_entity_context(
+        self,
+        current_route: str,
+        entity_context: ActiveEntityContext | dict[str, Any] | None = None,
+    ) -> ActiveEntityContext:
+        """Infer or sanitize entity context from explicit input and route."""
+        if isinstance(entity_context, ActiveEntityContext):
+            ctx_dict = entity_context.model_dump()
+        elif isinstance(entity_context, dict):
+            ctx_dict = dict(entity_context)
+        else:
+            ctx_dict = {}
+
+        entity_id = ctx_dict.get("entity_id")
+        entity_type = ctx_dict.get("entity_type")
+        active_tab = ctx_dict.get("active_tab")
+        selected_ids = tuple(ctx_dict.get("selected_ids") or ())
+        page_context = dict(ctx_dict.get("page_context") or {})
+
+        # Route fallback inference: /agents/ag-123 -> entity_type='agent', entity_id='ag-123'
+        if not entity_id or not entity_type:
+            parts = [p for p in current_route.strip("/").split("/") if p]
+            if len(parts) >= _MIN_ROUTE_PARTS:
+                route_type_map = {
+                    "agents": "agent",
+                    "workflows": "workflow",
+                    "brains": "brain",
+                    "missions": "mission",
+                    "incidents": "incident",
+                    "memory": "memory",
+                    "knowledge": "knowledge",
+                }
+                base = parts[0].lower()
+                potential_id = parts[1]
+                if base in route_type_map and potential_id and not potential_id.startswith("["):
+                    entity_type = entity_type or route_type_map[base]
+                    entity_id = entity_id or potential_id
+
+        return ActiveEntityContext(
+            entity_id=str(entity_id) if entity_id else None,
+            entity_type=str(entity_type) if entity_type else None,
+            active_tab=str(active_tab) if active_tab else None,
+            selected_ids=selected_ids,
+            page_context=page_context,
+        )
+
     async def build(
         self,
         user: dict[str, Any],
         current_route: str = "/",
         *,
+        entity_context: ActiveEntityContext | dict[str, Any] | None = None,
         include_operational: bool = True,
     ) -> RoleAwareAssistantContext:
         """Compose the full role-aware context for an identity on a route.
@@ -228,6 +304,7 @@ class RoleAwareContextBuilder:
         Args:
             user: Authenticated caller claims.
             current_route: Active frontend route.
+            entity_context: Optional active entity / view context.
             include_operational: Whether to attach a live operational snapshot.
 
         Returns:
@@ -236,6 +313,7 @@ class RoleAwareContextBuilder:
         identity = self._identity_from_user(user)
         perm_ctx = self._resolver.resolve_context(identity)
 
+        active_entity = self._infer_entity_context(current_route, entity_context)
         route_caps = tuple(self._route_capabilities(current_route))
 
         visible = tuple(perm_ctx.visible_capability_ids)
@@ -258,7 +336,23 @@ class RoleAwareContextBuilder:
                 approval_required.append(name)
 
         actions = self._derive_actions(perm_ctx, executable)
-        entities = await self._platform_entities(route_caps)
+        entities = await self._platform_entities(route_caps, context=perm_ctx)
+
+        platform_topology: dict[str, Any] = {}
+        if self._knowledge is not None:
+            primary_cap = route_caps[0] if route_caps else None
+            if not primary_cap and active_entity.entity_type:
+                type_map = {
+                    "agent": "eaip.agents",
+                    "workflow": "eaip.workflows",
+                    "brain": "eaip.brains",
+                    "mission": "eaip.missions",
+                }
+                primary_cap = type_map.get(active_entity.entity_type)
+            if primary_cap:
+                topo = await self._knowledge.get_capability_topology(primary_cap, context=perm_ctx)
+                if "error" not in topo:
+                    platform_topology = topo
 
         operational: LiveOperationalSnapshot | None = None
         if include_operational and self._operational is not None:
@@ -272,6 +366,7 @@ class RoleAwareContextBuilder:
             teams=identity.teams,
             roles=identity.roles,
             current_route=current_route,
+            active_entity=active_entity,
             current_capabilities=route_caps,
             visible_capabilities=visible,
             discoverable_capabilities=tuple(discoverable),
@@ -282,11 +377,13 @@ class RoleAwareContextBuilder:
             restricted_capabilities=restricted,
             available_actions=actions,
             platform_entities=entities,
+            platform_topology=platform_topology,
             operational=operational,
         )
 
 
 __all__ = [
+    "ActiveEntityContext",
     "AssistantAction",
     "RiskTier",
     "RoleAwareAssistantContext",

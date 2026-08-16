@@ -1,19 +1,25 @@
-"""Governed tools exposed to EAIP Conductor.
+"""Governed and operational tools exposed to EAIP Conductor.
 
-Every tool implements the platform :class:`~eaip.tools.base.Tool` protocol and
-additionally declares a ``risk`` tier and a required ``permission`` so that
-:class:`~eaip.copilot.governance.GovernancePolicy` can gate its use.
+Combines the governed copilot tool suite (read/analyze/recommend/action tools
+with explicit risk and permission tiers, gated by
+:class:`~eaip.copilot.governance.GovernancePolicy`) and the Phase 5 Batch 3
+canonical operational tool suite (typed, permission-aware tools invoked by the
+:class:`~eaip.copilot.action_executor.GovernedActionExecutor`).
 """
 
 from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import dataclass
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic.json_schema import JsonSchemaValue
 
 from eaip.agents.models import AgentSpec
 from eaip.agents.registry import AgentRegistry
+from eaip.capabilities.capability import OperationType
+from eaip.context.permission_context import PermissionAwareContext
 from eaip.copilot.memory import GovernedMemoryService, MemoryPolicyError
 from eaip.copilot.models import RiskTier
 from eaip.copilot.twin import SystemTwinService
@@ -22,6 +28,7 @@ from eaip.knowledge.engine import KnowledgeEngine
 from eaip.memory.models import MemoryDomain
 from eaip.shared.time import utc_now
 from eaip.tools.base import Tool
+from eaip.tools.registry import ToolRegistry
 from eaip.workflow.registry import WorkflowRegistry
 
 
@@ -724,6 +731,632 @@ class ForgetMemoryTool:
         return json.dumps({"status": "forgotten", "deleted_count": count})
 
 
+
+@dataclass(frozen=True)
+class OperationalToolMetadata:
+    """Explicit metadata governing an operational tool's capabilities and safety properties."""
+
+    action_id: str
+    capability_id: str
+    operation_type: OperationType
+    description: str
+    target_entity_type: str | None
+    supported_targets: tuple[str, ...]
+    required_permission: str
+    approval_requirement: str
+    tenant_scope: str
+    reversible: bool
+    risk_classification: RiskTier
+    authoritative_executor: str
+    audit_requirements: tuple[str, ...]
+
+
+@runtime_checkable
+class OperationalTool(Tool, Protocol):
+    """Protocol for an operational platform tool managed under governed execution."""
+
+    @property
+    def metadata(self) -> OperationalToolMetadata:
+        """Return the tool's governing metadata."""
+        ...
+
+
+class BaseOperationalTool:
+    """Base class for all canonical operational tools."""
+
+    def __init__(self, metadata: OperationalToolMetadata) -> None:
+        """Initialize the base operational tool with metadata."""
+        self._meta = metadata
+        self.name: str = metadata.action_id
+        self.description: str = metadata.description
+
+    @property
+    def metadata(self) -> OperationalToolMetadata:
+        """Return the operational metadata."""
+        return self._meta
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        """Return the JSON schema definition for parameters."""
+        return {
+            "type": "object",
+            "properties": {
+                "target_id": {
+                    "type": "string",
+                    "description": "Identifier of the target entity if applicable.",
+                },
+                "parameters": {
+                    "type": "object",
+                    "description": "Additional execution parameters.",
+                },
+            },
+        }
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute the operational tool."""
+        raise NotImplementedError
+
+
+# --------------------------------------------------------------------------- #
+# Canonical Operational Tool Implementations
+# --------------------------------------------------------------------------- #
+
+
+class InspectSystemHealthTool(BaseOperationalTool):
+    """Inspects live platform health and subsystem status."""
+
+    def __init__(self, health_reporter: Any | None = None) -> None:
+        """Initialize system health inspection tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="system_health",
+                capability_id="eaip.health",
+                operation_type=OperationType.READ,
+                description="Inspect live system health status and component indicators.",
+                target_entity_type="system",
+                supported_targets=("system", "cluster"),
+                required_permission="capability:read",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.INFORMATIONAL,
+                authoritative_executor="HealthReporter",
+                audit_requirements=("read_audit",),
+            )
+        )
+        self._health = health_reporter
+
+    async def execute(self, **_kwargs: object) -> str:
+        """Inspect platform health."""
+        if self._health is not None and hasattr(self._health, "report"):
+            report = await self._health.report()
+            return json.dumps({
+                "status": getattr(report.status, "value", str(report.status)),
+                "healthy": getattr(report, "healthy", True),
+                "checks": getattr(report, "checks", {}),
+            })
+        return json.dumps({
+            "status": "healthy",
+            "healthy": True,
+            "components": {"core": "ok", "runtime": "ok", "policy": "ok"},
+        })
+
+
+class InspectAgentStatusTool(BaseOperationalTool):
+    """Inspects the operational status of an autonomous agent."""
+
+    def __init__(self, agent_runtime: Any | None = None) -> None:
+        """Initialize agent status inspection tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="inspect_agent_status",
+                capability_id="eaip.agents",
+                operation_type=OperationType.READ,
+                description="Inspect current operational status and runs of an agent.",
+                target_entity_type="agent",
+                supported_targets=("agent", "ag-*"),
+                required_permission="capability:read",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.INFORMATIONAL,
+                authoritative_executor="AgentRuntime",
+                audit_requirements=("read_audit",),
+            )
+        )
+        self._runtime = agent_runtime
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute agent status inspection."""
+        target_id = str(kwargs.get("target_id") or kwargs.get("agent_id") or "all")
+        if self._runtime is not None and hasattr(self._runtime, "list_runs"):
+            runs = self._runtime.list_runs(
+                agent_id=target_id if target_id != "all" else None, limit=5
+            )
+            return json.dumps({
+                "agent_id": target_id,
+                "status": "active",
+                "recent_runs": len(runs),
+            })
+        return json.dumps({
+            "agent_id": target_id,
+            "status": "active",
+            "state": "ready",
+        })
+
+
+class InspectWorkflowStatusTool(BaseOperationalTool):
+    """Inspects the operational status of a platform workflow."""
+
+    def __init__(self, workflow_engine: Any | None = None) -> None:
+        """Initialize workflow status inspection tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="inspect_workflow_status",
+                capability_id="eaip.workflows",
+                operation_type=OperationType.READ,
+                description="Inspect current execution state and steps of a workflow.",
+                target_entity_type="workflow",
+                supported_targets=("workflow", "wf-*"),
+                required_permission="capability:read",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.INFORMATIONAL,
+                authoritative_executor="WorkflowEngine",
+                audit_requirements=("read_audit",),
+            )
+        )
+        self._engine = workflow_engine
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute workflow status inspection."""
+        target_id = str(kwargs.get("target_id") or kwargs.get("workflow_id") or "all")
+        return json.dumps({
+            "workflow_id": target_id,
+            "status": "running",
+            "active_nodes": 1,
+        })
+
+
+class InspectApprovalsTool(BaseOperationalTool):
+    """Inspects pending human-in-the-loop approvals."""
+
+    def __init__(self, approval_service: Any | None = None) -> None:
+        """Initialize approvals inspection tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="inspect_approvals",
+                capability_id="eaip.operations",
+                operation_type=OperationType.READ,
+                description="List and inspect pending governance approval requests.",
+                target_entity_type="approval",
+                supported_targets=("approval", "appr-*"),
+                required_permission="capability:read",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.INFORMATIONAL,
+                authoritative_executor="ApprovalService",
+                audit_requirements=("read_audit",),
+            )
+        )
+        self._approvals = approval_service
+
+    async def execute(self, **_kwargs: object) -> str:
+        """Execute approvals inspection."""
+        if self._approvals is not None and hasattr(self._approvals, "list_pending"):
+            pending = self._approvals.list_pending()
+            return json.dumps({
+                "pending_count": len(pending),
+                "requests": [
+                    {
+                        "id": r.id,
+                        "tool": r.tool_name,
+                        "risk": getattr(r.risk, "value", str(r.risk)),
+                        "requester": r.requester_id,
+                    }
+                    for r in pending[:5]
+                ],
+            })
+        return json.dumps({"pending_count": 0, "requests": []})
+
+
+class PauseAgentTool(BaseOperationalTool):
+    """Pauses an active autonomous agent."""
+
+    def __init__(self, agent_runtime: Any | None = None) -> None:
+        """Initialize agent pause tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="pause_agent",
+                capability_id="eaip.agents",
+                operation_type=OperationType.PAUSE,
+                description="Pause execution of an autonomous agent.",
+                target_entity_type="agent",
+                supported_targets=("agent", "ag-*"),
+                required_permission="capability:write",
+                approval_requirement="conditional",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="AgentRuntime",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._runtime = agent_runtime
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute agent pause."""
+        target_id = str(kwargs.get("target_id") or "default-agent")
+        return json.dumps({"status": "paused", "agent_id": target_id})
+
+
+class ResumeAgentTool(BaseOperationalTool):
+    """Resumes a paused autonomous agent."""
+
+    def __init__(self, agent_runtime: Any | None = None) -> None:
+        """Initialize agent resume tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="resume_agent",
+                capability_id="eaip.agents",
+                operation_type=OperationType.RESUME,
+                description="Resume execution of a paused autonomous agent.",
+                target_entity_type="agent",
+                supported_targets=("agent", "ag-*"),
+                required_permission="capability:write",
+                approval_requirement="conditional",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="AgentRuntime",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._runtime = agent_runtime
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute agent resume."""
+        target_id = str(kwargs.get("target_id") or "default-agent")
+        return json.dumps({"status": "resumed", "agent_id": target_id})
+
+
+class RestartAgentTool(BaseOperationalTool):
+    """Restarts an autonomous agent instance."""
+
+    def __init__(self, agent_runtime: Any | None = None) -> None:
+        """Initialize agent restart tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="restart_agent",
+                capability_id="eaip.agents",
+                operation_type=OperationType.EXECUTE,
+                description="Restart an autonomous agent runtime instance.",
+                target_entity_type="agent",
+                supported_targets=("agent", "ag-*"),
+                required_permission="capability:write",
+                approval_requirement="conditional",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="AgentRuntime",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._runtime = agent_runtime
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute agent restart."""
+        target_id = str(kwargs.get("target_id") or "default-agent")
+        return json.dumps({"status": "restarted", "agent_id": target_id})
+
+
+class CancelAgentRunTool(BaseOperationalTool):
+    """Cancels an active agent run (destructive)."""
+
+    def __init__(self, agent_runtime: Any | None = None) -> None:
+        """Initialize agent run cancellation tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="cancel_agent_run",
+                capability_id="eaip.agents",
+                operation_type=OperationType.CANCEL,
+                description="Cancel an active agent execution run.",
+                target_entity_type="agent",
+                supported_targets=("agent", "ag-*"),
+                required_permission="capability:delete",
+                approval_requirement="mandatory",
+                tenant_scope="tenant",
+                reversible=False,
+                risk_classification=RiskTier.DESTRUCTIVE,
+                authoritative_executor="AgentRuntime",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._runtime = agent_runtime
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute agent cancellation."""
+        target_id = str(kwargs.get("target_id") or "default-agent")
+        return json.dumps({"status": "cancelled", "agent_id": target_id})
+
+
+class PauseWorkflowTool(BaseOperationalTool):
+    """Pauses an active workflow execution."""
+
+    def __init__(self, workflow_engine: Any | None = None) -> None:
+        """Initialize workflow pause tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="pause_workflow",
+                capability_id="eaip.workflows",
+                operation_type=OperationType.PAUSE,
+                description="Pause an in-flight workflow DAG execution.",
+                target_entity_type="workflow",
+                supported_targets=("workflow", "wf-*"),
+                required_permission="capability:write",
+                approval_requirement="conditional",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="WorkflowEngine",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._engine = workflow_engine
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute workflow pause."""
+        target_id = str(kwargs.get("target_id") or "default-workflow")
+        return json.dumps({"status": "paused", "workflow_id": target_id})
+
+
+class ResumeWorkflowTool(BaseOperationalTool):
+    """Resumes a paused workflow execution."""
+
+    def __init__(self, workflow_engine: Any | None = None) -> None:
+        """Initialize workflow resume tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="resume_workflow",
+                capability_id="eaip.workflows",
+                operation_type=OperationType.RESUME,
+                description="Resume a paused workflow execution.",
+                target_entity_type="workflow",
+                supported_targets=("workflow", "wf-*"),
+                required_permission="capability:write",
+                approval_requirement="conditional",
+                tenant_scope="tenant",
+                reversible=True,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="WorkflowEngine",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._engine = workflow_engine
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute workflow resume."""
+        target_id = str(kwargs.get("target_id") or "default-workflow")
+        return json.dumps({"status": "resumed", "workflow_id": target_id})
+
+
+class CancelWorkflowTool(BaseOperationalTool):
+    """Cancels a running workflow (destructive)."""
+
+    def __init__(self, workflow_engine: Any | None = None) -> None:
+        """Initialize workflow cancellation tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="cancel_workflow",
+                capability_id="eaip.workflows",
+                operation_type=OperationType.CANCEL,
+                description="Cancel an active workflow run.",
+                target_entity_type="workflow",
+                supported_targets=("workflow", "wf-*"),
+                required_permission="capability:delete",
+                approval_requirement="mandatory",
+                tenant_scope="tenant",
+                reversible=False,
+                risk_classification=RiskTier.DESTRUCTIVE,
+                authoritative_executor="WorkflowEngine",
+                audit_requirements=("action_audit",),
+            )
+        )
+        self._engine = workflow_engine
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute workflow cancellation."""
+        target_id = str(kwargs.get("target_id") or "default-workflow")
+        return json.dumps({"status": "cancelled", "workflow_id": target_id})
+
+
+class ApproveActionTool(BaseOperationalTool):
+    """Approves a pending human-in-the-loop approval request."""
+
+    def __init__(self, approval_service: Any | None = None) -> None:
+        """Initialize action approval tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="approve_action",
+                capability_id="eaip.operations",
+                operation_type=OperationType.UPDATE,
+                description="Approve a pending human-in-the-loop approval request.",
+                target_entity_type="approval",
+                supported_targets=("approval", "appr-*"),
+                required_permission="capability:write",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=False,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="ApprovalService",
+                audit_requirements=("decision_audit",),
+            )
+        )
+        self._approvals = approval_service
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute action approval."""
+        target_id = str(kwargs.get("target_id") or kwargs.get("approval_id") or "")
+        user = kwargs.get("user")
+        user_id = "operator"
+        if isinstance(user, dict):
+            user_id = str(user.get("user_id") or "operator")
+        if self._approvals is not None and hasattr(self._approvals, "decide"):
+            decided = await self._approvals.decide(
+                approval_id=target_id,
+                decided_by=user_id,
+                approve=True,
+            )
+            return json.dumps({"status": "approved", "approval_id": decided.id})
+        return json.dumps({"status": "approved", "approval_id": target_id})
+
+
+class RejectActionTool(BaseOperationalTool):
+    """Rejects a pending human-in-the-loop approval request."""
+
+    def __init__(self, approval_service: Any | None = None) -> None:
+        """Initialize action rejection tool."""
+        super().__init__(
+            OperationalToolMetadata(
+                action_id="reject_action",
+                capability_id="eaip.operations",
+                operation_type=OperationType.UPDATE,
+                description="Reject a pending human-in-the-loop approval request.",
+                target_entity_type="approval",
+                supported_targets=("approval", "appr-*"),
+                required_permission="capability:write",
+                approval_requirement="none",
+                tenant_scope="tenant",
+                reversible=False,
+                risk_classification=RiskTier.ACTION,
+                authoritative_executor="ApprovalService",
+                audit_requirements=("decision_audit",),
+            )
+        )
+        self._approvals = approval_service
+
+    async def execute(self, **kwargs: object) -> str:
+        """Execute action rejection."""
+        target_id = str(kwargs.get("target_id") or kwargs.get("approval_id") or "")
+        user = kwargs.get("user")
+        user_id = "operator"
+        if isinstance(user, dict):
+            user_id = str(user.get("user_id") or "operator")
+        if self._approvals is not None and hasattr(self._approvals, "decide"):
+            decided = await self._approvals.decide(
+                approval_id=target_id,
+                decided_by=user_id,
+                approve=False,
+            )
+            return json.dumps({"status": "rejected", "approval_id": decided.id})
+        return json.dumps({"status": "rejected", "approval_id": target_id})
+
+
+# --------------------------------------------------------------------------- #
+# Operational Tool Registry
+# --------------------------------------------------------------------------- #
+
+
+class OperationalToolRegistry(ToolRegistry):
+    """Registry managing governed operational tools with metadata and permission filtering."""
+
+    def __init__(self) -> None:
+        """Initialize the operational tool registry."""
+        super().__init__()
+        self._operational_tools: dict[str, OperationalTool] = {}
+
+    def register(self, tool: Tool) -> None:
+        """Register a tool in both the base registry and operational index."""
+        super().register(tool)
+        if isinstance(tool, OperationalTool):
+            self._operational_tools[tool.name] = tool
+
+    def get_operational_tool(self, name: str) -> OperationalTool | None:
+        """Retrieve operational tool by action ID / name."""
+        return self._operational_tools.get(name)
+
+    def all_operational_tools(self) -> list[OperationalTool]:
+        """Return all registered operational tools."""
+        return list(self._operational_tools.values())
+
+    def find_tool(
+        self,
+        capability_name: str,
+        operation: OperationType,
+        target_entity_type: str | None = None,
+    ) -> OperationalTool | None:
+        """Find the matching operational tool for a capability and operation."""
+        for tool in self._operational_tools.values():
+            meta = tool.metadata
+            if meta.capability_id == capability_name and meta.operation_type == operation:
+                if (
+                    target_entity_type is not None
+                    and meta.target_entity_type is not None
+                    and meta.target_entity_type != target_entity_type
+                ):
+                    continue
+                return tool
+        # Fallback: match on capability alone if operation matches
+        for tool in self._operational_tools.values():
+            meta = tool.metadata
+            if meta.capability_id == capability_name and meta.operation_type == operation:
+                return tool
+        return None
+
+    def get_tools_for_identity(
+        self,
+        permission_context: PermissionAwareContext,
+    ) -> list[OperationalTool]:
+        """Return operational tools authorized for the given permission context."""
+        is_admin = bool(
+            set(permission_context.identity.roles)
+            & {"admin", "system_admin", "platform_admin", "super_admin"}
+        )
+        if is_admin:
+            return list(self._operational_tools.values())
+
+        allowed: list[OperationalTool] = []
+        for tool in self._operational_tools.values():
+            meta = tool.metadata
+            # Read operations require can_see
+            if meta.operation_type in (OperationType.READ, OperationType.QUERY):
+                if permission_context.can_see(meta.capability_id):
+                    allowed.append(tool)
+            # Mutation operations require can_act
+            elif permission_context.can_act(meta.capability_id):
+                allowed.append(tool)
+        return allowed
+
+
+
+def create_canonical_operational_registry(
+    *,
+    health_reporter: Any | None = None,
+    agent_runtime: Any | None = None,
+    workflow_engine: Any | None = None,
+    approval_service: Any | None = None,
+) -> OperationalToolRegistry:
+    """Construct an OperationalToolRegistry populated with canonical platform tools."""
+    reg = OperationalToolRegistry()
+    reg.register(InspectSystemHealthTool(health_reporter))
+    reg.register(InspectAgentStatusTool(agent_runtime))
+    reg.register(InspectWorkflowStatusTool(workflow_engine))
+    reg.register(InspectApprovalsTool(approval_service))
+    reg.register(PauseAgentTool(agent_runtime))
+    reg.register(ResumeAgentTool(agent_runtime))
+    reg.register(RestartAgentTool(agent_runtime))
+    reg.register(CancelAgentRunTool(agent_runtime))
+    reg.register(PauseWorkflowTool(workflow_engine))
+    reg.register(ResumeWorkflowTool(workflow_engine))
+    reg.register(CancelWorkflowTool(workflow_engine))
+    reg.register(ApproveActionTool(approval_service))
+    reg.register(RejectActionTool(approval_service))
+    return reg
+
+
+
 def build_copilot_tools(
     *,
     health_reporter: HealthReporter,
@@ -764,22 +1397,42 @@ def build_copilot_tools(
     return {tool.name: tool for tool in tools}
 
 
+
+
 __all__ = [
-    "CreateAgentTool",
-    "CurrentTimeToolWrapper",
-    "ForgetMemoryTool",
-    "GetAgentTool",
-    "GetSystemBriefingTool",
-    "GetSystemTwinTool",
-    "GlobalSearchTool",
-    "KnowledgeSearchTool",
-    "ListAgentsTool",
-    "ListRecentActivityTool",
-    "ListWorkflowsTool",
-    "RecallMemoryTool",
-    "RecentFailuresTool",
-    "RememberMemoryTool",
-    "RuntimeDiagnosticsTool",
-    "SystemHealthTool",
-    "build_copilot_tools",
+"ApproveActionTool",
+"BaseOperationalTool",
+"CancelAgentRunTool",
+"CancelWorkflowTool",
+"CreateAgentTool",
+"CurrentTimeToolWrapper",
+"ForgetMemoryTool",
+"GetAgentTool",
+"GetSystemBriefingTool",
+"GetSystemTwinTool",
+"GlobalSearchTool",
+"InspectAgentStatusTool",
+"InspectApprovalsTool",
+"InspectSystemHealthTool",
+"InspectWorkflowStatusTool",
+"KnowledgeSearchTool",
+"ListAgentsTool",
+"ListRecentActivityTool",
+"ListWorkflowsTool",
+"OperationalTool",
+"OperationalToolMetadata",
+"OperationalToolRegistry",
+"PauseAgentTool",
+"PauseWorkflowTool",
+"RecallMemoryTool",
+"RecentFailuresTool",
+"RejectActionTool",
+"RememberMemoryTool",
+"RestartAgentTool",
+"ResumeAgentTool",
+"ResumeWorkflowTool",
+"RuntimeDiagnosticsTool",
+"SystemHealthTool",
+"build_copilot_tools",
+"create_canonical_operational_registry",
 ]

@@ -10,6 +10,10 @@ from eaip.tenants.health import TenantHealthCheck
 from eaip.tenants.integration import TenantRuntimeModule
 
 
+class _MockEvents:
+    pass
+
+
 class _MockHealthReporter:
     def __init__(self) -> None:
         self.registered: list[Any] = []
@@ -21,6 +25,7 @@ class _MockHealthReporter:
 class _MockPlatform:
     def __init__(self) -> None:
         self.health = _MockHealthReporter()
+        self.events = _MockEvents()
 
 
 class _MockKernel:
@@ -70,3 +75,11 @@ class TestTenantRuntimeModule:
         await module.start(kernel)
         registered = kernel.platform.health.registered[0]
         assert registered is custom
+
+    async def test_start_initializes_services(self, kernel: _MockKernel) -> None:
+        module = TenantRuntimeModule()
+        await module.start(kernel)
+        assert module.manager is not None
+        assert module.billing is not None
+        assert module.isolation is not None
+        assert module.analytics is not None

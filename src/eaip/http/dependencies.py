@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from eaip.auth.auth_providers import AuthenticationService
@@ -17,6 +17,14 @@ async def get_current_user(request: Request) -> dict[str, Any]:
     if user is None:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
     return user
+
+
+CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
+
+
+async def get_tenant_id(user: CurrentUser) -> str:
+    """Extract tenant_id (organization_id) from the current user."""
+    return user.get("organization_id") or "default"
 
 
 def _extract_token(request: Request) -> str:

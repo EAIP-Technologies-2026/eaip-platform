@@ -36,6 +36,9 @@ class ConductorContext(BaseModel):
     current_route: str = "/"
     application: str = "enterprise_console"
     entity_id: str | None = None
+    entity_type: str | None = None
+    active_tab: str | None = None
+    selected_ids: tuple[str, ...] = Field(default_factory=tuple)
     session_id: str | None = None
     page_context: dict[str, Any] = Field(default_factory=dict)
 

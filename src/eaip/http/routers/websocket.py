@@ -20,8 +20,35 @@ log = get_logger("eaip.http.routers.websocket")
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    from eaip.auth.auth_providers import AuthenticationService
+    
+    # We must accept the socket to read headers/params or we can check before accepting.
+    # Actually, we should check token first.
+    token = websocket.query_params.get("token") or websocket.headers.get("Authorization", "").replace("Bearer ", "") or websocket.cookies.get("eaip_session")
+    
+    if not token:
+        await websocket.close(code=1008, reason="Unauthorized")
+        log.warning("websocket.rejected_missing_token")
+        return
+
     await websocket.accept()
     log.info("websocket.connected")
+    
+    lifecycle = websocket.app.state.lifecycle
+    
+    auth_service: AuthenticationService | None = None
+    try:
+        auth_service = lifecycle.platform.container.resolve(AuthenticationService)
+    except Exception:
+        pass
+        
+    user = None
+    if auth_service:
+        user = await auth_service.get_current_user(token)
+        if not user:
+            await websocket.close(code=1008, reason="Unauthorized")
+            log.warning("websocket.rejected_invalid_token")
+            return
 
     lifecycle = websocket.app.state.lifecycle
     event_bus: EventBus = lifecycle.platform.events
@@ -52,13 +79,19 @@ async def websocket_endpoint(websocket: WebSocket):
     if push_service:
         push_service.register_socket(connection_id, socket_send)
 
+    user_id = user.get("id", "anonymous") if user else "anonymous"
+    tenant_id = user.get("tenant_id", "default") if user else "default"
+
     # Register with connection manager
     if conn_mgr:
         ws_conn = WebSocketConnection(
             id=connection_id,
             channel="global",
-            user_id="anonymous",
-            metadata={"remote_addr": websocket.client.host if websocket.client else "unknown"},
+            user_id=user_id,
+            metadata={
+                "remote_addr": websocket.client.host if websocket.client else "unknown",
+                "tenant_id": tenant_id
+            },
         )
         conn_mgr.register(ws_conn)
 

@@ -298,15 +298,23 @@ class PlatformKnowledgeService:
         self._graph = graph
         self._log = get_logger("eaip.kgraph.platform_service")
 
-    async def get_capability_topology(self, capability_name: str) -> dict[str, Any]:
+    async def get_capability_topology(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> dict[str, Any]:
         """Return full topology of nodes connected to the capability.
 
         Args:
             capability_name: Dot-namespaced capability name (e.g. 'eaip.agents').
+            context: Optional PermissionAwareContext to enforce visibility filtering.
 
         Returns:
             Dictionary containing capability entity and all connected entities by type.
         """
+        if context is not None and not context.can_see(capability_name):
+            return {"error": f"Capability {capability_name} is restricted or not visible"}
+
         cap_entity_id = f"cap:{capability_name}"
         if cap_entity_id not in self._graph._entities:
             return {"error": f"Capability {capability_name} not found in graph"}
@@ -345,9 +353,196 @@ class PlatformKnowledgeService:
             elif target.type == PlatformNodeType.EXPERIENCE:
                 topology["experience"].append(target)
             elif target.type == PlatformNodeType.CAPABILITY:
-                topology["dependencies"].append(target)
+                target_cap_name = (
+                    target.properties.get("capability_name")
+                    or target.id.removeprefix("cap:")
+                )
+                if context is None or context.can_see(target_cap_name):
+                    topology["dependencies"].append(target)
 
         return topology
+
+    async def get_dependencies(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return capabilities and services that this capability directly depends on or uses."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        if "error" in topology:
+            return []
+        deps: list[Entity] = []
+        deps.extend(topology.get("dependencies", []))
+        deps.extend(topology.get("services", []))
+        return deps
+
+    async def get_dependents(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return capabilities and entities that depend on or connect to this capability."""
+        if context is not None and not context.can_see(capability_name):
+            return []
+
+        cap_entity_id = f"cap:{capability_name}"
+        if cap_entity_id not in self._graph._entities:
+            return []
+
+        in_rels = self._graph._adjacency[cap_entity_id]["in"].values()
+        dependents: list[Entity] = []
+        seen: set[str] = set()
+
+        for rel in in_rels:
+            source = await self._graph.get_entity(rel.source_entity_id)
+            if source.id in seen:
+                continue
+            if source.type == PlatformNodeType.CAPABILITY:
+                src_cap = (
+                    source.properties.get("capability_name")
+                    or source.id.removeprefix("cap:")
+                )
+                if context is not None and not context.can_see(src_cap):
+                    continue
+            seen.add(source.id)
+            dependents.append(source)
+
+        return dependents
+
+    async def get_related_capabilities(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return related capabilities (both dependencies and dependents), scoped to permissions."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        if "error" in topology:
+            return []
+        caps: list[Entity] = list(topology.get("dependencies", []))
+        seen = {c.id for c in caps}
+        for dep in await self.get_dependents(capability_name, context=context):
+            if (
+                dep.type == PlatformNodeType.CAPABILITY
+                and dep.id not in seen
+                and dep.id != f"cap:{capability_name}"
+            ):
+                seen.add(dep.id)
+                caps.append(dep)
+        return caps
+
+    async def get_related_services(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return service entities associated with a capability."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        return list(topology.get("services", [])) if "error" not in topology else []
+
+    async def get_related_apis(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return API entities exposed by a capability."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        return list(topology.get("apis", [])) if "error" not in topology else []
+
+    async def get_related_events(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return domain events emitted by a capability."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        return list(topology.get("events", [])) if "error" not in topology else []
+
+    async def get_related_entities(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return domain entity types associated with a capability."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        return list(topology.get("entities", [])) if "error" not in topology else []
+
+    async def get_related_documentation(
+        self,
+        capability_name: str,
+        context: PermissionAwareContext | None = None,
+    ) -> list[Entity]:
+        """Return documentation references for a capability."""
+        topology = await self.get_capability_topology(capability_name, context=context)
+        return list(topology.get("documentation", [])) if "error" not in topology else []
+
+    async def find_path(
+        self,
+        source_name: str,
+        target_name: str,
+        context: PermissionAwareContext | None = None,
+        max_depth: int = 5,
+    ) -> list[str]:
+        """Find the shortest relationship path between two capabilities."""
+        if context is not None and (
+            not context.can_see(source_name) or not context.can_see(target_name)
+        ):
+            return []
+
+        src_id = f"cap:{source_name}"
+        tgt_id = f"cap:{target_name}"
+        if src_id not in self._graph._entities or tgt_id not in self._graph._entities:
+            return []
+
+        path_result = await self._graph.get_shortest_path(src_id, tgt_id, max_depth=max_depth)
+        if path_result is None or not path_result.entity_ids:
+            return []
+
+        # Validate that no intermediate capability in path is restricted
+        if context is not None:
+            for eid in path_result.entity_ids:
+                if eid.startswith("cap:"):
+                    cap_name = eid.removeprefix("cap:")
+                    if not context.can_see(cap_name):
+                        return []
+
+        return list(path_result.entity_ids)
+
+    async def get_entity_topology(
+        self,
+        entity_id: str,
+        entity_type: str | None = None,
+        context: PermissionAwareContext | None = None,
+    ) -> dict[str, Any]:
+        """Return topology for a domain entity (e.g. agent ag-123 or workflow wf-456)."""
+        type_to_cap = {
+            "agent": "eaip.agents",
+            "agents": "eaip.agents",
+            "workflow": "eaip.workflows",
+            "workflows": "eaip.workflows",
+            "brain": "eaip.brains",
+            "brains": "eaip.brains",
+            "mission": "eaip.missions",
+            "missions": "eaip.missions",
+            "audit": "eaip.security.audit",
+            "policy": "eaip.policy",
+            "memory": "eaip.memory",
+            "knowledge": "eaip.knowledge",
+        }
+        cap_name = type_to_cap.get((entity_type or "").lower())
+        if cap_name:
+            topo = await self.get_capability_topology(cap_name, context=context)
+            if "error" not in topo:
+                return {
+                    "entity_id": entity_id,
+                    "entity_type": entity_type,
+                    "governing_capability": cap_name,
+                    **topo,
+                }
+        return {
+            "entity_id": entity_id,
+            "entity_type": entity_type,
+            "error": "No governing capability found for entity",
+        }
 
     async def query_scoped_knowledge(
         self,
@@ -365,7 +560,7 @@ class PlatformKnowledgeService:
         visible_caps: list[dict[str, Any]] = []
 
         for cap_name in context.visible_capability_ids:
-            topology = await self.get_capability_topology(cap_name)
+            topology = await self.get_capability_topology(cap_name, context=context)
             if "error" not in topology:
                 visible_caps.append(
                     {

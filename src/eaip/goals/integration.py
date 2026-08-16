@@ -13,6 +13,8 @@ from eaip.logging.context import get_logger
 
 if TYPE_CHECKING:
     from eaip.runtime.kernel import RuntimeKernel
+    
+from eaip.infrastructure.persistence import GoalRepository
 
 
 class GoalRuntimeModule:
@@ -35,13 +37,16 @@ class GoalRuntimeModule:
         tracker: GoalTracker | None = None,
         event_bus: Any = None,
         workforce_orchestrator: Any = None,
+        repository: GoalRepository | None = None,
     ) -> None:
         self._event_bus = event_bus
         self._tracker = tracker or GoalTracker()
+        self._repository = repository or GoalRepository()
         self._engine = engine or GoalEngine(
             tracker=self._tracker,
             event_bus=event_bus,
             workforce_orchestrator=workforce_orchestrator,
+            repository=self._repository,
         )
         self._health_check = GoalHealthCheck()
         self._log = get_logger("eaip.goals.integration")

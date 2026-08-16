@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from typing import Any
 
-from eaip.infrastructure.persistence import _TenantRepository
 from eaip.decisions.models import DecisionLog
-from eaip.shared.time import utc_now
+from eaip.infrastructure.persistence import _TenantRepository
 
 
 class DecisionRepository(_TenantRepository):

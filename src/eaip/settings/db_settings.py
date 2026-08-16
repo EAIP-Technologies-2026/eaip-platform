@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
         extra="forbid",
+        env_prefix="EAIP_DB_",
     )
 
     host: str = Field(default="localhost")

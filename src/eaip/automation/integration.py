@@ -13,6 +13,8 @@ from eaip.logging.context import get_logger
 if TYPE_CHECKING:
     from eaip.runtime.kernel import RuntimeKernel
 
+from eaip.infrastructure.persistence import AutomationRepository
+
 
 class AutomationRuntimeModule:
     name: str = "automation"
@@ -21,9 +23,14 @@ class AutomationRuntimeModule:
         self,
         config: AutomationConfig | None = None,
         engine: AutomationEngine | None = None,
+        repository: AutomationRepository | None = None,
     ) -> None:
         self._config = config or AutomationConfig()
-        self._engine = engine or AutomationEngine(config=self._config)
+        self._repository = repository or AutomationRepository()
+        self._engine = engine or AutomationEngine(
+            config=self._config,
+            repository=self._repository,
+        )
         self._log = get_logger("eaip.automation.integration")
 
     @property

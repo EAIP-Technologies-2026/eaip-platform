@@ -12,7 +12,7 @@ from eaip.admin.models import AuditEntry, AuditOutcome
 from eaip.copilot.approvals import ApprovalService
 from eaip.copilot.events import ConductorTurnCompleted
 from eaip.copilot.governance import GovernancePolicy, tool_risk
-from eaip.copilot.models import ApprovalRequest, CopilotTurn, ToolEvent
+from eaip.copilot.models import ApprovalRequest, ConductorContext, CopilotTurn, ToolEvent
 from eaip.copilot.planner import ConductorPlanner
 from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
@@ -57,12 +57,21 @@ class ConductorService:
         self._event_bus = event_bus
         self._log = get_logger("eaip.copilot.service")
 
-    async def converse(self, message: str, user: dict[str, Any]) -> CopilotTurn:
+    async def converse(
+        self,
+        message: str,
+        user: dict[str, Any],
+        context: ConductorContext | None = None,
+        conversation_id: str | None = None,
+    ) -> CopilotTurn:
         """Process a single user message into a grounded, governed turn.
 
         Args:
             message: The raw user message.
             user: The authenticated caller's identity claims.
+            context: Optional client and route context.
+            conversation_id: Optional client-supplied conversation id to thread
+                through the turn for conversation continuity.
 
         Returns:
             A :class:`CopilotTurn` describing the outcome.
@@ -143,7 +152,12 @@ class ConductorService:
                 )
             else:
                 result, audit_id = await self._execute(
-                    actor, tool, plan.tool_call.arguments, correlation, user=user
+                    actor,
+                    tool,
+                    plan.tool_call.arguments,
+                    correlation,
+                    user=user,
+                    context=context,
                 )
                 events.append(
                     ToolEvent(
@@ -161,6 +175,7 @@ class ConductorService:
             reply=reply,
             tool_events=tuple(events),
             pending_approval=pending,
+            conversation_id=conversation_id,
             correlation_id=str(correlation),
         )
         await self._publish(
@@ -175,14 +190,20 @@ class ConductorService:
         return turn
 
     async def stream_converse(
-        self, message: str, user: dict[str, Any]
+        self,
+        message: str,
+        user: dict[str, Any],
+        context: ConductorContext | None = None,
+        conversation_id: str | None = None,
     ) -> AsyncIterator[str]:
         """Stream SSE events for a single Conductor turn."""
         turn_id = f"turn-{uuid.uuid4().hex[:12]}"
-        start_payload = json.dumps({"turn_id": turn_id, "message": message})
+        start_payload = json.dumps(
+            {"turn_id": turn_id, "message": message, "conversation_id": conversation_id}
+        )
         yield f"event: message_start\ndata: {start_payload}\n\n"
 
-        turn = await self.converse(message, user)
+        turn = await self.converse(message, user, context=context, conversation_id=conversation_id)
 
         for event in turn.tool_events:
             call_payload = json.dumps(
@@ -294,6 +315,7 @@ class ConductorService:
         correlation: CorrelationId,
         *,
         user: dict[str, Any] | None = None,
+        context: ConductorContext | None = None,
     ) -> tuple[str, str]:
         """Execute a tool and write the corresponding audit entry.
 
@@ -308,6 +330,7 @@ class ConductorService:
 
         Args:
             user: Authenticated user context passed only to context-aware tools.
+            context: Client and route context recorded on the audit entry.
         """
         entry = self._entry(
             actor,
@@ -315,7 +338,7 @@ class ConductorService:
             resource_type="tool",
             resource_id=tool.name,
             outcome=AuditOutcome.SUCCESS,
-            details={"arguments": arguments},
+            details={"arguments": arguments, "context": self._context_details(context)},
             correlation=correlation,
         )
         try:
@@ -336,6 +359,17 @@ class ConductorService:
             )
         await self._audit.publish(entry)
         return result, entry.id
+
+    @staticmethod
+    def _context_details(context: ConductorContext | None) -> dict[str, Any]:
+        """Extract safe client/route metadata for audit records."""
+        if context is None:
+            return {}
+        return {
+            key: value
+            for key, value in context.model_dump().items()
+            if value not in (None, "", (), {})
+        }
 
     @staticmethod
     def _actor(user: dict[str, Any]) -> str:

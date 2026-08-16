@@ -20,18 +20,30 @@ from eaip.copilot.models import (
 )
 from eaip.copilot.planner import ConductorPlanner
 from eaip.copilot.service import ConductorService
-from eaip.copilot.tools import build_copilot_tools
+from eaip.copilot.tools import (
+    BaseOperationalTool,
+    OperationalTool,
+    OperationalToolMetadata,
+    OperationalToolRegistry,
+    build_copilot_tools,
+    create_canonical_operational_registry,
+)
 
 __all__ = [
     "ApprovalRequest",
     "ApprovalService",
     "ApprovalStatus",
+    "BaseOperationalTool",
     "ConductorChatRequest",
     "ConductorPlanner",
     "ConductorService",
     "CopilotTurn",
     "GovernancePolicy",
+    "OperationalTool",
+    "OperationalToolMetadata",
+    "OperationalToolRegistry",
     "RiskTier",
     "ToolEvent",
     "build_copilot_tools",
+    "create_canonical_operational_registry",
 ]

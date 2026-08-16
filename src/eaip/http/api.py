@@ -12,19 +12,28 @@ from eaip._version import __version__
 from eaip.app.lifecycle import ApplicationLifecycle
 from eaip.health.checks import HealthStatus
 from eaip.health.reporter import HealthReporter
+from eaip.http.schemas import (
+    API_CONTACT,
+    API_DESCRIPTION,
+    API_LICENSE,
+    API_TITLE,
+)
 from eaip.http.routers import (
     admin,
     administration_center,
     agents,
     auth,
+    automation,
     brains,
     copilot,
     cost_intelligence,
     deployments,
     events_router,
+    goals,
+    governance,
     investigations,
+    kgraph,
     knowledge,
-    orchestrations,
     marketplace_routes,
     memory,
     mission_analytics,
@@ -32,6 +41,7 @@ from eaip.http.routers import (
     monitoring_routes,
     notifications_router,
     operations_analytics,
+    orchestrations,
     organizations,
     reports,
     runtime,
@@ -46,6 +56,9 @@ from eaip.http.routers import (
     workflows,
     workforce,
     workspaces,
+    pulse,
+    decisions,
+    recommendations,
 )
 from eaip.integrations.sentry import add_sentry_middleware, init_sentry
 from eaip.logging.context import get_logger
@@ -59,8 +72,11 @@ def _status_text(status: HealthStatus) -> str:
 
 def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app = FastAPI(
-        title="EAIP Platform",
+        title=API_TITLE,
+        description=API_DESCRIPTION,
         version=__version__,
+        contact=API_CONTACT,
+        license_info=API_LICENSE,
         lifespan=None,
     )
 
@@ -155,6 +171,15 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
         status_code = 200 if healthy else 503
         return JSONResponse(content=body, status_code=status_code)
 
+    @app.get("/metrics")
+    async def metrics():
+        from fastapi.responses import PlainTextResponse
+        if hasattr(lifecycle.platform.metrics, "export"):
+            return PlainTextResponse(lifecycle.platform.metrics.export())
+        else:
+            from eaip.metrics.export import prometheus_text
+            return PlainTextResponse(prometheus_text([]))
+
     @app.get("/ready")
     async def ready():
         reporter: HealthReporter = lifecycle.platform.health
@@ -203,8 +228,10 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app.include_router(orchestrations.router, prefix="/api")
     app.include_router(tour.router, prefix="/api")
     app.include_router(agents.router, prefix="/api")
+    app.include_router(governance.router, prefix="/api")
     app.include_router(workflows.router, prefix="/api")
     app.include_router(knowledge.router, prefix="/api")
+    app.include_router(kgraph.router, prefix="/api")
     app.include_router(missions.router, prefix="/api")
     app.include_router(runtime.router, prefix="/api")
     app.include_router(events_router.router, prefix="/api")
@@ -212,6 +239,9 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app.include_router(deployments.router, prefix="/api")
     app.include_router(websocket.router)
     app.include_router(workflow_versions.router, prefix="/api")
+    app.include_router(pulse.router)
+    app.include_router(decisions.router)
+    app.include_router(recommendations.router)
     app.include_router(workflow_designer.router, prefix="/api")
     app.include_router(mission_analytics.router, prefix="/api")
     app.include_router(admin.router, prefix="/api")
@@ -229,6 +259,8 @@ def create_app(lifecycle: ApplicationLifecycle) -> FastAPI:
     app.include_router(workspaces.router, prefix="/api")
     app.include_router(workflow_export.router, prefix="/api")
     app.include_router(system_routes.router, prefix="/api")
+    app.include_router(goals.router, prefix="/api")
+    app.include_router(automation.router, prefix="/api")
 
     log.info("http.routes_registered", count=len(app.routes))
 

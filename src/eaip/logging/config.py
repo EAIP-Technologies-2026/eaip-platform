@@ -61,11 +61,26 @@ def configure_logging(config: LoggingConfig | None = None) -> None:
         force=True,
     )
 
+    def add_otel_trace_ids(logger, log_method, event_dict):
+        """Inject OTel trace_id and span_id if a span is active."""
+        try:
+            from opentelemetry import trace
+            span = trace.get_current_span()
+            if span and span.is_recording():
+                ctx = span.get_span_context()
+                if ctx.is_valid:
+                    event_dict["trace_id"] = format(ctx.trace_id, "032x")
+                    event_dict["span_id"] = format(ctx.span_id, "016x")
+        except ImportError:
+            pass
+        return event_dict
+
     # ------------------------------------------------------------------
     # Shared processors that run on every event.
     # ------------------------------------------------------------------
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
+        add_otel_trace_ids,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),

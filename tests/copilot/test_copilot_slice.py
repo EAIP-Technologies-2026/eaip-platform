@@ -261,6 +261,37 @@ class TestConductorApprovals:
         assert r.status_code == 404
 
 
+class TestConductorConversationContinuity:
+    async def test_chat_threads_conversation_id(self, authenticated_client):
+        """A client-supplied conversation_id is echoed on the returned turn."""
+        r = await authenticated_client.post(
+            "/api/copilot/chat",
+            json={"message": "how is the platform health?", "conversation_id": "conv-abc-123"},
+        )
+        assert r.status_code == 200
+        turn = r.json()
+        assert turn["conversation_id"] == "conv-abc-123"
+
+    async def test_chat_without_conversation_id_is_null(self, authenticated_client):
+        """When no conversation_id is supplied the turn reports null."""
+        r = await authenticated_client.post(
+            "/api/copilot/chat", json={"message": "how is the platform health?"}
+        )
+        assert r.status_code == 200
+        turn = r.json()
+        assert turn["conversation_id"] is None
+
+    async def test_chat_stream_echoes_conversation_id(self, authenticated_client):
+        """The streaming start event includes the client conversation_id."""
+        r = await authenticated_client.post(
+            "/api/copilot/chat/stream",
+            json={"message": "how is the system doing?", "conversation_id": "conv-stream-9"},
+        )
+        assert r.status_code == 200
+        content = r.text
+        assert '"conversation_id": "conv-stream-9"' in content or '"conversation_id": "conv-stream-9"' in content
+
+
 class TestConductorAudit:
     async def test_tool_execution_is_audited(self, authenticated_client):
         """Every executed tool produces a queryable audit entry."""

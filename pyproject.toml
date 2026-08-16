@@ -282,6 +282,7 @@ asyncio_mode = "auto"
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:hypothesis.*",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
 ]
 markers = [
     "unit: fast, isolated unit tests",

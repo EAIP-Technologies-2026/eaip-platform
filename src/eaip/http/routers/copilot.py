@@ -42,7 +42,9 @@ async def copilot_chat(
 ) -> CopilotTurn:
     """Process a single Conductor chat message for the authenticated user."""
     service = _get_service(request)
-    return await service.converse(body.message, user)
+    return await service.converse(
+        body.message, user, context=body.context, conversation_id=body.conversation_id
+    )
 
 
 @router.post("/chat/stream")
@@ -54,7 +56,12 @@ async def copilot_chat_stream(
     """Stream SSE events for a Conductor chat turn."""
     service = _get_service(request)
     return StreamingResponse(
-        service.stream_converse(body.message, user),
+        service.stream_converse(
+            body.message,
+            user,
+            context=body.context,
+            conversation_id=body.conversation_id,
+        ),
         media_type="text/event-stream",
     )
 

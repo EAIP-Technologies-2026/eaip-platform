@@ -1,9 +1,7 @@
 # =============================================================================
-# EAIP — Local development image
+# EAIP — Backend Platform Image
 # -----------------------------------------------------------------------------
-# Used by `docker compose -f docker-compose.dev.yml up` and by CI for
-# reproducible "works on my machine" parity. Production images for individual
-# capabilities ship from their own engineering packages.
+# Multi-stage build for local development and production distribution.
 # =============================================================================
 
 FROM python:3.13-slim-bookworm AS base
@@ -11,8 +9,10 @@ FROM python:3.13-slim-bookworm AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    EAIP_CORE__ENVIRONMENT=development
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# ── Builder Stage ────────────────────────────────────────────────────────────
+FROM base AS builder
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -23,20 +23,41 @@ RUN apt-get update \
         ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspaces/eaip-platform
+WORKDIR /build
 
-# Copy metadata files required by Hatchling before installing the package.
-# README.md and LICENSE are referenced from pyproject.toml and must be
-# present for `pip install -e` to succeed (OSError otherwise).
 COPY pyproject.toml README.md LICENSE ./
 COPY src/eaip/__init__.py src/eaip/__init__.py
 COPY src/eaip/_version.py src/eaip/_version.py
 COPY src/eaip/py.typed src/eaip/py.typed
+COPY src/ ./src/
 
-RUN python -m pip install --upgrade pip wheel setuptools \
- && python -m pip install -e ".[dev,test]"
+RUN python -m pip install --upgrade pip wheel setuptools hatchling \
+ && python -m pip wheel --no-deps --wheel-dir /build/wheels . \
+ && python -m pip wheel --wheel-dir /build/wheels ".[production]"
 
-# Copy the rest after deps so editing source doesn't bust the dep layer.
+# ── Development Stage ────────────────────────────────────────────────────────
+FROM builder AS development
+ENV EAIP_CORE__ENVIRONMENT=development
+WORKDIR /workspaces/eaip-platform
 COPY . .
+RUN python -m pip install -e ".[dev,test]"
+CMD ["python", "-m", "eaip"]
+
+# ── Production Stage ─────────────────────────────────────────────────────────
+FROM base AS production
+
+ENV EAIP_CORE__ENVIRONMENT=production
+
+RUN addgroup --system --gid 1001 eaip && \
+    adduser --system --uid 1001 --gid 1001 eaip
+
+WORKDIR /app
+
+COPY --from=builder /build/wheels /wheels
+RUN python -m pip install --no-cache-dir /wheels/* \
+ && rm -rf /wheels
+
+USER eaip
+EXPOSE 8080
 
 CMD ["python", "-m", "eaip"]

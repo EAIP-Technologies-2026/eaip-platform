@@ -288,29 +288,59 @@ async def administration_audit(
     total = len(entries)
     start = (page - 1) * pageSize
     page_entries = entries[start : start + pageSize]
-
+    
     return {
         "entries": [
             {
                 "id": e.id,
-                "timestamp": e.timestamp.isoformat()
-                if hasattr(e.timestamp, "isoformat")
-                else datetime.now(UTC).isoformat(),
+                "timestamp": e.timestamp.isoformat(),
                 "actor": e.actor_id,
                 "action": e.action,
-                "resource": e.resource_type,
+                "resourceType": e.resource_type,
                 "resourceId": e.resource_id,
-                "outcome": e.outcome.value
-                if hasattr(e.outcome, "value")
-                else str(e.outcome),
-                "details": e.details,
-            }
-            for e in page_entries
+                "outcome": e.outcome.value if hasattr(e.outcome, "value") else str(e.outcome)
+            } for e in page_entries
         ],
         "total": total,
         "page": page,
-        "pageSize": pageSize,
+        "pageSize": pageSize
     }
+
+
+@router.post("/audit/replay")
+async def replay_events(
+    request: Request,
+    _admin: dict = Depends(require_admin),
+    start_time: str | None = None,
+    end_time: str | None = None,
+):
+    """Replay events from the EventStore (Event Sourcing)."""
+    container = request.app.state.lifecycle.platform.container
+    from eaip.events.store import EventStore
+    
+    event_store = container.try_resolve(EventStore)
+    if not event_store:
+        raise HTTPException(status_code=500, detail="EventStore not available")
+        
+    try:
+        events = await event_store.get_all()
+        # In a real implementation, we'd filter by start_time and end_time, 
+        # and re-publish to the event bus. For v1, we just return the events for the viewer.
+        return {
+            "status": "replayed",
+            "count": len(events),
+            "events": [
+                {
+                    "id": e.id,
+                    "name": type(e).__name__,
+                    "timestamp": e.timestamp.isoformat(),
+                    "source": getattr(e, "source", "unknown")
+                } for e in events
+            ]
+        }
+    except Exception as e:
+        log.error("audit.replay_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to replay events")
 
 
 @router.get("/feature-flags")

@@ -34,21 +34,28 @@ class GoalEngine:
         config: GoalConfig | None = None,
         event_bus: Any = None,
         workforce_orchestrator: Any = None,
+        repository: Any = None,
     ) -> None:
         self._goals: dict[str, BusinessGoal] = {}
         self._tracker = tracker or GoalTracker()
         self._config = config or GoalConfig()
         self._event_bus = event_bus
         self._workforce_orchestrator = workforce_orchestrator
+        self._repository = repository
         self._progress_cache: dict[str, GoalProgress] = {}
         self._log = get_logger("eaip.goals.engine")
 
-    async def create_goal(self, goal: BusinessGoal) -> BusinessGoal:
+    async def create_goal(self, goal: BusinessGoal, tenant_id: str = "default") -> BusinessGoal:
         """Create a new goal."""
-        if goal.id in self._goals:
-            raise GoalValidationError(f"goal already exists: {goal.id!r}")
-
-        self._goals[goal.id] = goal
+        if self._repository:
+            existing = await self._repository.get(goal.id, tenant_id)
+            if existing:
+                raise GoalValidationError(f"goal already exists: {goal.id!r}")
+            await self._repository.create({**goal.model_dump(), "tenant_id": tenant_id})
+        else:
+            if goal.id in self._goals:
+                raise GoalValidationError(f"goal already exists: {goal.id!r}")
+            self._goals[goal.id] = goal
 
         # Register KPIs with tracker
         for kpi in goal.kpis:
@@ -68,29 +75,52 @@ class GoalEngine:
         self._log.info("goal.created", goal_id=goal.id, name=goal.name)
         return goal
 
-    async def update_goal(self, goal_id: str, updates: dict[str, Any]) -> BusinessGoal:
+    async def update_goal(self, goal_id: str, updates: dict[str, Any], tenant_id: str = "default") -> BusinessGoal:
         """Update an existing goal."""
-        if goal_id not in self._goals:
-            raise GoalNotFoundError(goal_id)
+        if self._repository:
+            existing = await self._repository.get(goal_id, tenant_id)
+            if not existing:
+                raise GoalNotFoundError(goal_id)
+            
+            from eaip.goals.models import BusinessGoal
+            current = BusinessGoal.model_validate(existing)
+            updated = current.model_copy(update=updates)
+            
+            await self._repository.update(goal_id, tenant_id, updates)
+        else:
+            if goal_id not in self._goals:
+                raise GoalNotFoundError(goal_id)
+            current = self._goals[goal_id]
+            updated = current.model_copy(update=updates)
+            self._goals[goal_id] = updated
 
-        current = self._goals[goal_id]
-        updated = current.model_copy(update=updates)
-        self._goals[goal_id] = updated
-
-        await self._publish(GoalUpdated(goal_id=goal_id, changes=updates))
+        if self._event_bus:
+            await self._event_bus.publish(GoalUpdated(goal_id=goal_id, changes=updates))
         self._log.info("goal.updated", goal_id=goal_id)
         return updated
 
-    async def get_goal(self, goal_id: str) -> BusinessGoal:
+    async def get_goal(self, goal_id: str, tenant_id: str = "default") -> BusinessGoal:
         """Get a goal by ID."""
-        if goal_id not in self._goals:
-            raise GoalNotFoundError(goal_id)
-        return self._goals[goal_id]
+        if self._repository:
+            data = await self._repository.get(goal_id, tenant_id)
+            if not data:
+                raise GoalNotFoundError(goal_id)
+            from eaip.goals.models import BusinessGoal
+            return BusinessGoal.model_validate(data)
+        else:
+            if goal_id not in self._goals:
+                raise GoalNotFoundError(goal_id)
+            return self._goals[goal_id]
 
     async def list_goals(
-        self, status: str | None = None, owner: str | None = None
+        self, status: str | None = None, owner: str | None = None, tenant_id: str = "default"
     ) -> list[BusinessGoal]:
         """List all goals, optionally filtered by status or owner."""
+        if self._repository:
+            rows = await self._repository.list_goals(tenant_id, status=status, owner=owner)
+            from eaip.goals.models import BusinessGoal
+            return [BusinessGoal.model_validate(row) for row in rows]
+            
         results: list[BusinessGoal] = []
         for goal in self._goals.values():
             if status and goal.status.value != status:

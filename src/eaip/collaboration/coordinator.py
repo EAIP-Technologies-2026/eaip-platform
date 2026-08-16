@@ -47,14 +47,13 @@ class CoordinationEngine:
         self,
         agent_runtime: Any | None = None,
         event_bus: Any | None = None,
-        session_repository: InMemoryRepository[str, CollaborationSession] | None = None,
+        repository: Any | None = None,
     ) -> None:
         self._agent_runtime: Any | None = agent_runtime
         self._event_bus: Any | None = event_bus
-        self._sessions = session_repository or InMemoryRepository[str, CollaborationSession](
-            max_size=10_000,
-            default_ttl_seconds=3600.0,
-        )
+        self._repository = repository
+        # Fallback to in-memory dict if no repository provided
+        self._in_memory_sessions: dict[str, CollaborationSession] = {}
         self._tasks: dict[str, dict[str, AgentTask]] = {}
         self._configs: dict[str, CoordinationConfig] = {}
         self._pending_tasks: set[asyncio.Task[Any]] = set()
@@ -78,7 +77,12 @@ class CoordinationEngine:
         Returns:
             The created session.
         """
-        await self._sessions.add(session)
+        if self._repository:
+            tenant_id = session.metadata.get("tenant_id", "default")
+            await self._repository.create({**session.model_dump(), "tenant_id": tenant_id})
+        else:
+            self._in_memory_sessions[session.id] = session
+
         self._tasks[session.id] = {}
         self._configs[session.id] = config or CoordinationConfig()
 
@@ -105,9 +109,17 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        session = await self._sessions.get(session_id)
-        if session is None:
-            raise SessionNotFoundError(session_id)
+        if self._repository:
+            # We assume tenant_id="default" if not provided here, though in reality it should be passed down
+            tenant_id = "default" 
+            data = await self._repository.get(session_id, tenant_id)
+            if data is None:
+                raise SessionNotFoundError(session_id)
+            session = CollaborationSession.model_validate(data)
+        else:
+            session = self._in_memory_sessions.get(session_id)
+            if session is None:
+                raise SessionNotFoundError(session_id)
 
         started = session.model_copy(
             update={
@@ -115,7 +127,11 @@ class CoordinationEngine:
                 "updated_at": datetime.now(),
             }
         )
-        await self._sessions.add(started)
+        if self._repository:
+            tenant_id = session.metadata.get("tenant_id", "default")
+            await self._repository.update(session_id, tenant_id, {"status": "active"})
+        else:
+            self._in_memory_sessions[session_id] = started
 
         self._publish(
             CollaborationSessionStarted(
@@ -140,9 +156,15 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        session = await self._sessions.get(session_id)
-        if session is None:
-            raise SessionNotFoundError(session_id)
+        if self._repository:
+            tenant_id = "default"
+            data = await self._repository.get(session_id, tenant_id)
+            if data is None:
+                raise SessionNotFoundError(session_id)
+        else:
+            session = self._in_memory_sessions.get(session_id)
+            if session is None:
+                raise SessionNotFoundError(session_id)
 
         self._tasks[session_id][task.id] = task
 
@@ -169,9 +191,16 @@ class CoordinationEngine:
         Raises:
             SessionNotFoundError: If the session does not exist.
         """
-        session = await self._sessions.get(session_id)
-        if session is None:
-            raise SessionNotFoundError(session_id)
+        if self._repository:
+            tenant_id = "default"
+            data = await self._repository.get(session_id, tenant_id)
+            if data is None:
+                raise SessionNotFoundError(session_id)
+            session = CollaborationSession.model_validate(data)
+        else:
+            session = self._in_memory_sessions.get(session_id)
+            if session is None:
+                raise SessionNotFoundError(session_id)
 
         config = self._configs.get(session_id, CoordinationConfig())
         tasks = list(self._tasks.get(session_id, {}).values())
@@ -197,7 +226,11 @@ class CoordinationEngine:
                     "updated_at": datetime.now(),
                 }
             )
-            await self._sessions.add(completed)
+            if self._repository:
+                tenant_id = session.metadata.get("tenant_id", "default")
+                await self._repository.update(session_id, tenant_id, {"status": "completed"})
+            else:
+                self._in_memory_sessions[session_id] = completed
 
             self._publish(
                 CollaborationSessionCompleted(
@@ -256,7 +289,12 @@ class CoordinationEngine:
         Returns:
             The session, or None if not found.
         """
-        return await self._sessions.get(session_id)
+        if self._repository:
+            data = await self._repository.get(session_id, "default")
+            if data is None:
+                return None
+            return CollaborationSession.model_validate(data)
+        return self._in_memory_sessions.get(session_id)
 
     async def cancel_session(self, session_id: str) -> CollaborationSession | None:
         """Cancel a collaboration session.
@@ -267,9 +305,16 @@ class CoordinationEngine:
         Returns:
             The cancelled session, or None if not found.
         """
-        session = await self._sessions.get(session_id)
-        if session is None:
-            return None
+        if self._repository:
+            data = await self._repository.get(session_id, "default")
+            if data is None:
+                return None
+            session = CollaborationSession.model_validate(data)
+        else:
+            session = self._in_memory_sessions.get(session_id)
+            if session is None:
+                return None
+
         if session.status in (SessionStatus.COMPLETED, SessionStatus.FAILED):
             return session
 
@@ -279,7 +324,11 @@ class CoordinationEngine:
                 "updated_at": datetime.now(),
             }
         )
-        await self._sessions.add(cancelled)
+        if self._repository:
+            await self._repository.update(session_id, "default", {"status": "failed"})
+        else:
+            self._in_memory_sessions[session_id] = cancelled
+            
         self._log.info("session.cancelled", session_id=session_id)
         return cancelled
 
@@ -298,7 +347,17 @@ class CoordinationEngine:
             A list of matching sessions.
         """
         results: list[CollaborationSession] = []
-        async for session in self._sessions.iter_all():
+        if self._repository:
+            rows = await self._repository.list_sessions(
+                "default", 
+                status=status.value if status else None,
+                limit=1000,
+            )
+            sessions = [CollaborationSession.model_validate(r) for r in rows]
+        else:
+            sessions = list(self._in_memory_sessions.values())
+            
+        for session in sessions:
             if status is not None and session.status is not status:
                 continue
             if agent_id is not None and agent_id not in session.agents:

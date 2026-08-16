@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from typing import Any
 
 from eaip.infrastructure.persistence import _TenantRepository
 from eaip.recommendations.models import Recommendation, RecommendationStatus
-from eaip.shared.time import utc_now
 
 
 class RecommendationRepository(_TenantRepository):

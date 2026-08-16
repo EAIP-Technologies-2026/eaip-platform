@@ -45,9 +45,11 @@ class AutomationEngine:
         self,
         config: AutomationConfig | None = None,
         event_bus: EventBus | None = None,
+        repository: Any = None,
     ) -> None:
         self._config = config or AutomationConfig()
         self._event_bus = event_bus or EventBus()
+        self._repository = repository
         self._log = get_logger("eaip.automation.engine")
         self._rules: dict[str, AutomationRule] = {}
         self._executions: dict[str, AutomationExecution] = {}
@@ -73,19 +75,44 @@ class AutomationEngine:
     def trigger_service(self) -> TriggerService:
         return self._trigger_service
 
-    async def register_rule(self, rule: AutomationRule) -> None:
-        self._rules[rule.id] = rule
+    async def register_rule(self, rule: AutomationRule, tenant_id: str = "default") -> None:
+        if self._repository:
+            existing = await self._repository.get(rule.id, tenant_id)
+            if existing:
+                raise RuleNotFoundError(f"Rule already exists: {rule.id!r}", context={"rule_id": rule.id})
+            await self._repository.create({**rule.model_dump(), "tenant_id": tenant_id})
+            self._rules[rule.id] = rule
+        else:
+            self._rules[rule.id] = rule
+            
         await self._event_bus.publish(RuleRegistered(rule=rule))
         self._log.info("rule.registered", rule_id=rule.id, rule_name=rule.name)
 
-    async def unregister_rule(self, rule_id: str) -> None:
-        rule = self._rules.pop(rule_id, None)
-        if rule is None:
-            raise RuleNotFoundError(f"Rule {rule_id!r} not found", context={"rule_id": rule_id})
-        await self._event_bus.publish(RuleUnregistered(rule_id=rule_id, rule_name=rule.name))
+    async def unregister_rule(self, rule_id: str, tenant_id: str = "default") -> None:
+        if self._repository:
+            existing = await self._repository.get(rule_id, tenant_id)
+            if not existing:
+                raise RuleNotFoundError(f"Rule {rule_id!r} not found", context={"rule_id": rule_id})
+            await self._repository.delete(rule_id, tenant_id)
+            rule = self._rules.pop(rule_id, None)
+            rule_name = rule.name if rule else existing.get("name", rule_id)
+        else:
+            rule = self._rules.pop(rule_id, None)
+            if rule is None:
+                raise RuleNotFoundError(f"Rule {rule_id!r} not found", context={"rule_id": rule_id})
+            rule_name = rule.name
+            
+        await self._event_bus.publish(RuleUnregistered(rule_id=rule_id, rule_name=rule_name))
         self._log.info("rule.unregistered", rule_id=rule_id)
 
-    async def get_rule(self, rule_id: str) -> AutomationRule:
+    async def get_rule(self, rule_id: str, tenant_id: str = "default") -> AutomationRule:
+        if self._repository:
+            data = await self._repository.get(rule_id, tenant_id)
+            if data is None:
+                raise RuleNotFoundError(f"Rule {rule_id!r} not found", context={"rule_id": rule_id})
+            from eaip.automation.models import AutomationRule
+            return AutomationRule.model_validate(data)
+            
         rule = self._rules.get(rule_id)
         if rule is None:
             raise RuleNotFoundError(f"Rule {rule_id!r} not found", context={"rule_id": rule_id})
@@ -95,7 +122,17 @@ class AutomationEngine:
         self,
         trigger_type: TriggerType | None = None,
         enabled: bool | None = None,
+        tenant_id: str = "default",
     ) -> list[AutomationRule]:
+        if self._repository:
+            rows = await self._repository.list_rules(
+                tenant_id, 
+                trigger_type=trigger_type.value if trigger_type else None,
+                enabled=enabled,
+            )
+            from eaip.automation.models import AutomationRule
+            return [AutomationRule.model_validate(r) for r in rows]
+            
         result = list(self._rules.values())
         if trigger_type is not None:
             result = [r for r in result if r.trigger_type == trigger_type]

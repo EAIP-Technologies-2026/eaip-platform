@@ -8,7 +8,7 @@ log = get_logger("eaip.infrastructure.migrations.m006_b07")
 
 async def up(db: DatabaseConnection) -> None:
     log.info("Running migration m006_b07_foundations: up")
-    
+
     # 1. Pulse Metrics
     await db.execute(
         """
@@ -24,7 +24,7 @@ async def up(db: DatabaseConnection) -> None:
         CREATE INDEX IF NOT EXISTS idx_pulse_metrics_name ON pulse_metrics(name);
         """
     )
-    
+
     # 2. Decision Logs
     await db.execute(
         """
@@ -40,7 +40,7 @@ async def up(db: DatabaseConnection) -> None:
         CREATE INDEX IF NOT EXISTS idx_decision_logs_type ON decision_logs(decision_type);
         """
     )
-    
+
     # 3. Recommendations
     await db.execute(
         """

@@ -97,6 +97,39 @@ async def system_health(request: Request) -> dict[str, Any]:
     }
 
 
+@router.get("/admin/health")
+async def admin_health(request: Request) -> dict[str, Any]:
+    """Detailed operational health endpoint for the admin platform."""
+    from eaip.healthagg.aggregator import HealthAggregator
+    from eaip.operations.health import OperationsHealthCheck
+    
+    container = request.app.state.lifecycle.platform.container
+    agg = container.try_resolve(HealthAggregator)
+    
+    platform = request.app.state.lifecycle.platform
+    report = await platform.health.report()
+    children = list(getattr(report, "children", []))
+    
+    # Check for operations
+    ops_check = next((c for c in children if c.component == "eaip.operations"), None)
+    
+    return {
+        "status": report.status.value if hasattr(report.status, "value") else str(report.status),
+        "timestamp": datetime.now(UTC).isoformat(),
+        "components": [
+            {
+                "id": c.component,
+                "status": c.status.value if hasattr(c.status, "value") else str(c.status),
+                "message": c.message,
+                "metadata": getattr(c, "metadata", {})
+            }
+            for c in children
+        ],
+        "dependencies": agg.dependency_graph.get_all_nodes() if agg else [],
+        "operations_status": ops_check.status.value if ops_check and hasattr(ops_check.status, "value") else "unknown"
+    }
+
+
 @router.get("/system/metrics")
 async def system_metrics(request: Request) -> list[dict[str, Any]]:
     """Health metrics in the shape expected by the console health page."""

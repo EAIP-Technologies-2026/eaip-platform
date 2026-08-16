@@ -49,6 +49,20 @@ class QdrantStore:
     def _is_connected(self) -> bool:
         return self._client is not None
 
+    @staticmethod
+    def tenant_collection_name(tenant_id: str, module: str) -> str:
+        """Build a tenant-isolated collection name.
+
+        Follows the convention ``eaip_{tenant_id}_{module}`` so collections can
+        never collide across tenants and can be filtered by prefix.  The final
+        name is capped at Qdrant's 63-character limit.
+        """
+        return _sanitize(f"eaip_{tenant_id}_{module}")
+
+    @staticmethod
+    def tenant_prefix(tenant_id: str) -> str:
+        return f"eaip_{_sanitize(tenant_id)}"
+
     async def _ensure_client(self) -> None:
         if self._client is not None:
             return
@@ -301,8 +315,15 @@ class QdrantStore:
                 )
         return _models.Filter(must=conditions) if conditions else None
 
-    def _get_query_vector(self, _query: RetrievalQuery) -> Sequence[float]:
+    def _get_query_vector(self, query: RetrievalQuery) -> Sequence[float]:
+        if query.vector:
+            return list(query.vector)
         return [0.0] * 384
+
+
+def _sanitize(value: str) -> str:
+    """Qdrant collection names allow letters, digits and underscores."""
+    return "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in value)[:63]
 
 
 __all__ = ["QdrantStore"]

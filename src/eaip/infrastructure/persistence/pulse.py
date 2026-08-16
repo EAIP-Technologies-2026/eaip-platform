@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from typing import Any
 
 from eaip.infrastructure.persistence import _TenantRepository
 from eaip.pulse.models import PulseMetric
-from eaip.shared.time import utc_now
 
 
 class PulseRepository(_TenantRepository):
