@@ -192,7 +192,7 @@ async def get_workflow(request: Request, workflow_id: str, _user: dict = Depends
         "nodes": [
             {
                 "id": s.id,
-                "type": s.type,
+                "type": "agent" if s.agent_id else "step",
                 "label": s.name,
                 "x": 0,
                 "y": 0,

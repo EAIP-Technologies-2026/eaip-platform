@@ -14,6 +14,7 @@ from eaip.agents.registry import AgentRegistry
 from eaip.agents.runtime import AgentRuntime
 from eaip.events.store import EventStore
 from eaip.http.dependencies import get_current_user
+from eaip.http.tenant_guard import assert_tenant_access, org_to_prefix
 from eaip.logging.context import get_logger
 
 router = APIRouter(prefix="/agents", tags=["agents"])
