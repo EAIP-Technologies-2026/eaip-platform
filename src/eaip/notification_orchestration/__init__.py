@@ -1,0 +1,85 @@
+"""Notification Orchestration — rule-based routing, escalation, digests, and scheduling."""
+
+from __future__ import annotations
+
+from eaip.notification_orchestration.events import (
+    DigestDelivered,
+    EscalationResolved,
+    EscalationTriggered,
+    NotificationBatchSent,
+    NotificationEscalated,
+    NotificationOrchestrated,
+    NotificationOrchestrationEvent,
+    NotificationRouted,
+    OrchestrationRuleActivated,
+    OrchestrationRuleCreated,
+    OrchestrationRuleDeactivated,
+    OrchestrationRuleDeleted,
+    OrchestrationRuleUpdated,
+    ScheduleTriggered,
+)
+from eaip.notification_orchestration.exceptions import (
+    DigestDeliveryError,
+    EscalationError,
+    NotificationOrchestrationError,
+    NotificationRoutingError,
+    OrchestrationExecutionError,
+    OrchestrationRuleNotFoundError,
+)
+from eaip.notification_orchestration.health import NotificationOrchestrationHealthCheck
+from eaip.notification_orchestration.integration import NotificationOrchestrationRuntimeModule
+from eaip.notification_orchestration.models import (
+    DeliveryRoute,
+    DigestConfig,
+    DigestFrequency,
+    EscalationLevel,
+    EscalationPolicy,
+    NotificationBatch,
+    NotificationOrchestrationConfig,
+    OrchestrationAction,
+    OrchestrationCondition,
+    OrchestrationRule,
+    OrchestrationSchedule,
+    OrchestrationStatus,
+    RoutePriority,
+)
+from eaip.notification_orchestration.service import NotificationOrchestrationService
+
+__all__ = [
+    "DeliveryRoute",
+    "DigestConfig",
+    "DigestDelivered",
+    "DigestDeliveryError",
+    "DigestFrequency",
+    "EscalationError",
+    "EscalationLevel",
+    "EscalationPolicy",
+    "EscalationResolved",
+    "EscalationTriggered",
+    "NotificationBatch",
+    "NotificationBatchSent",
+    "NotificationEscalated",
+    "NotificationOrchestrated",
+    "NotificationOrchestrationConfig",
+    "NotificationOrchestrationError",
+    "NotificationOrchestrationEvent",
+    "NotificationOrchestrationHealthCheck",
+    "NotificationOrchestrationRuntimeModule",
+    "NotificationOrchestrationService",
+    "NotificationRouted",
+    "NotificationRoutingError",
+    "OrchestrationAction",
+    "OrchestrationCondition",
+    "OrchestrationExecutionError",
+    "OrchestrationRule",
+    "OrchestrationRuleActivated",
+    "OrchestrationRuleCreated",
+    "OrchestrationRuleDeactivated",
+    "OrchestrationRuleDeleted",
+    "OrchestrationRuleNotFoundError",
+    "OrchestrationRuleUpdated",
+    "OrchestrationSchedule",
+    "OrchestrationStatus",
+    "RoutePriority",
+    "ScheduleTriggered",
+]

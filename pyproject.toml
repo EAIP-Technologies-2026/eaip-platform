@@ -61,7 +61,18 @@ dependencies = [
     "pydantic-settings>=2.6.0,<3",
     "structlog>=24.4.0,<27",
     "anyio>=4.6.0,<5",
+    "httpx>=0.27.0,<1",
     "typing-extensions>=4.12.0; python_version < '3.13'",
+    "opentelemetry-api>=1.27.0,<2",
+    "opentelemetry-sdk>=1.27.0,<2",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0,<2",
+    "fastapi>=0.115.0,<1",
+    "asyncpg>=0.29.0,<1",
+    "python-multipart>=0.0.12,<1",
+    "uvicorn[standard]>=0.32.0,<1",
+    "psutil>=6.0.0,<8",
+    "cryptography>=49.0.0",
+    "sentry-sdk[fastapi]>=2.0.0,<3",
 ]
 
 [project.optional-dependencies]
@@ -80,6 +91,14 @@ test = [
     "pytest-asyncio>=0.24.0",
     "pytest-xdist>=3.6.1",
     "hypothesis>=6.115.0",
+]
+knowledge = [
+    "qdrant-client>=1.9.0,<2",
+    "pypdf>=4.0.0,<6",
+    "python-docx>=1.1.0,<2",
+]
+automation = [
+    "croniter>=6.0.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -162,8 +181,10 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "D", "ANN", "PLR2004", "ARG"]
+"src/**/tests/**" = ["S", "D", "ANN", "PLR2004", "ARG"]
 "docs/**"  = ["D", "ANN"]
 "**/__init__.py" = ["F401", "D104"]
+"src/eaip/dr/**" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -220,12 +241,28 @@ show_error_codes = true
 show_column_numbers = true
 pretty = true
 files = ["src", "tests"]
-exclude = '(^|/)(\.venv|build|dist|docs/_build|node_modules)(/|$)'
+exclude = '(\.venv|build|dist|docs/_build|node_modules|migrations|^\d|/\d)'
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = ["opentelemetry.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sentry_sdk.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["eaip.infrastructure.migrations.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["asyncpg"]
+ignore_missing_imports = true
 
 # -----------------------------------------------------------------------------
 # pytest
@@ -245,6 +282,8 @@ asyncio_mode = "auto"
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:hypothesis.*",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+    "ignore::UserWarning",
 ]
 markers = [
     "unit: fast, isolated unit tests",

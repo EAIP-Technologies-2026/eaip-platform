@@ -13,6 +13,25 @@ if TYPE_CHECKING:  # pragma: no cover
     from eaip.platform.platform import Platform
 
 
+class PluginDependency(BaseModel):
+    """Declares a dependency on another plugin.
+
+    Attributes:
+        name: The plugin name this dependency targets.
+        version_spec: Semver range spec (``>=1.0.0,<2.0.0``, ``~1.2.0``,
+            ``^1.2.3``, ``*``). An empty string matches any version.
+        optional: If True, a missing or mismatched dependency is a
+            warning, not an error.
+    """
+
+    name: NonEmptyStr = Field(description="The plugin name this dependency targets.")
+    version_spec: str = Field(
+        default="*",
+        description="Semver range spec (empty or '*' = any version).",
+    )
+    optional: bool = Field(default=False, description="If True, failure is a warning.")
+
+
 class PluginManifest(BaseModel):
     """Static declaration of a plugin's identity and contract version.
 
@@ -31,6 +50,19 @@ class PluginManifest(BaseModel):
     )
     description: str = Field(default="")
     provides_capabilities: tuple[str, ...] = Field(default=())
+    entry_point: str = Field(
+        default="",
+        description="Dotted module path to the plugin's entry point class.",
+    )
+    requires_platform: str = Field(
+        default=">=0.1.0",
+        description="Semver range spec for the EAIP platform version.",
+    )
+    tags: tuple[str, ...] = Field(default=())
+    dependencies: tuple[PluginDependency, ...] = Field(
+        default=(),
+        description="Plugins this plugin depends on.",
+    )
 
     def to_metadata(self) -> ComponentMetadata:
         """Converts the manifest into component metadata.
@@ -43,7 +75,7 @@ class PluginManifest(BaseModel):
             kind=ComponentKind.PLUGIN,
             version=self.version,
             description=self.description,
-            tags=self.provides_capabilities,
+            tags=self.tags or self.provides_capabilities,
         )
 
 

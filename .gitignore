@@ -133,6 +133,7 @@ tags
 *.pfx
 secrets/
 .secrets.baseline.local
+.eaip-dev-runtime.json
 
 # -----------------------------------------------------------------------------
 # Docs build outputs
@@ -177,3 +178,16 @@ local.mk
 *.env
 credentials.json
 .credentials
+
+# Uvicorn stderr capture from manual backend launches
+backend.err
+backend.recovery.err
+# Debug / do not commit
+debug_org.py
+backend.run.err
+test_comprehensive.py
+test_execution.py
+test_knowledge.py
+test_mission.py
+test_retrieval.py
+test_tenant_isolation.py

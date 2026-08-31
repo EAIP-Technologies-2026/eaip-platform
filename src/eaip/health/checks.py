@@ -13,16 +13,29 @@ from eaip.shared.time import utc_now
 
 
 class HealthStatus(StrEnum):
-    """Tri-state health classification."""
+    """Health classification for a single check or an aggregated rollup.
+
+    Ordered from least to most severe via :attr:`numeric`:
+    ``HEALTHY < SKIPPED < DEGRADED < UNHEALTHY``.
+    """
 
     HEALTHY = "healthy"
+    SKIPPED = "skipped"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
 
     @property
     def numeric(self) -> int:
         """Higher = worse; useful for sorting/aggregation."""
-        return {"healthy": 0, "degraded": 1, "unhealthy": 2}[self.value]
+        return {"healthy": 0, "skipped": 1, "degraded": 2, "unhealthy": 3}[self.value]
+
+
+class DependencyClass(StrEnum):
+    """How strongly a dependency gates platform readiness."""
+
+    CRITICAL = "critical"
+    REQUIRED = "required"
+    OPTIONAL = "optional"
 
 
 class HealthReport(BaseModel):
@@ -36,6 +49,14 @@ class HealthReport(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
     observed_at: datetime = Field(default_factory=utc_now)
     children: tuple[HealthReport, ...] = Field(default=())
+    criticality: DependencyClass | None = Field(
+        default=None,
+        description="Dependency class (critical/required/optional) used for readiness gating.",
+    )
+    configured: bool | None = Field(
+        default=None,
+        description="Whether the dependency has configuration required to run.",
+    )
 
     def is_healthy(self) -> bool:
         """Checks if the component is healthy.
@@ -48,7 +69,13 @@ class HealthReport(BaseModel):
 
 @runtime_checkable
 class HealthCheck(Protocol):
-    """A callable that produces a :class:`HealthReport` on demand."""
+    """A callable that produces a :class:`HealthReport` on demand.
+
+    Implementations may optionally declare ``criticality`` (a
+    :class:`DependencyClass`) and ``configured`` (a bool) attributes; the
+    reporter copies them onto the produced :class:`HealthReport` so that
+    readiness gating and the dependency table can be derived.
+    """
 
     name: str
 
@@ -80,4 +107,4 @@ def callable_check(name: str, fn: Callable[[], Awaitable[HealthReport]]) -> Heal
     return _AdHoc()
 
 
-__all__ = ["HealthCheck", "HealthReport", "HealthStatus", "callable_check"]
+__all__ = ["DependencyClass", "HealthCheck", "HealthReport", "HealthStatus", "callable_check"]

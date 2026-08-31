@@ -23,6 +23,7 @@ from eaip.ports.clock import ClockPort
 from eaip.ports.id_generator import IdGeneratorPort
 from eaip.ports.secret_provider import SecretProviderPort
 from eaip.settings.core_settings import PlatformSettings, load_platform_settings
+from eaip.tracing.provider import setup_telemetry
 
 
 class PlatformBuilder:
@@ -94,6 +95,8 @@ class PlatformBuilder:
 
         if self._configure_logging:
             configure_logging(settings.logging.to_logging_config())
+
+        setup_telemetry(settings.telemetry)
 
         container = self._container or Container()
         self._wire_default_ports(container)

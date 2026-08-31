@@ -5,11 +5,7 @@ The top-level **composition root** that ties every Foundation layer together.
 ```python
 from eaip.platform import PlatformBuilder
 
-platform = (
-    PlatformBuilder()
-    .with_plugin(my_plugin)
-    .build()
-)
+platform = PlatformBuilder().with_plugin(my_plugin).build()
 
 async with platform:
     # platform is running; capabilities, events, health are all live

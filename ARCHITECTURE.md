@@ -1,8 +1,8 @@
 # EAIP Architecture
 
-> **Status:** Foundational sketch (EP-0001A). Concrete contracts, schemas, and APIs land in EP-0002 onwards.
+> **Status:** Beta Ready — architecture frozen.
 > **Audience:** maintainers, integrators, operators, security reviewers.
-> **Last updated:** 2026-01-15
+> **Last updated:** 2026-07-11
 
 This document describes the **target architecture** of the Enterprise Autonomous Intelligence Platform. It is intentionally written ahead of the implementation so that every code change can be evaluated against a stable north star.
 

@@ -3,5 +3,6 @@
 from __future__ import annotations
 
 from eaip.registry.registry import Registry
+from eaip.registry.service_registry import ServiceInstance, ServiceRegistry, ServiceStatus
 
-__all__ = ["Registry"]
+__all__ = ["Registry", "ServiceInstance", "ServiceRegistry", "ServiceStatus"]

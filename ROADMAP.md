@@ -1,7 +1,7 @@
 # EAIP Roadmap
 
 > **Horizon:** rolling **4 quarters**, refreshed at the start of each quarter.
-> **Last updated:** 2026-01-15
+> **Last updated:** 2026-07-07
 > **Owner:** Subham Panigrahi ([@subham1902](https://github.com/subham1902))
 
 The roadmap is **directional**, not contractual. Priorities shift based on user feedback, technical discovery, and capacity. Significant changes are announced in [GitHub Discussions › Announcements](https://github.com/subham1902/eaip-platform/discussions/categories/announcements).
@@ -17,13 +17,19 @@ The roadmap is **directional**, not contractual. Priorities shift based on user 
 
 ---
 
-## Q1 2026 — Foundation (current)
+## Q2-Q3 2026 — Platform Foundation & Runtime (current)
 
 | ID         | Deliverable                                | Status     | Owner        |
 | ---------- | ------------------------------------------ | ---------- | ------------ |
 | EP-0001A   | Repository foundation & governance         | ✅ Done    | @subham1902  |
 | EP-0001B   | CI/CD baseline (matrix, caching, releases) | 🟡 Active  | @subham1902  |
-| EP-0002    | Agent Runtime — core orchestrator skeleton | 🟡 Active  | @subham1902  |
+| EP-0002    | Agent Runtime — core orchestrator skeleton | ✅ Done    | @subham1902  |
+| EP-0002.2  | Platform Kernel (Bundle-008)               | ✅ Done    | @subham1902  |
+| EP-0002.3  | Services & Application Layer (Bundle-009)  | ✅ Done    | @subham1902  |
+| EP-0002.4  | Runtime Integration & Bootstrap (Bundle-010) | ✅ Done | @subham1902  |
+| EP-0002.5  | Event Bus & Messaging Core (Bundle-011)      | ✅ Done | @subham1902  |
+| EP-0002.6  | Registry & Plugin Runtime (Bundle-012)       | ✅ Done | @subham1902  |
+| EP-0015    | Knowledge Engine (Bundle-016)                | ✅ Done | @subham1902  |
 | EP-0003    | LLM Adapter contract + 2 reference adapters| ⚪ Planned | TBD          |
 | EP-0004    | Telemetry baseline (OTel traces + structlog) | ⚪ Planned | TBD          |
 

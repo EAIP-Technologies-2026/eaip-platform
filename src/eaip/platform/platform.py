@@ -22,6 +22,7 @@ from eaip.logging.context import bind_context, get_logger
 from eaip.plugins.loader import PluginLoader
 from eaip.plugins.registry import PluginRegistry
 from eaip.settings.core_settings import PlatformSettings
+from eaip.tracing.provider import force_flush, shutdown_telemetry
 
 if TYPE_CHECKING:  # pragma: no cover
     pass
@@ -174,6 +175,8 @@ class Platform:
             await self._plugin_loader.deactivate_all(self)
         finally:
             await self._lifecycle.stop()
+        force_flush()
+        shutdown_telemetry()
         self._log.info("platform.stopped")
 
     async def __aenter__(self) -> Platform:

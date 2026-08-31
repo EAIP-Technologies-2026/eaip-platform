@@ -1,4 +1,4 @@
-"""Tests for :mod:`eaip.capabilities`."""
+"""Tests for :mod:`eaip.capabilities` — base and extended API."""
 
 from __future__ import annotations
 
@@ -56,3 +56,31 @@ def test_metadata_translation() -> None:
     md = _cap().to_metadata()
     assert md.kind.value == "capability"
     assert md.name == "agent.run"
+
+
+def test_try_get_missing() -> None:
+    reg = CapabilityRegistry()
+    assert reg.try_get("nope") is None
+
+
+def test_keys() -> None:
+    reg = CapabilityRegistry()
+    reg.register(_cap("a"))
+    reg.register(_cap("b"))
+    assert set(reg.keys()) == {"a", "b"}
+
+
+def test_items() -> None:
+    reg = CapabilityRegistry()
+    c = _cap("a")
+    reg.register(c)
+    items = reg.items()
+    assert len(items) == 1
+    assert items[0] == ("a", c)
+
+
+def test_clear() -> None:
+    reg = CapabilityRegistry()
+    reg.register(_cap("a"))
+    reg.clear()
+    assert len(reg) == 0

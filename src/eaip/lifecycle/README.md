@@ -10,7 +10,7 @@ lm.add("db", start=db.connect, stop=db.disconnect)
 lm.add("server", start=server.serve, stop=server.shutdown)
 await lm.start()  # in registration order
 ...
-await lm.stop()   # in reverse order
+await lm.stop()  # in reverse order
 ```
 
 Guarantees:
