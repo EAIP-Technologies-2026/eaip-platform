@@ -77,12 +77,29 @@ class MockIdentityProvider:
                 provider=request.provider,
             )
 
+        # Map username to tenant_id for tenant isolation.
+        # Demo workspaces may request an explicit tenant at login; the request is
+        # validated against a demo-tenant allowlist so isolation is preserved
+        # (each session is bound to exactly one tenant).
+        tenant_map = {
+            "apex-user": "apex-advisory-group",
+            "nova-user": "nova-manufacturing-systems",
+            "meridian-user": "meridian-health-services",
+        }
+        requested_tenant = str(request.credentials.get("tenant_id", "") or "")
+        demo_tenants = {"apex", "nova", "meridian"}
+        if requested_tenant in demo_tenants:
+            tenant_id = requested_tenant
+        else:
+            tenant_id = tenant_map.get(username, username)
+
         identity = {
             "sub": username,
             "name": username,
             "email": f"{username}@example.com",
             "provider": request.provider,
             "roles": ["admin", "user"],
+            "tenant_id": tenant_id,
         }
 
         return AuthenticationResult(

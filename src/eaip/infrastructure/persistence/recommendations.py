@@ -13,7 +13,8 @@ class RecommendationRepository(_TenantRepository):
     """Repository for managing recommendations."""
 
     def __init__(self, db: Any) -> None:
-        super().__init__(db, table_name="recommendations")
+        self._db = db
+        self._table_name = "recommendations"
 
     async def get_by_id(self, id: str, tenant_id: str) -> Recommendation | None:
         row = await self._db.fetch_row(

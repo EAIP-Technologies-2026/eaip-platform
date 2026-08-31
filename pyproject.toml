@@ -283,6 +283,7 @@ filterwarnings = [
     "error",
     "ignore::DeprecationWarning:hypothesis.*",
     "ignore::starlette.exceptions.StarletteDeprecationWarning",
+    "ignore::UserWarning",
 ]
 markers = [
     "unit: fast, isolated unit tests",

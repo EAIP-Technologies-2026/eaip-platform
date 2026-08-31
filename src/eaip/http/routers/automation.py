@@ -10,7 +10,7 @@ from eaip.automation.exceptions import RuleNotFoundError
 from eaip.automation.models import AutomationRule, TriggerType
 from eaip.http.dependencies import get_tenant_id
 
-router = APIRouter(prefix="/api/v1/automation", tags=["automation"])
+router = APIRouter(prefix="/automation", tags=["automation"])
 
 
 class RegisterRuleRequest(BaseModel):

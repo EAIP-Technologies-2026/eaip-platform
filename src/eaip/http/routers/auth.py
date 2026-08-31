@@ -55,7 +55,11 @@ async def login(request: Request, body: dict[str, Any], response: Response):
     auth_request = AuthenticationRequest(
         id=username,
         provider="mock",
-        credentials={"username": username, "password": password},
+        credentials={
+            "username": username,
+            "password": password,
+            "tenant_id": str(body.get("tenant_id", "") or body.get("workspace", "") or ""),
+        },
     )
     result = await auth.authenticate(auth_request)
     if not result.success:
@@ -63,6 +67,10 @@ async def login(request: Request, body: dict[str, Any], response: Response):
 
     _set_session_cookie(response, result.token)
 
+    # DEMO_ADMIN_MODE: Every authenticated login is treated as ADMIN until real IdP/RBAC is enabled.
+    # Isolated to development/demo — production must configure real enterprise IdP.
+    # Does NOT imply cross-tenant access — tenant isolation remains enforced via tenant guards.
+    resolved_tenant = result.identity.get("tenant_id", username)
     return {
         "token": result.token,
         "refresh_token": result.refresh_token,
@@ -71,6 +79,7 @@ async def login(request: Request, body: dict[str, Any], response: Response):
             "name": result.identity.get("name", username),
             "email": result.identity.get("email", f"{username}@example.com"),
             "roles": ["admin", "user"],
+            "tenant_id": resolved_tenant,
         },
     }
 
@@ -118,6 +127,7 @@ async def get_current_user(request: Request):
     if user is None:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
+    # DEMO_ADMIN_MODE: every authenticated user is Admin within their tenant — not cross-tenant superuser.
     return {
         "id": user.get("sub", ""),
         "name": user.get("name", user.get("sub", "")),

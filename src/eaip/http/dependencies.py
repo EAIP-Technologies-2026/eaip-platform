@@ -23,8 +23,18 @@ CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
 
 
 async def get_tenant_id(user: CurrentUser) -> str:
-    """Extract tenant_id (organization_id) from the current user."""
-    return user.get("organization_id") or "default"
+    """Extract tenant_id (organization_id) from the current user.
+
+    Honors the authenticated identity's tenant claim so every router that
+    depends on this resolves the SAME tenant as claim-based routers
+    (e.g. kgraph) — one tenant resolution rule across the API.
+    """
+    return (
+        user.get("organization_id")
+        or user.get("tenant_id")
+        or user.get("tenant")
+        or "default"
+    )
 
 
 def _extract_token(request: Request) -> str:

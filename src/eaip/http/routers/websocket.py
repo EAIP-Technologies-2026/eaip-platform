@@ -99,8 +99,29 @@ async def websocket_endpoint(websocket: WebSocket):
         if not running:
             return
         try:
+            event_tenant = None
+            if hasattr(event, "tenant_id"):
+                event_tenant = getattr(event, "tenant_id", None)
+            elif hasattr(event, "model_dump"):
+                try:
+                    dumped = event.model_dump()
+                    event_tenant = dumped.get("tenant_id")
+                except Exception:
+                    pass
+            if isinstance(event_tenant, str) and event_tenant and event_tenant != "default":
+                user_tenant = tenant_id
+                if event_tenant != user_tenant:
+                    return
             module = type(event).__module__
-            if "agents" in module:
+            if "scheduling" in module or "schedul" in type(event).__name__.lower():
+                event_channel = "scheduling"
+            elif "workforce" in module:
+                event_channel = "workforce"
+            elif "marketplace" in module:
+                event_channel = "marketplace"
+            elif "simulation" in module:
+                event_channel = "simulation"
+            elif "agents" in module:
                 event_channel = "agent"
             elif "workflow" in module:
                 event_channel = "workflow"

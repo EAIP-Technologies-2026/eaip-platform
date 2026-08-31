@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import time
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
 from typing import Any
 
 from eaip.admin.audit import AuditLogger
@@ -13,7 +15,7 @@ from eaip.copilot.approvals import ApprovalService
 from eaip.copilot.events import ConductorTurnCompleted
 from eaip.copilot.governance import GovernancePolicy, tool_risk
 from eaip.copilot.models import ApprovalRequest, ConductorContext, CopilotTurn, ToolEvent
-from eaip.copilot.planner import ConductorPlanner
+from eaip.copilot.planner import ConductorPlanner, Plan
 from eaip.events.bus import EventBus
 from eaip.logging.context import get_logger
 from eaip.shared.identifiers import CorrelationId
@@ -28,6 +30,9 @@ class ConductorService:
     registry, the approval service, and the audit logger into the vertical
     slice: ask -> inspect -> ground -> approve -> execute -> audit.
     """
+
+    _SESSION_MAX_TURNS = 12
+    _SESSION_MAX_SESSIONS = 200
 
     def __init__(
         self,
@@ -56,6 +61,97 @@ class ConductorService:
         self._audit = audit
         self._event_bus = event_bus
         self._log = get_logger("eaip.copilot.service")
+        # Bounded per-(tenant, conversation) working memory so follow-ups like
+        # "show me the campaign" or "simulate it" resolve without restating
+        # context. Not a new memory engine: an ephemeral session cache.
+        self._session_memory: dict[tuple[str, str], list[dict[str, Any]]] = {}
+
+    # ------------------------------------------------------------------
+    # Working memory helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _looks_like_followup(message: str) -> bool:
+        text = message.strip().lower()
+        if len(text) > 120:
+            return False
+        markers = (
+            "it", "that", "them", "this", "the campaign", "the mission",
+            "the risk", "the workflow", "show me", "simulate it", "simulate that",
+            "do it", "why", "what about", "more detail", "go on", "continue",
+            "open it", "take me", "who owns", "what happened",
+        )
+        return any(text.startswith(m) or f" {m} " in f" {text} " for m in markers)
+
+    def _followup_reply(self, memory: list[dict[str, Any]], message: str) -> str:
+        last = memory[-1]
+        topic = last.get("topic") or "our previous topic"
+        entity = last.get("entity_id")
+        route = last.get("route") or "/"
+        lines: list[str] = []
+        if entity and entity != "null":
+            lines.append(f"Continuing with **{entity}** (from our conversation).")
+        if last.get("summary"):
+            lines.append(str(last["summary"]))
+        low = message.strip().lower()
+        if "simulat" in low:
+            lines.append(
+                "To simulate it safely, open the Simulation workspace — I will carry "
+                f"this entity's context: `/simulation?focus={entity or ''}`."
+            )
+        elif "approv" in low or "do it" in low:
+            pending = last.get("pending_approval_id")
+            lines.append(
+                f"Approval {pending} is pending your decision on the Approvals page."
+                if pending else
+                "No approval is pending for this item; actions on it remain governed."
+            )
+        else:
+            lines.append(
+                f"You were working in `{route}` on this. Ask me to *simulate*, "
+                "*approve*, or *show related* and I will act with this context."
+            )
+        lines.append(f"_Context carried from earlier: {topic}_")
+        return "\n\n".join(lines)
+
+    def _remember_turn(
+        self,
+        conv_key: tuple[str, str],
+        *,
+        message: str,
+        reply: str,
+        context: ConductorContext | None,
+        pending: ApprovalRequest | None,
+    ) -> None:
+        entry: dict[str, Any] = {
+            "ts": time.time(),
+            "message": message[:280],
+            "reply": reply[:280],
+            "route": context.current_route if context else "/",
+            "entity_id": (context.entity_id if context else None),
+            "entity_type": (context.entity_type if context else None),
+            "pending_approval_id": (pending.id if pending else None),
+            "topic": self._topic_of(message),
+            "summary": reply.split("\n")[0][:200],
+        }
+        session = self._session_memory.setdefault(conv_key, [])
+        session.append(entry)
+        del session[: max(0, len(session) - self._SESSION_MAX_TURNS)]
+        # Bound total sessions (LRU by insertion order)
+        if len(self._session_memory) > self._SESSION_MAX_SESSIONS:
+            for key in next(iter(self._session_memory)):
+                break
+            self._session_memory.pop(next(iter(self._session_memory)), None)
+
+    @staticmethod
+    def _topic_of(message: str) -> str:
+        stop = {
+            "the", "a", "an", "is", "are", "was", "were", "show", "me", "what",
+            "why", "how", "did", "does", "do", "to", "of", "in", "on", "for",
+            "and", "it", "this", "that", "with", "about", "tell", "explain",
+        }
+        words = [w for w in "".join(c if c.isalnum() or c.isspace() else " " for c in message.lower()).split() if w not in stop]
+        return " ".join(words[:6]) or message[:60]
 
     async def converse(
         self,
@@ -79,7 +175,21 @@ class ConductorService:
         actor = self._actor(user)
         roles = list(user.get("roles") or [])
         correlation = CorrelationId.new()
+        tenant = str(user.get("tenant_id") or "default")
+        conv_key = (tenant, conversation_id or "default")
+        memory = self._session_memory.get(conv_key)
+
         plan = self._planner.plan(message)
+
+        # Working memory: resolve short follow-ups ("show me the campaign",
+        # "simulate it", "why?") against the bounded session context instead
+        # of dropping to the generic fallback.
+        if (
+            plan.tool_call is None
+            and memory
+            and self._looks_like_followup(message)
+        ):
+            plan = Plan(reply=self._followup_reply(memory, message))
 
         events: list[ToolEvent] = []
         pending: ApprovalRequest | None = None
@@ -177,6 +287,13 @@ class ConductorService:
             pending_approval=pending,
             conversation_id=conversation_id,
             correlation_id=str(correlation),
+        )
+        self._remember_turn(
+            conv_key,
+            message=message,
+            reply=reply,
+            context=context,
+            pending=pending,
         )
         await self._publish(
             ConductorTurnCompleted(

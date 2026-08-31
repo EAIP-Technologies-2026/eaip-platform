@@ -17,6 +17,7 @@ from typing import Any, Protocol, runtime_checkable
 from pydantic.json_schema import JsonSchemaValue
 
 from eaip.agents.models import AgentSpec
+from eaip.agents.models import AgentStatus
 from eaip.agents.registry import AgentRegistry
 from eaip.capabilities.capability import OperationType
 from eaip.context.permission_context import PermissionAwareContext
@@ -845,7 +846,7 @@ class InspectSystemHealthTool(BaseOperationalTool):
 class InspectAgentStatusTool(BaseOperationalTool):
     """Inspects the operational status of an autonomous agent."""
 
-    def __init__(self, agent_runtime: Any | None = None) -> None:
+    def __init__(self, agent_runtime: Any | None = None, agent_registry: Any | None = None) -> None:
         """Initialize agent status inspection tool."""
         super().__init__(
             OperationalToolMetadata(
@@ -865,10 +866,18 @@ class InspectAgentStatusTool(BaseOperationalTool):
             )
         )
         self._runtime = agent_runtime
+        self._registry = agent_registry
 
     async def execute(self, **kwargs: object) -> str:
         """Execute agent status inspection."""
         target_id = str(kwargs.get("target_id") or kwargs.get("agent_id") or "all")
+        if self._registry is not None and hasattr(self._registry, "get_status"):
+            if target_id != "all":
+                status = await self._registry.get_status(target_id)
+                if status is None:
+                    return json.dumps({"agent_id": target_id, "status": "unknown"})
+                return json.dumps({"agent_id": target_id, "status": str(status.value)})
+            return json.dumps({"agent_id": target_id, "status": "all"})
         if self._runtime is not None and hasattr(self._runtime, "list_runs"):
             runs = self._runtime.list_runs(
                 agent_id=target_id if target_id != "all" else None, limit=5
@@ -965,7 +974,7 @@ class InspectApprovalsTool(BaseOperationalTool):
 class PauseAgentTool(BaseOperationalTool):
     """Pauses an active autonomous agent."""
 
-    def __init__(self, agent_runtime: Any | None = None) -> None:
+    def __init__(self, agent_runtime: Any | None = None, agent_registry: Any | None = None) -> None:
         """Initialize agent pause tool."""
         super().__init__(
             OperationalToolMetadata(
@@ -985,17 +994,25 @@ class PauseAgentTool(BaseOperationalTool):
             )
         )
         self._runtime = agent_runtime
+        self._registry = agent_registry
 
     async def execute(self, **kwargs: object) -> str:
         """Execute agent pause."""
         target_id = str(kwargs.get("target_id") or "default-agent")
-        return json.dumps({"status": "paused", "agent_id": target_id})
+        if self._registry is None or not hasattr(self._registry, "transition_to"):
+            return json.dumps({"status": "unsupported", "agent_id": target_id, "error": "agent lifecycle not wired"})
+        try:
+            agent = await self._registry.transition_to(target_id, AgentStatus.PAUSED)
+            status = await self._registry.get_status(target_id)
+            return json.dumps({"status": str(status.value), "agent_id": target_id, "name": agent.name})
+        except Exception as exc:  # pragma: no cover - defensive
+            return json.dumps({"status": "error", "agent_id": target_id, "error": repr(exc)})
 
 
 class ResumeAgentTool(BaseOperationalTool):
     """Resumes a paused autonomous agent."""
 
-    def __init__(self, agent_runtime: Any | None = None) -> None:
+    def __init__(self, agent_runtime: Any | None = None, agent_registry: Any | None = None) -> None:
         """Initialize agent resume tool."""
         super().__init__(
             OperationalToolMetadata(
@@ -1015,17 +1032,25 @@ class ResumeAgentTool(BaseOperationalTool):
             )
         )
         self._runtime = agent_runtime
+        self._registry = agent_registry
 
     async def execute(self, **kwargs: object) -> str:
         """Execute agent resume."""
         target_id = str(kwargs.get("target_id") or "default-agent")
-        return json.dumps({"status": "resumed", "agent_id": target_id})
+        if self._registry is None or not hasattr(self._registry, "transition_to"):
+            return json.dumps({"status": "unsupported", "agent_id": target_id, "error": "agent lifecycle not wired"})
+        try:
+            await self._registry.transition_to(target_id, AgentStatus.RUNNING)
+            status = await self._registry.get_status(target_id)
+            return json.dumps({"status": str(status.value), "agent_id": target_id})
+        except Exception as exc:  # pragma: no cover - defensive
+            return json.dumps({"status": "error", "agent_id": target_id, "error": repr(exc)})
 
 
 class RestartAgentTool(BaseOperationalTool):
     """Restarts an autonomous agent instance."""
 
-    def __init__(self, agent_runtime: Any | None = None) -> None:
+    def __init__(self, agent_runtime: Any | None = None, agent_registry: Any | None = None) -> None:
         """Initialize agent restart tool."""
         super().__init__(
             OperationalToolMetadata(
@@ -1045,17 +1070,26 @@ class RestartAgentTool(BaseOperationalTool):
             )
         )
         self._runtime = agent_runtime
+        self._registry = agent_registry
 
     async def execute(self, **kwargs: object) -> str:
         """Execute agent restart."""
         target_id = str(kwargs.get("target_id") or "default-agent")
-        return json.dumps({"status": "restarted", "agent_id": target_id})
+        if self._registry is None or not hasattr(self._registry, "transition_to"):
+            return json.dumps({"status": "unsupported", "agent_id": target_id, "error": "agent lifecycle not wired"})
+        try:
+            await self._registry.transition_to(target_id, AgentStatus.STOPPED)
+            await self._registry.transition_to(target_id, AgentStatus.RUNNING)
+            status = await self._registry.get_status(target_id)
+            return json.dumps({"status": str(status.value), "agent_id": target_id})
+        except Exception as exc:  # pragma: no cover - defensive
+            return json.dumps({"status": "error", "agent_id": target_id, "error": repr(exc)})
 
 
 class CancelAgentRunTool(BaseOperationalTool):
     """Cancels an active agent run (destructive)."""
 
-    def __init__(self, agent_runtime: Any | None = None) -> None:
+    def __init__(self, agent_runtime: Any | None = None, agent_registry: Any | None = None) -> None:
         """Initialize agent run cancellation tool."""
         super().__init__(
             OperationalToolMetadata(
@@ -1075,11 +1109,28 @@ class CancelAgentRunTool(BaseOperationalTool):
             )
         )
         self._runtime = agent_runtime
+        self._registry = agent_registry
 
     async def execute(self, **kwargs: object) -> str:
         """Execute agent cancellation."""
         target_id = str(kwargs.get("target_id") or "default-agent")
-        return json.dumps({"status": "cancelled", "agent_id": target_id})
+        # Prefer cancelling a specific active run by run id.
+        if self._runtime is not None and hasattr(self._runtime, "cancel_run"):
+            try:
+                run = await self._runtime.cancel_run(target_id)
+                if run is not None:
+                    return json.dumps({"status": str(run.status.value), "run_id": target_id})
+            except Exception:
+                pass
+        # Fall back to stopping the agent definition lifecycle.
+        if self._registry is not None and hasattr(self._registry, "transition_to"):
+            try:
+                await self._registry.transition_to(target_id, AgentStatus.STOPPED)
+                status = await self._registry.get_status(target_id)
+                return json.dumps({"status": str(status.value), "agent_id": target_id})
+            except Exception as exc:  # pragma: no cover - defensive
+                return json.dumps({"status": "error", "agent_id": target_id, "error": repr(exc)})
+        return json.dumps({"status": "unsupported", "agent_id": target_id, "error": "agent run not wired"})
 
 
 class PauseWorkflowTool(BaseOperationalTool):
@@ -1109,7 +1160,13 @@ class PauseWorkflowTool(BaseOperationalTool):
     async def execute(self, **kwargs: object) -> str:
         """Execute workflow pause."""
         target_id = str(kwargs.get("target_id") or "default-workflow")
-        return json.dumps({"status": "paused", "workflow_id": target_id})
+        if self._engine is None or not hasattr(self._engine, "pause"):
+            return json.dumps({"status": "unsupported", "workflow_id": target_id, "error": "workflow engine not wired"})
+        try:
+            await self._engine.pause(target_id)
+            return json.dumps({"status": "paused", "workflow_id": target_id})
+        except Exception as exc:
+            return json.dumps({"status": "error", "workflow_id": target_id, "error": repr(exc)})
 
 
 class ResumeWorkflowTool(BaseOperationalTool):
@@ -1139,7 +1196,13 @@ class ResumeWorkflowTool(BaseOperationalTool):
     async def execute(self, **kwargs: object) -> str:
         """Execute workflow resume."""
         target_id = str(kwargs.get("target_id") or "default-workflow")
-        return json.dumps({"status": "resumed", "workflow_id": target_id})
+        if self._engine is None or not hasattr(self._engine, "resume"):
+            return json.dumps({"status": "unsupported", "workflow_id": target_id, "error": "workflow engine not wired"})
+        try:
+            result = await self._engine.resume(target_id)
+            return json.dumps({"status": "resumed", "workflow_id": target_id})
+        except Exception as exc:
+            return json.dumps({"status": "error", "workflow_id": target_id, "error": repr(exc)})
 
 
 class CancelWorkflowTool(BaseOperationalTool):
@@ -1169,7 +1232,13 @@ class CancelWorkflowTool(BaseOperationalTool):
     async def execute(self, **kwargs: object) -> str:
         """Execute workflow cancellation."""
         target_id = str(kwargs.get("target_id") or "default-workflow")
-        return json.dumps({"status": "cancelled", "workflow_id": target_id})
+        if self._engine is None or not hasattr(self._engine, "cancel"):
+            return json.dumps({"status": "unsupported", "workflow_id": target_id, "error": "workflow engine not wired"})
+        try:
+            await self._engine.cancel(target_id)
+            return json.dumps({"status": "cancelled", "workflow_id": target_id})
+        except Exception as exc:
+            return json.dumps({"status": "error", "workflow_id": target_id, "error": repr(exc)})
 
 
 class ApproveActionTool(BaseOperationalTool):
@@ -1357,6 +1426,228 @@ def create_canonical_operational_registry(
 
 
 
+class ListSchedulesTool:
+    name = "list_schedules"
+    description = "List upcoming and active schedules for the current tenant."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:list_schedules"
+
+    def __init__(self, scheduling_service: Any | None = None) -> None:
+        self._svc = scheduling_service
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        if self._svc is not None and hasattr(self._svc, "list_schedules"):
+            try:
+                schedules = await self._svc.list_schedules(tenant_id, limit=20)
+                return json.dumps({"tenant_id": tenant_id, "total": len(schedules), "schedules": [{"id": s.id, "name": s.name, "status": s.status.value, "next_run_at": s.next_run_at.isoformat() if s.next_run_at else None} for s in schedules[:10]]}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"tenant_id": tenant_id, "schedules": [], "note": "scheduling not available"})
+
+
+class ScheduleHealthTool:
+    name = "schedule_health"
+    description = "Get health status for schedules."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:schedule_health"
+
+    def __init__(self, scheduling_service: Any | None = None) -> None:
+        self._svc = scheduling_service
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {"schedule_id": {"type": "string"}}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        schedule_id = str(kwargs.get("schedule_id", ""))
+        if self._svc is not None and schedule_id and hasattr(self._svc, "get_health"):
+            try:
+                h = await self._svc.get_health(schedule_id, tenant_id)
+                return json.dumps(h.model_dump(), default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        if self._svc is not None and hasattr(self._svc, "get_stats"):
+            try:
+                stats = await self._svc.get_stats(tenant_id)
+                return json.dumps({"tenant_id": tenant_id, **stats}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"tenant_id": tenant_id, "note": "scheduling not available"})
+
+
+class WorkforceOverviewTool:
+    name = "workforce_overview"
+    description = "Get workforce utilization and capacity overview."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:workforce_overview"
+
+    def __init__(self, workforce_analytics: Any | None = None) -> None:
+        self._analytics = workforce_analytics
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        if self._analytics is not None and hasattr(self._analytics, "get_overview"):
+            try:
+                overview = self._analytics.get_overview(tenant_id)
+                return json.dumps({"tenant_id": tenant_id, **overview}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"tenant_id": tenant_id, "note": "workforce analytics not available"})
+
+
+class WorkforceBottlenecksTool:
+    name = "workforce_bottlenecks"
+    description = "Detect workforce bottlenecks."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:workforce_bottlenecks"
+
+    def __init__(self, workforce_analytics: Any | None = None) -> None:
+        self._analytics = workforce_analytics
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        if self._analytics is not None and hasattr(self._analytics, "detect_bottlenecks"):
+            try:
+                bottlenecks = self._analytics.detect_bottlenecks(tenant_id)
+                return json.dumps({"tenant_id": tenant_id, "bottlenecks": bottlenecks}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"tenant_id": tenant_id, "bottlenecks": []})
+
+
+class MarketplaceSearchTool:
+    name = "marketplace_search"
+    description = "Search marketplace packages."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:marketplace_search"
+
+    def __init__(self, marketplace_registry: Any | None = None) -> None:
+        self._registry = marketplace_registry
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {"query": {"type": "string"}}}
+
+    async def execute(self, **kwargs: object) -> str:
+        query = str(kwargs.get("query", "")).strip()
+        if self._registry is not None and hasattr(self._registry, "search"):
+            try:
+                results = self._registry.search(query=query or None)
+                return json.dumps({"query": query, "total": len(results), "packages": [{"id": p.package_id, "name": p.name, "type": p.type.value, "description": p.description} for p in results[:5]]}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"query": query, "packages": []})
+
+
+class SimulationStateTool:
+    name = "simulation_state"
+    description = "Get enterprise simulation state."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:simulation_state"
+
+    def __init__(self, simulation_engine: Any | None = None) -> None:
+        self._engine = simulation_engine
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {"enterprise": {"type": "string", "enum": ["apex", "nova", "meridian"]}}}
+
+    async def execute(self, **kwargs: object) -> str:
+        enterprise = str(kwargs.get("enterprise", "apex"))
+        if self._engine is not None and hasattr(self._engine, "get_enterprise_state"):
+            try:
+                state = self._engine.get_enterprise_state(enterprise)
+                return json.dumps({"enterprise": state.enterprise, "workload": state.workload, "utilization": state.utilization, "active_tasks": state.active_tasks, "alerts": state.alerts}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"enterprise": enterprise, "note": "simulation not available"})
+
+
+class ListIntegrationsTool:
+    name = "list_integrations"
+    description = "List MCP integrations for the current tenant."
+    risk = RiskTier.INFORMATIONAL
+    permission = "copilot:tools:list_integrations"
+
+    def __init__(self, server_registry: Any | None = None) -> None:
+        self._registry = server_registry
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        if self._registry and hasattr(self._registry, "list_for_tenant"):
+            try:
+                servers = self._registry.list_for_tenant(tenant_id)
+                return json.dumps({"tenant_id": tenant_id, "total": len(servers), "servers": [{"server_id": s.server_id, "name": s.name, "status": s.status.value, "capabilities": list(s.capabilities)} for s in servers[:10]]}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc)})
+        return json.dumps({"tenant_id": tenant_id, "servers": []})
+
+
+class InvokeExternalTool:
+    name = "invoke_external_tool"
+    description = "Invoke an external MCP tool for the current tenant."
+    risk = RiskTier.ACTION
+    permission = "copilot:tools:invoke_external_tool"
+
+    def __init__(self, executor: Any | None = None) -> None:
+        self._executor = executor
+
+    @property
+    def parameters(self) -> JsonSchemaValue:
+        return {"type": "object", "properties": {"server_id": {"type": "string"}, "tool_name": {"type": "string"}, "arguments": {"type": "object"}}}
+
+    async def execute(self, **kwargs: object) -> str:
+        user = kwargs.get("user")
+        tenant_id = "default"
+        if isinstance(user, dict):
+            tenant_id = str(user.get("organization_id") or user.get("tenant_id") or "default")
+        server_id = str(kwargs.get("server_id", ""))
+        tool_name = str(kwargs.get("tool_name", kwargs.get("tool", "")))
+        arguments = kwargs.get("arguments", {})
+        if not isinstance(arguments, dict):
+            arguments = {}
+        if self._executor and hasattr(self._executor, "invoke"):
+            try:
+                result = await self._executor.invoke(tool_name, server_id, tenant_id, arguments)
+                return json.dumps({"tool": tool_name, "server_id": server_id, "result": result}, default=str)
+            except Exception as exc:
+                return json.dumps({"error": str(exc), "code": getattr(exc, "code", "ERROR")})
+        return json.dumps({"error": "external executor not available"})
+
+
 def build_copilot_tools(
     *,
     health_reporter: HealthReporter,
@@ -1364,6 +1655,14 @@ def build_copilot_tools(
     workflow_registry: WorkflowRegistry,
     knowledge_engine: KnowledgeEngine,
     memory_service: GovernedMemoryService | None = None,
+    scheduling_service: Any | None = None,
+    workforce_analytics: Any | None = None,
+    marketplace_registry: Any | None = None,
+    simulation_engine: Any | None = None,
+    mcp_server_registry: Any | None = None,
+    mcp_executor: Any | None = None,
+    agent_runtime: Any | None = None,
+    workflow_engine: Any | None = None,
 ) -> dict[str, Tool]:
     """Build the governed tool set exposed to Conductor."""
     k_tool = KnowledgeSearchTool(knowledge_engine)
@@ -1385,6 +1684,14 @@ def build_copilot_tools(
         ListRecentActivityTool(),
         CurrentTimeToolWrapper(),
         CreateAgentTool(agent_registry),
+        ListSchedulesTool(scheduling_service),
+        ScheduleHealthTool(scheduling_service),
+        WorkforceOverviewTool(workforce_analytics),
+        WorkforceBottlenecksTool(workforce_analytics),
+        MarketplaceSearchTool(marketplace_registry),
+        SimulationStateTool(simulation_engine),
+        ListIntegrationsTool(mcp_server_registry),
+        InvokeExternalTool(mcp_executor),
     ]
     if memory_service is not None:
         tools.extend(
@@ -1394,6 +1701,23 @@ def build_copilot_tools(
                 ForgetMemoryTool(memory_service),
             ]
         )
+    # Real operational tools — these call the authoritative runtimes so the
+    # Conductor's pause/resume/restart/cancel verbs reflect actual state.
+    tools.extend(
+        [
+            InspectSystemHealthTool(health_reporter),
+            InspectAgentStatusTool(agent_runtime, agent_registry),
+            InspectWorkflowStatusTool(workflow_engine),
+            InspectApprovalsTool(),
+            PauseAgentTool(agent_runtime, agent_registry),
+            ResumeAgentTool(agent_runtime, agent_registry),
+            RestartAgentTool(agent_runtime, agent_registry),
+            CancelAgentRunTool(agent_runtime, agent_registry),
+            PauseWorkflowTool(workflow_engine),
+            ResumeWorkflowTool(workflow_engine),
+            CancelWorkflowTool(workflow_engine),
+        ]
+    )
     return {tool.name: tool for tool in tools}
 
 

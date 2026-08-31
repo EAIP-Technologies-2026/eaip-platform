@@ -13,7 +13,8 @@ class DecisionRepository(_TenantRepository):
     """Repository for managing decision logs."""
 
     def __init__(self, db: Any) -> None:
-        super().__init__(db, table_name="decision_logs")
+        self._db = db
+        self._table_name = "decision_logs"
 
     async def get_by_id(self, id: str, tenant_id: str) -> DecisionLog | None:
         row = await self._db.fetch_row(

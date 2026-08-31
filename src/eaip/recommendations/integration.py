@@ -7,7 +7,7 @@ from typing import Any
 from eaip.infrastructure.db.connection import DatabaseConnection
 from eaip.infrastructure.persistence.recommendations import RecommendationRepository
 from eaip.recommendations.engine import RecommendationEngine
-from eaip.runtime.modules import RuntimeModule
+from eaip.runtime.module import RuntimeModule
 
 
 class RecommendationRuntimeModule(RuntimeModule):

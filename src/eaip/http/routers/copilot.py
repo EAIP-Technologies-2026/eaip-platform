@@ -20,7 +20,7 @@ from eaip.copilot.skills.engine import SkillExecutionEngine, build_default_skill
 from eaip.copilot.skills.models import ConductorSkill, SkillResult
 from eaip.copilot.twin import SystemTwinService
 from eaip.health.reporter import HealthReporter
-from eaip.http.dependencies import get_current_user
+from eaip.http.dependencies import get_current_user, get_tenant_id
 from eaip.memory.models import MemoryDomain
 from eaip.workflow.registry import WorkflowRegistry
 
@@ -32,6 +32,36 @@ CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
 def _get_service(request: Request) -> ConductorService:
     """Resolve the Conductor service from the platform container."""
     return request.app.state.lifecycle.platform.container.resolve(ConductorService)
+
+
+@router.post("/assistant/answer")
+async def assistant_answer(
+    request: Request,
+    body: dict[str, Any],
+    user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Role-aware, route-aware Enterprise Assistant (B1) — grounded answers from real state."""
+    try:
+        from eaip.copilot.enterprise_assistant import EnterpriseAssistantService
+
+        assistant = request.app.state.lifecycle.platform.container.try_resolve(
+            EnterpriseAssistantService
+        )
+    except Exception:
+        assistant = None
+    if assistant is None:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="assistant not wired")
+    try:
+        resp = await assistant.answer(
+            str(body.get("message", "")),
+            user=user or {},
+            current_route=str(body.get("current_route", "/")),
+            entity_context=body.get("entity_context"),
+        )
+    except Exception as exc:  # never fabricate — surface the failure honestly
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(exc))
+    data = resp.model_dump(mode="json") if hasattr(resp, "model_dump") else dict(resp)
+    return data
 
 
 @router.post("/chat")
@@ -101,6 +131,60 @@ async def reject_approval(
     except ApprovalNotFoundError as exc:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return {"approval": approval, "result": result}
+
+
+@router.get("/approval-inbox")
+async def approval_inbox(
+    request: Request,
+    user: CurrentUser,
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict[str, Any]:
+    """Get the unified action inbox aggregating every pending approval source.
+
+    Aggregation is read-only over the authoritative stores; it does not replace
+    any existing approval engine and never duplicates state.
+    """
+    service = _get_service(request)
+    actor = str(user.get("sub") or user.get("name") or "unknown")
+    copilot_items = await service.list_pending(user)
+
+    from eaip.http.routers import approval_center as approval_center_router
+
+    center_items = approval_center_router.get_pending_for_tenant(tenant_id)
+
+    inbox: list[dict[str, Any]] = []
+    for item in copilot_items:
+        inbox.append(
+            {
+                "id": item.id,
+                "tool_name": item.tool_name,
+                "arguments": item.arguments,
+                "risk": getattr(item, "risk", ""),
+                "status": "pending",
+                "source": "conductor",
+                "requester": actor,
+                "tenant_id": tenant_id,
+                "created_at": (
+                    item.created_at.isoformat() if getattr(item, "created_at", None) else None
+                ),
+            }
+        )
+    for item in center_items:
+        inbox.append(
+            {
+                "id": item.get("approval_id"),
+                "tool_name": item.get("type", "general"),
+                "arguments": item.get("metadata") or {},
+                "risk": "action",
+                "status": item.get("status", "pending"),
+                "source": "approval-center",
+                "requester": item.get("requester", "system"),
+                "tenant_id": tenant_id,
+                "title": item.get("title"),
+                "created_at": None,
+            }
+        )
+    return {"items": inbox, "total": len(inbox)}
 
 
 def _twin_service(request: Request) -> SystemTwinService:

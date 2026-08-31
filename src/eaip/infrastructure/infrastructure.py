@@ -200,7 +200,47 @@ class PlatformInfrastructure:
             self._log.error("infrastructure.db_failed", error=str(last_error))
             return
 
-        self._container.register_factory(DatabaseConnection, lambda _c: DatabaseConnection)
+        class _DatabaseConnectionInstance(DatabaseConnection):
+            """Instance wrapper for DatabaseConnection class methods."""
+
+            async def initialize(self, provider_name: str, **kwargs: Any) -> None:
+                await DatabaseConnection.initialize(provider_name, **kwargs)
+
+            async def close(self) -> None:
+                await DatabaseConnection.close()
+
+            async def connection(self):
+                return DatabaseConnection.connection()
+
+            async def transaction(self):
+                return DatabaseConnection.transaction()
+
+            async def execute(self, query: str, *args: Any) -> str:
+                return await DatabaseConnection.execute(query, *args)
+
+            async def fetchrow(self, query: str, *args: Any) -> Any:
+                return await DatabaseConnection.fetchrow(query, *args)
+
+            async def fetch(self, query: str, *args: Any) -> list[Any]:
+                return await DatabaseConnection.fetch(query, *args)
+
+            async def fetchval(self, query: str, *args: Any) -> Any:
+                return await DatabaseConnection.fetchval(query, *args)
+
+            def get_pool(self) -> Any:
+                return DatabaseConnection.get_pool()
+
+            async def health(self) -> dict[str, Any]:
+                return await DatabaseConnection.health()
+
+            # Aliases for PulseRepository compatibility
+            async def fetch_row(self, query: str, *args: Any) -> Any:
+                return await DatabaseConnection.fetchrow(query, *args)
+
+            async def fetch_rows(self, query: str, *args: Any) -> list[Any]:
+                return await DatabaseConnection.fetch(query, *args)
+
+        self._container.register_instance(DatabaseConnection, _DatabaseConnectionInstance())
         self._infra_health.register("postgresql", self._db)
 
         if self._settings.database_provider.resolve().enable_migrations:

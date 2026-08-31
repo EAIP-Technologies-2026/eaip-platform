@@ -11,7 +11,7 @@ from eaip.http.dependencies import get_tenant_id
 from eaip.recommendations.engine import RecommendationEngine
 from eaip.recommendations.models import Recommendation, RecommendationStatus
 
-router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 
 class CreateRecommendationRequest(BaseModel):

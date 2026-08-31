@@ -160,6 +160,42 @@ def _ensure_installable_version(registry: MarketplaceRegistry, package: Marketpl
     )
 
 
+@router.get("/search")
+async def marketplace_search(
+    request: Request, search: str = "", category: str = "", tags: str = "", sort: str = "", page: int = 1, pageSize: int = 20
+):
+    discovery, _, _ = _core(request)
+    type_filter = CATEGORY_TYPES.get(category)
+    tag = category if category and type_filter is None else (tags.split(",")[0].strip() if tags else None)
+    query = search.strip() or None
+    if query:
+        results = discovery.search(query, type_filter=type_filter, tag=tag)
+    else:
+        results = discovery.discover_packages(type_filter=type_filter, tag=tag)
+    if sort == "rating":
+        results = sorted(results, key=lambda p: p.rating, reverse=True)
+    elif sort == "downloads":
+        results = sorted(results, key=lambda p: p.downloads, reverse=True)
+    total = len(results)
+    page = max(1, int(page))
+    page_size = min(100, max(1, int(pageSize)))
+    start = (page - 1) * page_size
+    sliced = results[start : start + page_size]
+    return {"packages": [_package_to_dict(p) for p in sliced], "total": total, "page": page, "pageSize": page_size}
+
+
+@router.get("/recommendations")
+async def marketplace_recommendations(request: Request):
+    discovery, _, _ = _core(request)
+    try:
+        all_pkgs = discovery.discover_packages(tag="featured")
+        if not all_pkgs:
+            all_pkgs = discovery.discover_packages()[:5]
+        return {"packages": [_package_to_dict(p) for p in all_pkgs[:5]], "reason": "recommended for your organization"}
+    except Exception:
+        return {"packages": [], "reason": "no recommendations"}
+
+
 @router.get("/packages")
 async def list_packages(
     request: Request, search: str = "", category: str = "", page: int = 1, pageSize: int = 20
@@ -305,3 +341,54 @@ async def list_categories(request: Request):
             {"id": category_id, "name": CATEGORY_NAMES.get(category_id, category_id), "count": count}
         )
     return {"categories": categories}
+
+
+@router.get("/packages/{package_id}/detail")
+async def package_detail(request: Request, package_id: str):
+    discovery, _, _ = _core(request)
+    try:
+        pkg = discovery.get_package(package_id)
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    data = _package_to_dict(pkg)
+    caps = getattr(pkg, "capabilities", None)
+    reqs = getattr(pkg, "requirements", None)
+    compat = getattr(pkg, "compatibility", None)
+    data["capabilities"] = list(caps) if caps else list(pkg.tags)
+    data["requirements"] = list(reqs) if reqs else []
+    data["compatibility"] = list(compat) if compat else []
+    data["installable"] = pkg.status == PackageStatus.PUBLISHED
+    return data
+
+
+@router.post("/packages/{package_id}/configure")
+async def configure_package(request: Request, package_id: str, body: dict[str, Any], _user: dict = Depends(get_current_user)):
+    discovery, _, _ = _core(request)
+    try:
+        pkg = discovery.get_package(package_id)
+    except PackageNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    config = body.get("config") or body.get("configuration") or body
+    return {"package_id": package_id, "name": pkg.name, "config": config, "status": "configured"}
+
+
+@router.post("/packages/{package_id}/disable")
+async def disable_package(request: Request, package_id: str, _user: dict = Depends(get_current_user)):
+    _, manager, _ = _core(request)
+    active = [i for i in manager.list_installations(package_id=package_id) if i.status == "active"]
+    if not active:
+        raise HTTPException(status_code=404, detail=f"No active installation for {package_id!r}")
+    for inst in active:
+        manager._installations[inst.installation_id] = inst.model_copy(update={"status": "disabled"})
+    return {"status": "disabled", "package_id": package_id}
+
+
+@router.post("/packages/{package_id}/enable")
+async def enable_package(request: Request, package_id: str, _user: dict = Depends(get_current_user)):
+    _, manager, _ = _core(request)
+    disabled = [i for i in manager.list_installations(package_id=package_id) if i.status == "disabled"]
+    if not disabled:
+        raise HTTPException(status_code=404, detail=f"No disabled installation for {package_id!r}")
+    for inst in disabled:
+        manager._installations[inst.installation_id] = inst.model_copy(update={"status": "active"})
+    return {"status": "enabled", "package_id": package_id}

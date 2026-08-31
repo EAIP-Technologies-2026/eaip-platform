@@ -12,7 +12,7 @@ from eaip.goals.exceptions import GoalNotFoundError, GoalValidationError
 from eaip.goals.models import BusinessGoal
 from eaip.http.dependencies import get_tenant_id
 
-router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
+router = APIRouter(prefix="/goals", tags=["goals"])
 
 
 class CreateGoalRequest(BaseModel):

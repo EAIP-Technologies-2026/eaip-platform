@@ -13,7 +13,8 @@ class PulseRepository(_TenantRepository):
     """Repository for managing intelligence pulse metrics."""
 
     def __init__(self, db: Any) -> None:
-        super().__init__(db, table_name="pulse_metrics")
+        self._db = db
+        self._table_name = "pulse_metrics"
 
     async def get_by_id(self, id: str, tenant_id: str) -> PulseMetric | None:
         row = await self._db.fetch_row(

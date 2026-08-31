@@ -104,8 +104,11 @@ class SentryFastAPIMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return response
         except Exception as exc:
-            hub = _get_hub()
-            hub.capture_exception(exc)
+            try:
+                hub = _get_hub()
+                hub.capture_exception(exc)
+            except Exception:
+                pass
             self._log.error("sentry.captured_exception", error=repr(exc))
             raise
 

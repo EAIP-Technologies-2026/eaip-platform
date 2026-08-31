@@ -7,7 +7,7 @@ from typing import Any
 from eaip.decisions.engine import DecisionEngine
 from eaip.infrastructure.db.connection import DatabaseConnection
 from eaip.infrastructure.persistence.decisions import DecisionRepository
-from eaip.runtime.modules import RuntimeModule
+from eaip.runtime.module import RuntimeModule
 
 
 class DecisionRuntimeModule(RuntimeModule):

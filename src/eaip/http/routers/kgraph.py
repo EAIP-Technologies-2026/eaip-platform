@@ -39,6 +39,7 @@ def _tenant_id(user: dict[str, Any]) -> str:
         user.get("tenant_id")
         or user.get("org_id")
         or user.get("organization_id")
+        or user.get("tenant")
         or user.get("sub")
         or "default"
     )

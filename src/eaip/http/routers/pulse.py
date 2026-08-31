@@ -11,7 +11,7 @@ from eaip.http.dependencies import get_tenant_id
 from eaip.pulse.engine import PulseEngine
 from eaip.pulse.models import PulseMetric
 
-router = APIRouter(prefix="/api/v1/pulse", tags=["pulse"])
+router = APIRouter(prefix="/pulse", tags=["pulse"])
 
 
 class RecordMetricRequest(BaseModel):

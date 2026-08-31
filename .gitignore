@@ -133,6 +133,7 @@ tags
 *.pfx
 secrets/
 .secrets.baseline.local
+.eaip-dev-runtime.json
 
 # -----------------------------------------------------------------------------
 # Docs build outputs
