@@ -375,6 +375,136 @@ async def _async_main() -> None:
     )
     container.register_instance(GovernedMemoryService, memory_service)
 
+    # Scheduling / Workforce analytics / Simulation — must be before Conductor so tools can reference them
+    from eaip.scheduling.repository import ScheduleExecutionRepository, ScheduleRepository
+    from eaip.scheduling.service import SchedulingService
+
+    _sched_repo = ScheduleRepository()
+    _sched_exec_repo = ScheduleExecutionRepository()
+    _scheduling_service = SchedulingService(
+        repo=_sched_repo,
+        exec_repo=_sched_exec_repo,
+        event_bus=events,
+        workflow_engine=wf_engine,
+        mission_registry=mission_registry,
+        agent_runtime=agent_runtime,
+    )
+    container.register_instance(ScheduleRepository, _sched_repo)
+    container.register_instance(ScheduleExecutionRepository, _sched_exec_repo)
+    container.register_instance(SchedulingService, _scheduling_service)
+
+    from eaip.workforce.analytics import WorkforceAnalyticsService
+
+    _workforce_analytics = WorkforceAnalyticsService(
+        registry=workforce_module.registry,
+        orchestrator=workforce_module.orchestrator,
+        event_bus=events,
+    )
+    container.register_instance(WorkforceAnalyticsService, _workforce_analytics)
+
+    from eaip.simulation.engine import SimulationEngine
+
+    _simulation_engine = SimulationEngine(event_bus=events, knowledge_graph=knowledge_graph, seed=42)
+    container.register_instance(SimulationEngine, _simulation_engine)
+
+    # MCP / Connector Fabric — Batch 1
+    from eaip.mcp.credentials import CredentialStore
+    from eaip.mcp.discovery import MCPDiscoveryService
+    from eaip.mcp.executor import MCPToolExecutor
+    from eaip.mcp.registry import MCPServerRegistry, MCPToolRegistry
+    from eaip.mcp.synthetic import MockTransport, create_synthetic_servers, create_synthetic_tools
+    from eaip.solution_packs.registry import SolutionPackRegistry
+    from eaip.onboarding.service import OnboardingService
+
+    _mcp_servers = MCPServerRegistry()
+    _mcp_tools = MCPToolRegistry()
+    _mcp_credentials = CredentialStore()
+    _mcp_executor = MCPToolExecutor(server_registry=_mcp_servers, tool_registry=_mcp_tools, event_bus=events)
+    _mcp_discovery = MCPDiscoveryService(server_registry=_mcp_servers, tool_registry=_mcp_tools, event_bus=events)
+    container.register_instance(MCPServerRegistry, _mcp_servers)
+    container.register_instance(MCPToolRegistry, _mcp_tools)
+    container.register_instance(CredentialStore, _mcp_credentials)
+    container.register_instance(MCPToolExecutor, _mcp_executor)
+    container.register_instance(MCPDiscoveryService, _mcp_discovery)
+    _pack_registry = SolutionPackRegistry()
+    container.register_instance(SolutionPackRegistry, _pack_registry)
+    _onboarding_svc = OnboardingService(solution_registry=_pack_registry, event_bus=events)
+    container.register_instance(OnboardingService, _onboarding_svc)
+
+    from eaip.swarm.engine import SwarmEngine
+    from eaip.long_missions.service import LongMissionService
+    from eaip.runtime_registry.registry import RuntimeRegistry
+    from eaip.runtime_registry.models import RuntimeRecord, RuntimeKind
+    from eaip.audit_chain.chain import AuditChain
+    from eaip.federation.service import FederationService
+    from eaip.intelligence.registry import CapabilityRegistry
+    from eaip.intelligence.kernel import IntelligenceKernel
+    from eaip.intelligence.supervision import SupervisionEngine
+    from eaip.intelligence.cognition import CognitiveEngine
+    from eaip.intelligence.decision_service import DecisionIntelligenceService
+    from eaip.intelligence.coordination import CoordinationEngine
+    from eaip.intelligence.memory_consistency import MemoryConsistencyEngine
+
+    _swarm_engine = SwarmEngine(agent_runtime=agent_runtime, event_bus=events)
+    container.register_instance(SwarmEngine, _swarm_engine)
+    _long_mission_svc = LongMissionService(event_bus=events)
+    container.register_instance(LongMissionService, _long_mission_svc)
+    _runtime_registry = RuntimeRegistry()
+    _runtime_registry.register(RuntimeRecord(runtime_id="local-1", kind=RuntimeKind.local_runtime, name="Local Runtime", capabilities=("agents", "workflows"), status="healthy", tenant_id="default"))
+    container.register_instance(RuntimeRegistry, _runtime_registry)
+    _audit_chain = AuditChain()
+    container.register_instance(AuditChain, _audit_chain)
+    _federation_svc = FederationService()
+    container.register_instance(FederationService, _federation_svc)
+    _cap_registry = CapabilityRegistry()
+    for _cat, _name in [("agent", "Agent Execution"), ("workflow", "Workflow Execution"), ("knowledge", "Knowledge Search"), ("decision", "Decision Analysis")]:
+        from eaip.intelligence.models import CapabilityRecord
+        _cap_registry.register(CapabilityRecord(capability_id=f"cap-{_cat}", name=_name, category=_cat, tenant_id="default"))
+    container.register_instance(CapabilityRegistry, _cap_registry)
+    _intel_kernel = IntelligenceKernel(registry=_cap_registry, agent_runtime=agent_runtime, event_bus=events)
+    container.register_instance(IntelligenceKernel, _intel_kernel)
+    container.register_instance(SupervisionEngine, SupervisionEngine(event_bus=events))
+    container.register_instance(CognitiveEngine, CognitiveEngine(knowledge_engine=knowledge_engine, memory_engine=memory_engine, event_bus=events))
+    container.register_instance(DecisionIntelligenceService, DecisionIntelligenceService(simulation_engine=_simulation_engine, event_bus=events))
+    container.register_instance(CoordinationEngine, CoordinationEngine(workforce_analytics=_workforce_analytics, event_bus=events))
+    container.register_instance(MemoryConsistencyEngine, MemoryConsistencyEngine())
+    # M7 — Marketplace + Deployment Ecosystem
+    from eaip.deployment_packs.registry import ArtifactRegistry, DeploymentConfigRegistry, DeploymentPackRegistry, OnboardingRegistry, SandboxRegistry
+    container.register_instance(ArtifactRegistry, ArtifactRegistry())
+    container.register_instance(DeploymentPackRegistry, DeploymentPackRegistry())
+    container.register_instance(SandboxRegistry, SandboxRegistry())
+    container.register_instance(DeploymentConfigRegistry, DeploymentConfigRegistry())
+    container.register_instance(OnboardingRegistry, OnboardingRegistry())
+    # M8 — Scale + Production Operations
+    from eaip.scale_ops.registry import DataResidencyRegistry, DisasterRecoveryRegistry, IncidentRegistry, PoolRegistry, RegionRegistry, WorkloadScheduler
+    container.register_instance(PoolRegistry, PoolRegistry())
+    container.register_instance(WorkloadScheduler, WorkloadScheduler())
+    container.register_instance(RegionRegistry, RegionRegistry())
+    container.register_instance(DataResidencyRegistry, DataResidencyRegistry())
+    container.register_instance(IncidentRegistry, IncidentRegistry())
+    container.register_instance(DisasterRecoveryRegistry, DisasterRecoveryRegistry())
+    # M9 — Executive OS + Departments
+    from eaip.executive_os.registry import BriefingService, DepartmentRegistry, KPIRegistry
+    container.register_instance(BriefingService, BriefingService())
+    container.register_instance(DepartmentRegistry, DepartmentRegistry())
+    container.register_instance(KPIRegistry, KPIRegistry())
+    # M10 — Autonomous Enterprise Loop
+    from eaip.enterprise_loop.engine import EnterpriseLoopEngine, ObjectiveLoopEngine, StrategicCorrectionEngine
+    container.register_instance(EnterpriseLoopEngine, EnterpriseLoopEngine(event_bus=events))
+    container.register_instance(ObjectiveLoopEngine, ObjectiveLoopEngine())
+    container.register_instance(StrategicCorrectionEngine, StrategicCorrectionEngine())
+    for _rec in create_synthetic_servers():
+        _mcp_servers.register(_rec)
+        transport = MockTransport(_rec.server_id, _rec.tenant_id)
+        _mcp_executor.register_transport(_rec.server_id, _rec.tenant_id, transport)
+        _mcp_discovery.register_transport(_rec.server_id, _rec.tenant_id, transport)
+    from collections import defaultdict as _dd
+    grouped: dict[tuple[str, str], list] = _dd(list)
+    for _t in create_synthetic_tools():
+        grouped[(_t.tenant_id, _t.server_id)].append(_t)
+    for (_tid, _sid), _tools_list in grouped.items():
+        _mcp_tools.discover(_sid, _tid, _tools_list)
+
     # Copilot services — EAIP Conductor (governed assistant)
     from eaip.copilot.approvals import ApprovalService
     from eaip.copilot.planner import ConductorPlanner
@@ -387,6 +517,14 @@ async def _async_main() -> None:
         workflow_registry=wf_registry,
         knowledge_engine=knowledge_engine,
         memory_service=memory_service,
+        scheduling_service=_scheduling_service,
+        workforce_analytics=_workforce_analytics,
+        marketplace_registry=marketplace_registry,
+        simulation_engine=_simulation_engine,
+        mcp_server_registry=_mcp_servers,
+        mcp_executor=_mcp_executor,
+        agent_runtime=agent_runtime,
+        workflow_engine=wf_engine,
     )
     for tool in copilot_tools.values():
         if tool_registry.try_get(tool.name) is None:
@@ -465,6 +603,81 @@ async def _async_main() -> None:
     for tool in orchestration_tools.values():
         if tool_registry.try_get(tool.name) is None:
             tool_registry.register(tool)
+
+    # B1 — Enterprise Assistant DI wiring: compose the fully-implemented
+    # role-aware assistant stack from EXISTING authoritative services only.
+    from eaip.copilot.action_executor import GovernedActionExecutor
+    from eaip.copilot.enterprise_assistant import EnterpriseAssistantService
+    from eaip.copilot.intelligence import AssistantIntelligenceService
+    from eaip.copilot.operational_intelligence import OperationalIntelligenceService
+    from eaip.copilot.role_context import RoleAwareContextBuilder
+    from eaip.capabilities.registry import CapabilityRegistry as AssistantCapabilityRegistry
+    from eaip.context.permission_resolver import PermissionContextResolver
+    from eaip.kgraph.platform_graph import PlatformKnowledgeService
+    from eaip.policy.authorization import AuthorizationManager
+    from eaip.policy.engine import PolicyEngine as AuthzPolicyEngine
+    from eaip.policy.registry import PolicyRegistry
+
+    _authz_policy_registry = PolicyRegistry()
+    _authz_policy_engine = AuthzPolicyEngine()
+    _assistant_authz_manager = AuthorizationManager(
+        engine=_authz_policy_engine,
+        registry=_authz_policy_registry,
+        event_bus=events,
+    )
+    _assistant_capability_registry = AssistantCapabilityRegistry()
+    _assistant_permission_resolver = PermissionContextResolver(
+        authz_manager=_assistant_authz_manager,
+        capability_registry=_assistant_capability_registry,
+    )
+    _platform_knowledge = PlatformKnowledgeService(graph=knowledge_graph)
+    _assistant_intelligence = AssistantIntelligenceService(
+        capability_registry=_assistant_capability_registry,
+        permission_resolver=_assistant_permission_resolver,
+        knowledge_service=_platform_knowledge,
+    )
+    _operational_intelligence = OperationalIntelligenceService(
+        health_reporter=lifecycle.platform.health,
+        agent_registry=agent_registry,
+        workflow_registry=wf_registry,
+        audit_logger=audit_logger,
+    )
+    _role_context_builder = RoleAwareContextBuilder(
+        capability_registry=_assistant_capability_registry,
+        permission_resolver=_assistant_permission_resolver,
+        knowledge_service=_platform_knowledge,
+        operational_intelligence=_operational_intelligence,
+    )
+    _governed_action_executor = GovernedActionExecutor(
+        tools=tool_registry,
+        authz_manager=_assistant_authz_manager,
+        capability_registry=_assistant_capability_registry,
+        permission_resolver=_assistant_permission_resolver,
+        approvals=approval_service,
+        audit=audit_logger,
+    )
+    _enterprise_assistant = EnterpriseAssistantService(
+        capability_registry=_assistant_capability_registry,
+        permission_resolver=_assistant_permission_resolver,
+        context_builder=_role_context_builder,
+        grounded_intelligence=_assistant_intelligence,
+        operational_intelligence=_operational_intelligence,
+        tour_service=tour_service,
+        action_executor=_governed_action_executor,
+        memory_service=memory_service,
+        knowledge_service=_platform_knowledge,
+    )
+    container.register_instance(AuthorizationManager, _assistant_authz_manager)
+    # NOTE: AssistantCapabilityRegistry intentionally NOT registered under its
+    # class name — it collides with the intelligence CapabilityRegistry binding.
+    # It is composed into the services below, which are the access points.
+    container.register_instance(PermissionContextResolver, _assistant_permission_resolver)
+    container.register_instance(PlatformKnowledgeService, _platform_knowledge)
+    container.register_instance(AssistantIntelligenceService, _assistant_intelligence)
+    container.register_instance(OperationalIntelligenceService, _operational_intelligence)
+    container.register_instance(RoleAwareContextBuilder, _role_context_builder)
+    container.register_instance(GovernedActionExecutor, _governed_action_executor)
+    container.register_instance(EnterpriseAssistantService, _enterprise_assistant)
 
     # Register core health checks
     from eaip.health.checks import (
@@ -552,16 +765,18 @@ async def _async_main() -> None:
 
     app = create_app(lifecycle)
 
+    http_port = int(os.environ.get("EAIP_HTTP_PORT", "8080"))
+
     config = uvicorn.Config(
         app,
         host="0.0.0.0",
-        port=8080,
+        port=http_port,
         log_level="info",
         ws="auto",
     )
     server = uvicorn.Server(config)
 
-    log.info("http.server.starting", host="0.0.0.0", port=8080)
+    log.info("http.server.starting", host="0.0.0.0", port=http_port)
 
     try:
         await server.serve()
